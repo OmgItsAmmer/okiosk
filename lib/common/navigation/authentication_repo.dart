@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,17 +8,23 @@ import '../../features/cart/controller/cart_controller.dart';
 import '../../features/categories/controller/category_controller.dart';
 import '../../features/customer/controller/customer_controller.dart';
 import '../../features/login/controller/login_controller.dart';
+import '../../features/login/screens/login.dart';
 import '../../features/network_manager/network_manager.dart';
+import '../../features/pos/screens/pos_kiosk_screen.dart';
 import '../../features/products/controller/product_controller.dart';
 import '../../main.dart';
 import '../../routes/routes.dart';
 
 class AuthenticationRepository extends GetxController {
   @override
-  void onInit() {
-    super.onInit();
+  void onReady() {
+    super.onReady();
     _initlizeCritcalControllers();
-    screenRedirect();
+
+    // Use post-frame callback to ensure app is fully initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      screenRedirect();
+    });
 
     //for futute listining
     _initlizeSupabaseAuthListener();
@@ -26,9 +33,10 @@ class AuthenticationRepository extends GetxController {
 
   Future<void> screenRedirect() async {
     if (await checkSession()) {
-      Get.offAllNamed(TRoutes.posKiosk);
+      _initlizePostSignInControllers();
+      Get.off(() => const PosKioskScreen());
     } else {
-      Get.offAllNamed(TRoutes.signIn);
+      Get.off(() => const LoginScreen());
     }
   }
 
@@ -46,9 +54,6 @@ class AuthenticationRepository extends GetxController {
       Get.put(NetworkManager(), permanent: true);
       Get.lazyPut(() => LoginController(), fenix: true);
       Get.put(CustomerController(), permanent: true);
-
-      
-
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -61,7 +66,6 @@ class AuthenticationRepository extends GetxController {
       final productController = Get.put(ProductController(), permanent: true);
       final categoryController = Get.put(CategoryController(), permanent: true);
       Get.put(CartController(), permanent: true);
-
 
       // Load ALL products for POS system (not just popular ones)
       await productController.loadAllProductsForPOS();

@@ -9,7 +9,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
     return GetMaterialApp(
       defaultTransition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 200),
@@ -17,10 +16,11 @@ class App extends StatelessWidget {
       theme: TAppTheme.lightTheme,
       darkTheme: TAppTheme.darkTheme,
       getPages: AppRoutes.pages,
-     initialRoute: TRoutes.loading, 
-    
+      initialRoute: TRoutes.loading, // Keep loading as initial route
+      // The AuthenticationRepository will redirect from here
+
       //  navigatorObservers: [TRouteObserver()],
-      // unknownRoute: GetPage( 
+      // unknownRoute: GetPage(
       //     name: TRoutes.UnkownRoute,
       //     page: () => const UnkownRoute(),
       //     middlewares: [TRouteMiddleware()]),
