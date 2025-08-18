@@ -1,0 +1,74 @@
+name: okiosk
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core Flutter packages
+  cupertino_icons: ^1.0.8
+  iconsax: ^0.0.6
+
+  # State Management
+  get: ^4.6.5
+  get_storage: ^2.1.1
+
+  # Networking & HTTP
+  http: ^1.1.0
+  connectivity_plus: ^5.0.1
+
+  # UI & Animation
+  flutter_native_splash: ^2.4.1
+  smooth_page_indicator: ^1.1.0
+  lottie: ^2.7.0
+  shimmer: ^3.0.0
+  flutter_rating_bar: ^4.0.1
+  readmore: ^2.2.0
+
+  # Utilities
+  intl: ^0.18.1
+  logger: ^2.0.1
+  url_launcher: ^6.3.2
+  cached_network_image: ^3.4.1
+  package_info_plus: ^8.3.0
+
+  # Backend & Database
+  firebase_core: ^3.15.1
+  supabase_flutter: ^2.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logos/
+    - assets/icons/
+    - assets/images/
+    - assets/images/on_boarding_images/
+    - assets/images/animations/
+    - assets/icons/categories/
+    - assets/images/banners/
+    - assets/images/products/
+    - assets/images/content/
+    - assets/images/reviews/
+    - assets/icons/payment_methods/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 800
+ 
