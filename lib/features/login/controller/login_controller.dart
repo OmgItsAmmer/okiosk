@@ -30,6 +30,7 @@ class LoginController extends GetxController {
 
   @override
   void onInit() {
+   
     // Load saved credentials if remember me was selected
     email.text = localStorage.read('REMEMBER_ME_EMAIL') ?? "";
     //password.text = localStorage.read('REMEMBER_ME_PASSWORD') ?? "";
@@ -39,6 +40,10 @@ class LoginController extends GetxController {
 
     super.onInit();
   }
+
+
+
+
 
   Future<void> emailAndPasswordSignIn() async {
     try {
@@ -80,14 +85,14 @@ class LoginController extends GetxController {
         clearCredentials();
       }
 
-      // Initialize controllers and load data for POS system
-      await _initializePOSData();
+      // // Initialize controllers and load data for POS system
+      // await _initializePOSData();
 
       //Remove Loader
       TFullScreenLoader.stopLoading();
 
-      //Redirect to dashboard
-      Get.offAllNamed(TRoutes.posKiosk);
+      // //Redirect to dashboard
+      // Get.offAllNamed(TRoutes.posKiosk);
     } catch (e) {
       if (kDebugMode) {
         print(e);
@@ -99,35 +104,35 @@ class LoginController extends GetxController {
     }
   }
 
-  /// Initialize POS data after successful login
-  Future<void> _initializePOSData() async {
-    try {
-      // Initialize controllers
-      final productController = Get.put(ProductController(), permanent: true);
-      final categoryController = Get.put(CategoryController(), permanent: true);
-      final cartController = Get.put(CartController(), permanent: true);
-      final customerController = Get.put(CustomerController(), permanent: true);
+  // /// Initialize POS data after successful login
+  // Future<void> _initializePOSData() async {
+  //   try {
+  //     // Initialize controllers
+  //     final productController = Get.put(ProductController(), permanent: true);
+  //     final categoryController = Get.put(CategoryController(), permanent: true);
+  //     final cartController = Get.put(CartController(), permanent: true);
+  //     final customerController = Get.put(CustomerController(), permanent: true);
 
-      // Load popular products for POS system
-      await productController.loadPopularProductsLazily();
+  //     // Load ALL products for POS system (not just popular ones)
+  //     await productController.loadAllProductsForPOS();
 
-      // Set products in category controller for filtering
-      categoryController.setProducts(productController.popularProducts);
+  //     // Set products in category controller for filtering
+  //     categoryController.setProducts(productController.allProductsForPOS);
 
-      if (kDebugMode) {
-        print('POS Data initialized successfully');
-        print(
-            'Total products loaded: ${productController.popularProducts.length}');
-        print('Categories loaded: ${categoryController.allCategories.length}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error initializing POS data: $e');
-      }
-      // Don't throw here to avoid breaking the login flow
-      // The POS screen will handle loading its own data if needed
-    }
-  }
+  //     if (kDebugMode) {
+  //       print('POS Data initialized successfully');
+  //       print(
+  //           'Total products loaded: ${productController.allProductsForPOS.length}');
+  //       print('Categories loaded: ${categoryController.allCategories.length}');
+  //     }
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print('Error initializing POS data: $e');
+  //     }
+  //     // Don't throw here to avoid breaking the login flow
+  //     // The POS screen will handle loading its own data if needed
+  //   }
+  // }
 
   // Toggle remember me value and save it immediately
   void toggleRememberMe() {

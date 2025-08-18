@@ -22,8 +22,8 @@ class CartController extends GetxController {
   static CartController get instance => Get.find();
 
   // Dependencies - Dependency Injection following SOLID principles
-  late final CustomerController _customerController;
-  late final CartRepository _cartRepository;
+   final CustomerController _customerController = Get.find<CustomerController>();
+   final CartRepository _cartRepository = Get.put(CartRepository());
 
   // Reactive state variables
   final RxBool isLoading = false.obs;
@@ -34,26 +34,26 @@ class CartController extends GetxController {
       <CartStockValidation>[].obs;
   final RxBool hasStockIssues = false.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    _initializeDependencies();
-  }
+  // @override
+  // void onInit() {
+  //   super.onInit();
+  //   // _initializeDependencies();
+  // }
 
   /// Initialize dependencies with proper error handling
   ///
   /// Uses dependency injection to maintain loose coupling and testability
-  void _initializeDependencies() {
-    try {
-      //   _customerController = Get.find<CustomerController>();
-      //  _cartRepository = Get.find<CartRepository>();
-    } catch (e) {
-      if (kDebugMode) {
-        print('CartController: Failed to initialize dependencies - $e');
-      }
-      // Handle gracefully - dependencies might not be ready yet
-    }
-  }
+  // void _initializeDependencies() {
+  //   try {
+  //       _customerController = Get.find<CustomerController>();
+  //      _cartRepository = Get.find<CartRepository>();
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print('CartController: Failed to initialize dependencies - $e');
+  //     }
+  //     // Handle gracefully - dependencies might not be ready yet
+  //   }
+  // }
 
   /// Fetches complete cart data with optimized single query
   ///

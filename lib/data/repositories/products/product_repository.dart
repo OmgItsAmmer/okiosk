@@ -1,5 +1,6 @@
-
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../../common/widgets/loaders/tloaders.dart';
 import '../../../features/products/models/product_model.dart';
 import '../../../features/products/models/product_variation_model.dart';
@@ -231,6 +232,39 @@ class ProductRepository extends GetxController {
       return suggestions;
     } catch (e) {
       // Silent fail for suggestions to not interrupt user experience
+      return [];
+    }
+  }
+
+  // Fetch ALL products without pagination (for POS system)
+  Future<List<ProductModel>> fetchAllProductsForPOS() async {
+    final cacheKey = 'all_products_pos';
+
+    // Check cache first
+    if (_isCacheValid(cacheKey) && _productCache.containsKey(cacheKey)) {
+      return _productCache[cacheKey]!;
+    }
+
+    try {
+      // Fetch all products without pagination
+      final List<Map<String, dynamic>> products =
+          await supabase.from('products').select();
+
+      final productModels =
+          products.map((product) => ProductModel.fromJson(product)).toList();
+
+      // Cache the results
+      _productCache[cacheKey] = productModels;
+      _cacheTimestamps[cacheKey] = DateTime.now();
+
+      if (kDebugMode) {
+        print('Fetched ${productModels.length} products for POS system');
+      }
+
+      return productModels;
+    } catch (e) {
+      TLoader.warningSnackBar(
+          title: "Fetch All Products", message: e.toString());
       return [];
     }
   }

@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:get/get.dart';
 
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 
+import 'common/navigation/authentication_repo.dart';
 import 'supabase/supabase_strings.dart';
 
 // Supabase
@@ -33,15 +35,10 @@ Future<void> main() async {
       ),
     );
 
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    // );
 
-    //  await _setupNotifications();
 
-    // Get.put(AuthenticationRepository());
+    Get.put(AuthenticationRepository());
     // Remove the preserved native splash so the first frame can be drawn
-    FlutterNativeSplash.remove();
     runApp(const App());
   } catch (e, s) {
     debugPrint('🔥 Initialization Error: $e');

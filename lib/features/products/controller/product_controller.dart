@@ -15,6 +15,7 @@ class ProductController extends GetxController {
   RxList<ProductModel> filteredProducts = <ProductModel>[].obs;
   RxList<ProductModel> currentBrandProducts = <ProductModel>[].obs;
   RxList<ProductModel> cachedProducts = <ProductModel>[].obs;
+  RxList<ProductModel> allProducts = <ProductModel>[].obs;
 
   // Category-based product caching
   final Map<int, RxList<ProductModel>> categoryProducts = {};
@@ -398,5 +399,65 @@ class ProductController extends GetxController {
       }
       return null;
     }
+  }
+
+  // POS System Methods
+  /// Load all products for POS system
+  Future<void> loadAllProductsForPOS() async {
+    try {
+      isLoading.value = true;
+
+      if (kDebugMode) {
+        print('Loading all products for POS...');
+      }
+
+      // Fetch ALL products from the database (not just popular ones)
+      final products = await productRepository.fetchAllProductsForPOS();
+
+      if (kDebugMode) {
+        print('Fetched ${products.length} products from database');
+      }
+
+      // Assign products to both allProducts and filteredProducts for POS
+      allProducts.assignAll(products);
+      filteredProducts.assignAll(products);
+
+      if (kDebugMode) {
+        print('POS Products loaded: ${products.length} products');
+        print('allProducts length: ${allProducts.length}');
+        print('filteredProducts length: ${filteredProducts.length}');
+
+        // Print first few products for debugging
+        if (products.isNotEmpty) {
+          print('Sample products:');
+          for (int i = 0;
+              i < (products.length > 3 ? 3 : products.length);
+              i++) {
+            final product = products[i];
+            print(
+                '  ${i + 1}. ${product.name} (ID: ${product.productId}, Category: ${product.categoryId})');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading POS products: $e');
+      }
+      TLoader.errorSnackBar(
+          title: 'Error', message: 'Failed to load products: ${e.toString()}');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Get all products for POS system
+  List<ProductModel> get allProductsForPOS => allProducts;
+
+  /// Get filtered products for POS system
+  List<ProductModel> get filteredProductsForPOS => filteredProducts;
+
+  /// Set products for category filtering (called by CategoryController)
+  void setProductsForCategoryFiltering(List<ProductModel> products) {
+    filteredProducts.assignAll(products);
   }
 }

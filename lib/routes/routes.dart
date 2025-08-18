@@ -7,4 +7,6 @@ class TRoutes {
   static const posKiosk = '/pos-kiosk';
   static const posKioskDebug = '/pos-kiosk-debug';
   static const search = '/search';
+
+  static const loading = '/loading';
 }

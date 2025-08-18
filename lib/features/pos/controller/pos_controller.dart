@@ -58,17 +58,17 @@ class PosController extends GetxController {
 
     try {
       // Check if products are already loaded (from login)
-      if (productController.popularProducts.isEmpty) {
-        // Load popular products if not already loaded
-        await productController.loadPopularProductsLazily();
+      if (productController.allProductsForPOS.isEmpty) {
+        // Load ALL products if not already loaded
+        await productController.loadAllProductsForPOS();
       }
 
       // Set products in category controller for filtering
-      categoryController.setProducts(productController.popularProducts);
+      categoryController.setProducts(productController.allProductsForPOS);
 
       if (kDebugMode) {
         print('POS Controller initialized');
-        print('Total products: ${productController.popularProducts.length}');
+        print('Total products: ${productController.allProductsForPOS.length}');
         print('Categories: ${categoryController.allCategories.length}');
       }
     } catch (e) {
