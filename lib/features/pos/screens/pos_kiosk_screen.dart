@@ -80,7 +80,7 @@ class PosKioskScreen extends StatelessWidget {
 
               // Cart Sidebar (30-35% width)
               Expanded(
-                flex: 35,
+                flex: 25,
                 child: CartSidebar(
                   mediaController: Get.find<MediaController>(),
                 ),

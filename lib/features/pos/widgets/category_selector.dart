@@ -130,6 +130,7 @@ class CategorySelector extends GetView<CategoryController> {
     return SizedBox(
       height: context.touchTargetSize,
       child: TChoiceChip(
+        
         text: categoryName,
         selected: isSelected,
         onSelected: (selected) {

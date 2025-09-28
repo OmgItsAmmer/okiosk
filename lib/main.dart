@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 
 import 'common/navigation/authentication_repo.dart';
+import 'features/media/services/cache_initialization_service.dart';
 import 'supabase/supabase_strings.dart';
 
 // Supabase
@@ -35,9 +36,11 @@ Future<void> main() async {
       ),
     );
 
-
-
     Get.put(AuthenticationRepository());
+
+    // Initialize image caching system
+    await CacheInitializationService.instance.initializeCache();
+
     // Remove the preserved native splash so the first frame can be drawn
     runApp(const App());
   } catch (e, s) {

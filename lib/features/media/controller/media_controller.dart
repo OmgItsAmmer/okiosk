@@ -1,11 +1,10 @@
-
-
 import 'package:flutter/foundation.dart';
 
 import 'package:get/get.dart';
 import 'dart:io';
 
 import '../../../data/repositories/media/media_repository.dart';
+import '../controllers/image_cache_controller.dart';
 import '../models/image_model.dart';
 
 class MediaOwnerImage {
@@ -24,7 +23,10 @@ class MediaController extends GetxController {
   static MediaController get instance => Get.find();
   final MediaRepository _mediaRepository = Get.put(MediaRepository());
 
-  // Cache for storing fetched images to avoid repeated API calls
+  // New cache controller for persistent caching
+  ImageCacheController? _cacheController;
+
+  // Legacy cache for storing fetched images to avoid repeated API calls (kept for compatibility)
   final RxMap<String, String> _imageCache = <String, String>{}.obs;
   final RxMap<String, List<String>> _multipleImagesCache =
       <String, List<String>>{}.obs;
@@ -37,11 +39,40 @@ class MediaController extends GetxController {
   final RxBool isUploading = false.obs;
   final RxDouble uploadProgress = 0.0.obs;
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Initialize cache controller if available
+    if (Get.isRegistered<ImageCacheController>()) {
+      _cacheController = Get.find<ImageCacheController>();
+    }
+  }
+
   /// Fetch main image URL for a single entity with caching
   Future<String?> fetchMainImage(int entityId, String entityType) async {
     final cacheKey = '${entityType}_${entityId}_main';
 
-    // Return cached image if available
+    // Try persistent cache first if available
+    if (_cacheController != null) {
+      try {
+        final cacheResult =
+            await _cacheController!.getMainImageWithCache(entityId, entityType);
+        if (cacheResult.success) {
+          // Update legacy cache for compatibility
+          if (cacheResult.imageUrl != null) {
+            _imageCache[cacheKey] = cacheResult.imageUrl!;
+            return cacheResult.imageUrl;
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              '⚠️ MediaController: Cache controller error, falling back to repository: $e');
+        }
+      }
+    }
+
+    // Return legacy cached image if available
     if (_imageCache.containsKey(cacheKey)) {
       return _imageCache[cacheKey];
     }
@@ -201,13 +232,37 @@ class MediaController extends GetxController {
     _imageCache.clear();
     _multipleImagesCache.clear();
     _entityLoadingStates.clear();
+
+    // Also clear persistent cache if available
+    if (_cacheController != null) {
+      _cacheController!.clearAllCache().then((success) {
+        if (kDebugMode) {
+          print(success
+              ? '✅ MediaController: Persistent cache cleared successfully'
+              : '❌ MediaController: Failed to clear persistent cache');
+        }
+      });
+    }
   }
 
   /// Preload images for better performance (useful for product lists)
   Future<void> preloadImages(List<int> entityIds, String entityType) async {
     if (entityIds.isEmpty) return;
 
-    // Only preload if not already cached
+    // Use persistent cache preloading if available
+    if (_cacheController != null) {
+      try {
+        await _cacheController!.preloadImages(entityIds, entityType);
+        return;
+      } catch (e) {
+        if (kDebugMode) {
+          print(
+              '⚠️ MediaController: Cache preload error, falling back to legacy: $e');
+        }
+      }
+    }
+
+    // Legacy preload logic
     final uncachedIds = entityIds.where((id) {
       final cacheKey = '${entityType}_${id}_main';
       return !_imageCache.containsKey(cacheKey);
@@ -389,6 +444,57 @@ class MediaController extends GetxController {
 
   /// Get current upload progress (0.0 to 1.0)
   double get uploadProgressValue => uploadProgress.value;
+
+  /// Get cache statistics (if persistent cache is available)
+  Map<String, dynamic>? getCacheStatistics() {
+    return _cacheController?.getCacheStatistics();
+  }
+
+  /// Check if persistent cache is available and initialized
+  bool get isPersistentCacheAvailable => _cacheController != null;
+
+  /// Force refresh image for an entity (clears both caches and fetches new)
+  Future<String?> forceRefreshImageWithPersistentCache(
+      int entityId, String entityType) async {
+    // Clear from persistent cache if available
+    if (_cacheController != null) {
+      try {
+        await _cacheController!.clearEntityCache(entityId, entityType);
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️ MediaController: Error clearing persistent cache: $e');
+        }
+      }
+    }
+
+    // Clear from legacy cache
+    clearCacheForEntity(entityId, entityType);
+
+    // Fetch fresh image
+    return await fetchMainImage(entityId, entityType);
+  }
+
+  /// Cleanup old cached images (persistent cache only)
+  Future<int> cleanupOldCachedImages(
+      {Duration maxAge = const Duration(days: 30)}) async {
+    if (_cacheController != null) {
+      try {
+        return await _cacheController!.cleanupOldImages(maxAge: maxAge);
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ MediaController: Error cleaning up old images: $e');
+        }
+      }
+    }
+    return 0;
+  }
+
+  /// Get cache directory path (Windows specific)
+  String? getCacheDirectoryPath() {
+    return _cacheController != null
+        ? _cacheController!.getCacheStatistics()['cacheDirectory'] as String?
+        : null;
+  }
 
   @override
   void onClose() {
