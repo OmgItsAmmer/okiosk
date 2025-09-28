@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:okiosk/features/cart/screens/widgets/cart_item_card.dart';
@@ -21,7 +20,6 @@ import '../../../media/controller/media_controller.dart';
 import '../../../products/controller/product_varaintion_controller.dart';
 import '../../controller/cart_controller.dart';
 import '../../model/cart_model.dart';
-
 
 /// Cart Items Widget - Displays list of cart items with quantity controls
 ///
@@ -149,7 +147,7 @@ class TCartItems extends StatelessWidget {
     final mediaController = Get.find<MediaController>();
     final productVariationController = Get.find<ProductVariationController>();
 
-    // Get the product ID for the current cart item   
+    // Get the product ID for the current cart item
     final productId =
         productVariationController.getProductId(cartItem.cart.variantId!);
 
@@ -347,7 +345,7 @@ class TCartItems extends StatelessWidget {
       decoration: BoxDecoration(
         color: dark ? TColors.darkerGrey : TColors.light,
         borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: TColors.grey.withValues(alpha: 0.3)),
+        border: Border.all(color: TColors.grey.withValues(alpha: 0.3)),
       ),
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 6 : 8,
@@ -587,7 +585,6 @@ class TCartItems extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Brand Name
-              
 
               // Product Title with Tooltip
               TTooltipText(

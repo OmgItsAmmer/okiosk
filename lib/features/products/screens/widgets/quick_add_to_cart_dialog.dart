@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -667,7 +666,7 @@ class _QuickAddToCartDialogState extends State<QuickAddToCartDialog> {
       mainButton: TextButton(
         onPressed: () {
           NavigationHelper.goBack(Get.overlayContext!); // Close snackbar
-         // Get.toNamed(TRoutes.cart);
+          // Get.toNamed(TRoutes.cart);
         },
         child: const Text(
           'View Cart',

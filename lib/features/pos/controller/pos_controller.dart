@@ -3,6 +3,7 @@ import 'package:okiosk/features/categories/controller/category_controller.dart';
 import 'package:okiosk/features/products/controller/product_controller.dart';
 import 'package:okiosk/features/products/models/product_model.dart';
 import 'package:okiosk/features/cart/model/cart_model.dart';
+import 'package:okiosk/features/cart/controller/cart_controller.dart';
 import 'package:okiosk/utils/constants/enums.dart';
 import 'package:flutter/foundation.dart';
 
@@ -31,6 +32,8 @@ class PosController extends GetxController {
   CategoryController get categoryController => Get.find<CategoryController>();
   // Get ProductController instance
   final ProductController productController = Get.find<ProductController>();
+  // Get CartController instance (single source of truth for cart)
+  final CartController cartController = Get.find<CartController>();
 
   // Getters for reactive state
   List<ProductModel> get products => _products;
@@ -50,6 +53,12 @@ class PosController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeData();
+
+    // Mirror cart items from CartController so sidebar stays in sync
+    ever<List<CartItemModel>>(cartController.cartItems, (items) {
+      _cartItems.assignAll(items);
+      _updateCartTotals();
+    });
   }
 
   /// Initialize data for the POS system
@@ -94,39 +103,43 @@ class PosController extends GetxController {
       // Update existing item quantity
       final existingItem = _cartItems[existingItemIndex];
       final newQuantity = existingItem.cart.quantityAsInt + 1;
-      _cartItems[existingItemIndex] = existingItem.updateQuantity(newQuantity);
+      updateCartItemQuantity(existingItem, newQuantity);
     } else {
-      // Add new item to cart
+      // Create a basic cart item locally when needed (fallback)
+      final sell = double.tryParse(product.salePrice.isNotEmpty
+              ? product.salePrice
+              : product.basePrice) ??
+          0.0;
+      final buy = double.tryParse(product.basePrice);
       final cartItem = CartItemModel(
         cart: CartModel(
           cartId: DateTime.now().millisecondsSinceEpoch,
-          variantId: 1, // Default variant
+          variantId: 1,
           quantity: "1",
-          customerId: 1, // Default customer
+          customerId: 0,
         ),
         productName: product.name,
         productDescription: product.description ?? '',
-        basePrice: product.basePrice ?? '0',
-        salePrice: product.salePrice ?? product.basePrice ?? '0',
+        basePrice: product.basePrice,
+        salePrice: (product.salePrice.isNotEmpty
+            ? product.salePrice
+            : product.basePrice),
         brandId: product.brandID,
         variantName: 'Default',
-        sellPrice:
-            double.tryParse(product.salePrice ?? product.basePrice ?? '0') ??
-                0.0,
-        buyPrice: double.tryParse(product.basePrice ?? '0'),
-        stock: product.stockQuantity ?? 0,
-        isVisible: product.isVisible ?? true,
+        sellPrice: sell,
+        buyPrice: buy,
+        stock: product.stockQuantity,
+        isVisible: product.isVisible,
       );
       _cartItems.add(cartItem);
+      _updateCartTotals();
     }
-
-    _updateCartTotals();
   }
 
   /// Remove product from cart
   void removeFromCart(CartItemModel cartItem) {
-    _cartItems.remove(cartItem);
-    _updateCartTotals();
+    // Delegate to CartController so single source of truth updates
+    cartController.removeCartItem(cartItem);
   }
 
   /// Update cart item quantity
@@ -135,18 +148,12 @@ class PosController extends GetxController {
       removeFromCart(cartItem);
       return;
     }
-
-    final index = _cartItems.indexOf(cartItem);
-    if (index != -1) {
-      _cartItems[index] = cartItem.updateQuantity(quantity);
-      _updateCartTotals();
-    }
+    cartController.updateCartItemQuantity(cartItem, quantity);
   }
 
   /// Clear entire cart
   void clearCart() {
-    _cartItems.clear();
-    _updateCartTotals();
+    cartController.clearCart();
   }
 
   /// Update cart totals

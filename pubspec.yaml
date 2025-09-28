@@ -1,6 +1,6 @@
 name: okiosk
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
@@ -36,6 +36,9 @@ dependencies:
   url_launcher: ^6.3.2
   cached_network_image: ^3.4.1
   package_info_plus: ^8.3.0
+  # mobile_scanner: ^3.5.7
+  qr_flutter: ^4.1.0
+  uuid: ^4.5.1
 
   # Backend & Database
   firebase_core: ^3.15.1
@@ -71,4 +74,3 @@ flutter:
           style: italic
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 800
- 

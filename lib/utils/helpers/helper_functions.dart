@@ -5,6 +5,9 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:okiosk/utils/constants/image_strings.dart';
 import 'package:okiosk/utils/constants/enums.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../common/widgets/loaders/tloaders.dart';
 
 /// Helper Functions for the E-commerce App
 ///
@@ -243,6 +246,29 @@ class THelperFunctions {
     if (kIsWeb) return 'Web';
 
     return 'Unknown';
+  }
+
+  /// Generates a random UUID compatible with Supabase
+  ///
+  /// This function generates a UUID v4 that is compatible with Supabase's UUID format.
+  /// Supabase uses PostgreSQL's UUID type which expects the standard UUID format.
+  ///
+  /// @return String A randomly generated UUID in the format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  static String generateRandomUUID() {
+    // Import uuid package dynamically to avoid dependency issues
+    try {
+      final uuid = Uuid();
+      return uuid.v4();
+    } catch (e) {
+      if (kDebugMode) {
+        print('THelperFunctions: Error generating random UUID - $e');
+        TLoader.errorSnackBar(
+          title: 'Error',
+          message: 'Error generating random UUID',
+        );
+      }
+      return '';
+    }
   }
 }
 

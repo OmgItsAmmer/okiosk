@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
+import 'package:okiosk/features/products/controller/product_varaintion_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/cart/controller/cart_controller.dart';
@@ -12,6 +13,7 @@ import '../../features/login/screens/login.dart';
 import '../../features/network_manager/network_manager.dart';
 import '../../features/pos/screens/pos_kiosk_screen.dart';
 import '../../features/products/controller/product_controller.dart';
+import '../../features/shop/controller/shop_controller.dart';
 import '../../main.dart';
 import '../../routes/routes.dart';
 
@@ -53,6 +55,7 @@ class AuthenticationRepository extends GetxController {
     try {
       Get.put(NetworkManager(), permanent: true);
       Get.lazyPut(() => LoginController(), fenix: true);
+      Get.lazyPut(() => ShopController(), fenix: true);
       Get.put(CustomerController(), permanent: true);
     } catch (e) {
       if (kDebugMode) {
@@ -65,7 +68,8 @@ class AuthenticationRepository extends GetxController {
     try {
       final productController = Get.put(ProductController(), permanent: true);
       final categoryController = Get.put(CategoryController(), permanent: true);
-      Get.put(CartController(), permanent: true);
+      Get.lazyPut(() => CartController(), fenix: true);
+      Get.lazyPut(() => ProductVariationController(), fenix: true);
 
       // Load ALL products for POS system (not just popular ones)
       await productController.loadAllProductsForPOS();
@@ -86,7 +90,7 @@ class AuthenticationRepository extends GetxController {
         _initlizePostSignInControllers();
         screenRedirect();
       } else if (event.event == AuthChangeEvent.signedOut) {
-        screenRedirect();
+        screenRedirect();  
       }
     });
   }

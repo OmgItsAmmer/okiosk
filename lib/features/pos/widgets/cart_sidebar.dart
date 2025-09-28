@@ -1,24 +1,29 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:okiosk/common/widgets/custom_shapes/containers/rounded_container.dart';
 import 'package:okiosk/common/widgets/icons/t_circular_icon.dart';
 import 'package:okiosk/common/widgets/texts/currency_text.dart';
-import 'package:okiosk/common/widgets/chips/choice_chip.dart';
 import 'package:okiosk/features/pos/controller/pos_controller.dart';
 import 'package:okiosk/features/cart/model/cart_model.dart';
+import 'package:okiosk/features/cart/controller/cart_controller.dart';
 import 'package:okiosk/features/cart/screens/widgets/cart_item_card.dart';
 import 'package:okiosk/features/media/controller/media_controller.dart';
 import 'package:okiosk/utils/layouts/template.dart';
 import 'package:okiosk/utils/constants/colors.dart';
-import 'package:okiosk/utils/constants/enums.dart';
+
 import 'package:okiosk/utils/constants/sizes.dart';
 import 'package:iconsax/iconsax.dart';
 
 import '../../../utils/helpers/helper_functions.dart';
+import '../../../common/widgets/loaders/tloaders.dart';
+import 'package:okiosk/features/checkout/screens/checkout_screen.dart';
+import 'package:okiosk/features/checkout/controller/checkout_controller.dart';
 
 /// Cart Sidebar Widget for POS Kiosk
 ///
-/// Contains cart summary, total pricing, payment method selector, and checkout button
+/// Contains cart summary, total pricing, and checkout button
 /// Fixed width and consistent across all screen sizes
 class CartSidebar extends StatelessWidget {
   const CartSidebar({
@@ -59,21 +64,16 @@ class CartSidebar extends StatelessWidget {
           // Cart Header
           _buildCartHeader(context, controller),
 
-          // Cart Items List
+          // Cart Items List - Takes most of the space
           Expanded(
+            flex: 7, // Give more space to cart items
             child: _buildCartItemsList(context, controller),
           ),
 
-          // Cart Summary
+          // Cart Summary - Compact
           _buildCartSummary(context, controller),
 
-          // Payment Methods
-          _buildPaymentMethods(context, controller),
-
-          // Shipping Methods
-          _buildShippingMethods(context, controller),
-
-          // Checkout Button
+          // Checkout Button - Compact
           _buildCheckoutButton(context, controller),
         ],
       ),
@@ -83,6 +83,8 @@ class CartSidebar extends StatelessWidget {
   /// Build cart header with item count
   Widget _buildCartHeader(BuildContext context, PosController controller) {
     final dark = THelperFunctions.isDarkMode(context);
+    final cartController = Get.find<CartController>();
+
     return Container(
       padding: context.responsivePadding,
       decoration: BoxDecoration(
@@ -94,44 +96,108 @@ class CartSidebar extends StatelessWidget {
           ),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Icon(
-            Icons.shopping_cart,
-            size: PosLayoutTemplate.getResponsiveFontSize(context, 24),
-            color: dark
-                ? TColors.darkModePrimaryText
-                : TColors.lightModePrimaryText,
-          ),
-          SizedBox(width: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
-          Text(
-            'Cart',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize:
-                      PosLayoutTemplate.getResponsiveFontSize(context, 20),
-                  fontWeight: FontWeight.bold,
-                  color: dark
-                      ? TColors.darkModePrimaryText
-                      : TColors.lightModePrimaryText,
-                ),
-          ),
-          const Spacer(),
-          Obx(() => TRoundedContainer(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                backgroundColor: dark
+          Row(
+            children: [
+              Icon(
+                Icons.shopping_cart,
+                size: PosLayoutTemplate.getResponsiveFontSize(context, 24),
+                color: dark
                     ? TColors.darkModePrimaryText
                     : TColors.lightModePrimaryText,
+              ),
+              SizedBox(
+                  width: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+              Expanded(
                 child: Text(
-                  '${controller.cartItemCount}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  'Cart',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: PosLayoutTemplate.getResponsiveFontSize(
-                            context, 12),
-                        color:
-                            dark ? TColors.black : TColors.lightModeTextWhite,
+                            context, 20),
                         fontWeight: FontWeight.bold,
+                        color: dark
+                            ? TColors.darkModePrimaryText
+                            : TColors.lightModePrimaryText,
                       ),
                 ),
-              )),
+              ),
+              Obx(() => TRoundedContainer(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    backgroundColor: dark
+                        ? TColors.darkModePrimaryText
+                        : TColors.lightModePrimaryText,
+                    child: Text(
+                      '${controller.cartItemCount}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                                context, 12),
+                            color: dark
+                                ? TColors.black
+                                : TColors.lightModeTextWhite,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  )),
+            ],
+          ),
+          // Kiosk session indicator
+          Obx(() {
+            if (cartController.scannedKioskSessionId.isNotEmpty &&
+                cartController.scannedKioskSessionId !=
+                    cartController.kioskUUID) {
+              return Container(
+                margin: EdgeInsets.only(
+                    top: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+                padding: EdgeInsets.symmetric(
+                  horizontal:
+                      PosLayoutTemplate.getResponsiveSpacing(context, 8),
+                  vertical: PosLayoutTemplate.getResponsiveSpacing(context, 4),
+                ),
+                decoration: BoxDecoration(
+                  color: TColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border:
+                      Border.all(color: TColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.link,
+                      size: 16,
+                      color: TColors.primary,
+                    ),
+                    SizedBox(
+                        width:
+                            PosLayoutTemplate.getResponsiveSpacing(context, 4)),
+                    Expanded(
+                      child: Text(
+                        'Kiosk Session: ${cartController.scannedKioskSessionId.substring(0, 8)}...',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                                  context, 12),
+                              color: TColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _showClearSessionDialog(context),
+                      icon: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: TColors.primary,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
         ],
       ),
     );
@@ -239,57 +305,6 @@ class CartSidebar extends StatelessWidget {
     );
   }
 
-  /// Builds quantity controls and price display with responsive layout
-  Widget _buildQuantityAndPriceControls(
-    BuildContext context,
-    PosController controller,
-    CartItemModel cartItem,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenWidth = constraints.maxWidth;
-        final isSmallScreen = screenWidth < 350;
-
-        if (isSmallScreen) {
-          // Stack layout for very small screens
-          return Column(
-            children: [
-              // Price display below
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Quantity controls on top
-                  _buildQuantityControls(context, controller, cartItem,
-                      isCompact: true),
-                  _buildPriceDisplay(context, cartItem),
-                ],
-              ),
-            ],
-          );
-        } else {
-          // Side by side layout for larger screens
-          return Row(
-            children: [
-              // Quantity Control Section
-              Expanded(
-                flex: 3,
-                child: _buildQuantityControls(context, controller, cartItem),
-              ),
-
-              const SizedBox(width: TSizes.spaceBtwItems),
-
-              // Price Display Section
-              Expanded(
-                flex: 2,
-                child: _buildPriceDisplay(context, cartItem),
-              ),
-            ],
-          );
-        }
-      },
-    );
-  }
-
   /// Builds compact quantity controls for horizontal layout
   Widget _buildCompactQuantityControls(
     BuildContext context,
@@ -368,95 +383,6 @@ class CartSidebar extends StatelessWidget {
     );
   }
 
-  /// Builds quantity control buttons with responsive design
-  Widget _buildQuantityControls(
-    BuildContext context,
-    PosController controller,
-    CartItemModel cartItem, {
-    bool isCompact = false,
-  }) {
-    final dark = THelperFunctions.isDarkMode(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: dark ? TColors.darkContainer : TColors.lightContainer,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: dark ? TColors.borderSecondary : TColors.borderPrimary,
-        ),
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 6 : 8,
-        vertical: 4,
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final buttonSize = isCompact ? 32.0 : 36.0;
-          final iconSize = isCompact ? 18.0 : 20.0;
-
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Decrease quantity button
-              Center(
-                child: _buildQuantityButton(
-                  context,
-                  icon: Iconsax.minus,
-                  onPressed: () =>
-                      _decreaseQuantity(context, controller, cartItem),
-                  enabled: cartItem.cart.quantityAsInt > 1,
-                  size: buttonSize,
-                  iconSize: iconSize,
-                ),
-              ),
-
-              SizedBox(width: isCompact ? 8 : TSizes.spaceBtwItems),
-
-              // Current quantity display
-              Container(
-                constraints: BoxConstraints(minWidth: isCompact ? 35 : 40),
-                child: Text(
-                  cartItem.cart.quantityAsInt.toString(),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isCompact ? 14 : 16,
-                        color: dark
-                            ? TColors.darkModePrimaryText
-                            : TColors.lightModePrimaryText,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-              SizedBox(width: isCompact ? 8 : TSizes.spaceBtwItems),
-
-              // Increase quantity button
-              Center(
-                child: _buildQuantityButton(
-                  context,
-                  icon: Iconsax.add,
-                  onPressed: () =>
-                      _increaseQuantity(context, controller, cartItem),
-                  enabled: _canIncreaseQuantity(cartItem),
-                  size: buttonSize,
-                  iconSize: iconSize,
-                ),
-              ),
-
-              SizedBox(width: isCompact ? 8 : TSizes.spaceBtwItems),
-
-              // Remove item button
-              Center(
-                child: _buildRemoveButton(context, controller, cartItem,
-                    size: buttonSize, iconSize: iconSize),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
   /// Builds individual quantity control button with responsive sizing
   Widget _buildQuantityButton(
     BuildContext context, {
@@ -492,7 +418,6 @@ class CartSidebar extends StatelessWidget {
     double size = 36,
     double iconSize = 20,
   }) {
-    final dark = THelperFunctions.isDarkMode(context);
     return TCircularIcon(
       icon: Iconsax.trash,
       size: iconSize,
@@ -511,31 +436,6 @@ class CartSidebar extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
-      children: [
-        // Unit price
-        Text(
-          'Rs ${cartItem.effectivePrice.toStringAsFixed(2)}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: dark
-                    ? TColors.darkModeSecondaryText
-                    : TColors.lightModeSecondaryText,
-              ),
-        ),
-
-        // Total price for this item
-        TProductPriceText(
-          price: cartItem.totalPrice.toStringAsFixed(2),
-          isLarge: false,
-        ),
-      ],
-    );
-  }
-
-  /// Builds price display section with reactive updates
-  Widget _buildPriceDisplay(BuildContext context, CartItemModel cartItem) {
-    final dark = THelperFunctions.isDarkMode(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         // Unit price
         Text(
@@ -627,18 +527,44 @@ class CartSidebar extends StatelessWidget {
   /// Build empty cart state
   Widget _buildEmptyCart(BuildContext context) {
     final dark = THelperFunctions.isDarkMode(context);
+    final cartController = Get.find<CartController>();
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: PosLayoutTemplate.getResponsiveFontSize(context, 48),
-            color: TColors.primary,
+          // QR Code Widget
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: QrImageView(
+              data: cartController.kioskUUID,
+              version: QrVersions.auto,
+              size: PosLayoutTemplate.getResponsiveFontSize(context, 120),
+              backgroundColor: Colors.white,
+              eyeStyle: QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: TColors.primary,
+              ),
+              dataModuleStyle: QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: TColors.primary,
+              ),
+            ),
           ),
           SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 16)),
           Text(
-            'Cart is Empty',
+            'Scan to Load Cart',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontSize:
                       PosLayoutTemplate.getResponsiveFontSize(context, 18),
@@ -648,7 +574,7 @@ class CartSidebar extends StatelessWidget {
           ),
           SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
           Text(
-            'Add products to get started',
+            'Customers can scan this QR code to connect their cart',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize:
                       PosLayoutTemplate.getResponsiveFontSize(context, 14),
@@ -656,7 +582,108 @@ class CartSidebar extends StatelessWidget {
                       ? TColors.darkModeSecondaryText.withValues(alpha: 0.7)
                       : TColors.primary,
                 ),
+            textAlign: TextAlign.center,
           ),
+          SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 16)),
+          // Action Buttons
+          Row(
+            children: [
+              // QR Scanner Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _showQRScannerDialog(context),
+                  icon: Icon(
+                    Icons.qr_code_scanner,
+                    size: PosLayoutTemplate.getResponsiveFontSize(context, 18),
+                  ),
+                  label: Text(
+                    'Scan QR',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                              context, 12),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColors.buttonPrimary,
+                    foregroundColor: TColors.lightModeTextWhite,
+                    padding: EdgeInsets.symmetric(
+                      horizontal:
+                          PosLayoutTemplate.getResponsiveSpacing(context, 12),
+                      vertical:
+                          PosLayoutTemplate.getResponsiveSpacing(context, 10),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                  width: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+              // Refresh Cart Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _refreshCart(context),
+                  icon: Icon(
+                    Icons.refresh,
+                    size: PosLayoutTemplate.getResponsiveFontSize(context, 18),
+                  ),
+                  label: Text(
+                    'Refresh',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                              context, 12),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TColors.primary.withValues(alpha: 0.8),
+                    foregroundColor: TColors.lightModeTextWhite,
+                    padding: EdgeInsets.symmetric(
+                      horizontal:
+                          PosLayoutTemplate.getResponsiveSpacing(context, 12),
+                      vertical:
+                          PosLayoutTemplate.getResponsiveSpacing(context, 10),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+          // Debug button (only show in debug mode)
+          if (kDebugMode)
+            ElevatedButton.icon(
+              onPressed: () => _debugCart(context),
+              icon: Icon(
+                Icons.bug_report,
+                size: PosLayoutTemplate.getResponsiveFontSize(context, 16),
+              ),
+              label: Text(
+                'Debug Cart',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize:
+                          PosLayoutTemplate.getResponsiveFontSize(context, 12),
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TColors.error.withValues(alpha: 0.8),
+                foregroundColor: TColors.lightModeTextWhite,
+                padding: EdgeInsets.symmetric(
+                  horizontal:
+                      PosLayoutTemplate.getResponsiveSpacing(context, 12),
+                  vertical: PosLayoutTemplate.getResponsiveSpacing(context, 8),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -736,102 +763,6 @@ class CartSidebar extends StatelessWidget {
     );
   }
 
-  /// Build payment methods selector
-  Widget _buildPaymentMethods(BuildContext context, PosController controller) {
-    final paymentMethods = [
-      PaymentMethods.cash,
-      PaymentMethods.creditCard,
-      PaymentMethods.jazzcash,
-      //PaymentMethods.applePay,
-    ];
-    final dark = THelperFunctions.isDarkMode(context);
-    return Container(
-      padding: context.responsivePadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Text(
-            'Payment Method',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize:
-                      PosLayoutTemplate.getResponsiveFontSize(context, 16),
-                  fontWeight: FontWeight.bold,
-                  color: dark
-                      ? TColors.darkModePrimaryText
-                      : TColors.lightModePrimaryText,
-                ),
-          ),
-          SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
-          Obx(() => Wrap(
-                alignment: WrapAlignment.start,
-                spacing: PosLayoutTemplate.getResponsiveSpacing(context, 8),
-                runSpacing: PosLayoutTemplate.getResponsiveSpacing(context, 8),
-                children: paymentMethods
-                    .map((method) => TChoiceChip(
-                          text: _getPaymentMethodName(method),
-                          selected: controller.selectedPaymentMethod == method,
-                          onSelected: (selected) {
-                            if (selected) {
-                              controller.selectPaymentMethod(method);
-                            }
-                          },
-                          showCheckmark: false,
-                        ))
-                    .toList(),
-              )),
-        ],
-      ),
-    );
-  }
-
-  /// Build shipping methods selector
-  Widget _buildShippingMethods(BuildContext context, PosController controller) {
-    final shippingMethods = [
-      ShippingMethods.shipping,
-      ShippingMethods.pickup,
-    ];
-    final dark = THelperFunctions.isDarkMode(context);
-    return Container(
-      padding: context.responsivePadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Text(
-            'Shipping Method',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize:
-                      PosLayoutTemplate.getResponsiveFontSize(context, 16),
-                  fontWeight: FontWeight.bold,
-                  color: dark
-                      ? TColors.darkModePrimaryText
-                      : TColors.lightModePrimaryText,
-                ),
-          ),
-          SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
-          Obx(() => Wrap(
-                alignment: WrapAlignment.start,
-                spacing: PosLayoutTemplate.getResponsiveSpacing(context, 8),
-                runSpacing: PosLayoutTemplate.getResponsiveSpacing(context, 8),
-                children: shippingMethods
-                    .map((method) => TChoiceChip(
-                          text: _getShippingMethodName(method),
-                          selected: controller.selectedShippingMethod == method,
-                          onSelected: (selected) {
-                            if (selected) {
-                              controller.selectShippingMethod(method);
-                            }
-                          },
-                          showCheckmark: false,
-                        ))
-                    .toList(),
-              )),
-        ],
-      ),
-    );
-  }
-
   /// Build checkout button
   Widget _buildCheckoutButton(BuildContext context, PosController controller) {
     return Container(
@@ -840,9 +771,9 @@ class CartSidebar extends StatelessWidget {
             width: double.infinity,
             height: context.checkoutButtonSize.height,
             child: ElevatedButton(
-              onPressed: controller.cartItems.isEmpty || controller.isLoading
+              onPressed: controller.cartItems.isEmpty
                   ? null
-                  : () => controller.processCheckout(),
+                  : () => _openCheckoutDialog(context, controller),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TColors.buttonPrimary,
                 disabledBackgroundColor: TColors.buttonDisabled,
@@ -853,67 +784,189 @@ class CartSidebar extends StatelessWidget {
                 ),
                 elevation: 2,
               ),
-              child: controller.isLoading
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: TColors.lightModeTextWhite,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.payment,
-                          size: PosLayoutTemplate.getResponsiveFontSize(
-                              context, 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.payment,
+                    size: PosLayoutTemplate.getResponsiveFontSize(context, 20),
+                  ),
+                  SizedBox(
+                      width:
+                          PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+                  Text(
+                    'Checkout',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                              context, 18),
+                          fontWeight: FontWeight.bold,
+                          color: TColors.lightModeTextWhite,
                         ),
-                        SizedBox(
-                            width: PosLayoutTemplate.getResponsiveSpacing(
-                                context, 8)),
-                        Text(
-                          'Checkout',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontSize:
-                                        PosLayoutTemplate.getResponsiveFontSize(
-                                            context, 18),
-                                    fontWeight: FontWeight.bold,
-                                    color: TColors.lightModeTextWhite,
-                                  ),
-                        ),
-                      ],
-                    ),
+                  ),
+                ],
+              ),
             ),
           )),
     );
   }
 
-  /// Get payment method display name
-  String _getPaymentMethodName(PaymentMethods method) {
-    switch (method) {
-      case PaymentMethods.cash:
-        return 'Cash';
-      case PaymentMethods.creditCard:
-        return 'Card';
-      case PaymentMethods.jazzcash:
-        return 'JazzCash';
-      default:
-        return method.name;
+  /// Open checkout dialog
+  void _openCheckoutDialog(BuildContext context, PosController controller) {
+    // Initialize checkout controller if not already initialized
+    if (!Get.isRegistered<CheckoutController>()) {
+      Get.put(CheckoutController());
     }
+    Get.to(() => const CheckoutScreen());
   }
 
-  /// Get shipping method display name
-  String _getShippingMethodName(ShippingMethods method) {
-    switch (method) {
-      case ShippingMethods.shipping:
-        return 'Shipping';
-      case ShippingMethods.pickup:
-        return 'Pickup';
-      default:
-        return method.name;
-    }
+  /// Show QR scanner dialog for manual input
+  void _showQRScannerDialog(BuildContext context) {
+    final cartController = Get.find<CartController>();
+    final dark = THelperFunctions.isDarkMode(context);
+    final textController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        title: Text(
+          'Scan Kiosk Cart QR Code',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: dark
+                    ? TColors.darkModePrimaryText
+                    : TColors.lightModePrimaryText,
+              ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Enter the kiosk session ID from the QR code:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: dark
+                        ? TColors.darkModeSecondaryText
+                        : TColors.lightModeSecondaryText,
+                  ),
+            ),
+            SizedBox(
+                height: PosLayoutTemplate.getResponsiveSpacing(context, 16)),
+            TextField(
+              controller: textController,
+              decoration: InputDecoration(
+                hintText: 'Enter kiosk session ID...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor:
+                    dark ? TColors.darkContainer : TColors.lightContainer,
+              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: dark
+                        ? TColors.darkModePrimaryText
+                        : TColors.lightModePrimaryText,
+                  ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: dark
+                    ? TColors.darkModeSecondaryText
+                    : TColors.lightModeSecondaryText,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final sessionId = textController.text.trim();
+              if (sessionId.isNotEmpty) {
+                Get.back();
+                await cartController.handleKioskCartQRScan(sessionId);
+              } else {
+                TLoader.errorSnackBar(
+                  title: 'Invalid Input',
+                  message: 'Please enter a valid kiosk session ID.',
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TColors.buttonPrimary,
+              foregroundColor: TColors.lightModeTextWhite,
+            ),
+            child: const Text('Scan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Refresh cart to check for new items
+  void _refreshCart(BuildContext context) {
+    final cartController = Get.find<CartController>();
+    cartController.checkForExistingKioskCart();
+  }
+
+  /// Debug cart to check all items in database
+  void _debugCart(BuildContext context) {
+    final cartController = Get.find<CartController>();
+    cartController.debugCheckAllKioskCartItems();
+  }
+
+  /// Show dialog to confirm clearing kiosk session
+  void _showClearSessionDialog(BuildContext context) {
+    final cartController = Get.find<CartController>();
+    final dark = THelperFunctions.isDarkMode(context);
+
+    Get.dialog(
+      AlertDialog(
+        title: Text(
+          'Clear Kiosk Session',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: dark
+                    ? TColors.darkModePrimaryText
+                    : TColors.lightModePrimaryText,
+              ),
+        ),
+        content: Text(
+          'Are you sure you want to clear the current kiosk session? This will disconnect from the scanned cart.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: dark
+                    ? TColors.darkModeSecondaryText
+                    : TColors.lightModeSecondaryText,
+              ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: dark
+                    ? TColors.darkModeSecondaryText
+                    : TColors.lightModeSecondaryText,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              cartController.clearKioskSession();
+              TLoader.successSnackBar(
+                title: 'Session Cleared',
+                message: 'Kiosk session has been cleared successfully.',
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: TColors.error,
+              foregroundColor: TColors.lightModeTextWhite,
+            ),
+            child: const Text('Clear Session'),
+          ),
+        ],
+      ),
+    );
   }
 }

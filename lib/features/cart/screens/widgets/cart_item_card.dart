@@ -358,12 +358,12 @@ class _TCartItemState extends State<TCartItem> {
 /// Allows easy extension of cart item attributes without modifying the main widget.
 /// Follows the Open/Closed Principle by being open for extension.
 class CartItemAttribute {
-  bool isLabel = false; 
+  bool isLabel = false;
   final String label;
   final String value;
   final IconData? icon;
 
-   CartItemAttribute({
+  CartItemAttribute({
     this.isLabel = false,
     required this.label,
     required this.value,

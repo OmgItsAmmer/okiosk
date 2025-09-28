@@ -1,3 +1,5 @@
+import 'kiosk_cart_model.dart';
+
 /// Cart Model - Represents a single cart entry in the database
 ///
 /// This model follows the Single Responsibility Principle by only handling
@@ -8,12 +10,14 @@
 /// - cart_id: Primary key (auto-generated)
 /// - variant_id: Foreign key to product_variants table
 /// - quantity: String representation of item quantity
-/// - user_id: Foreign key to users table (UUID)
+/// - customer_id: Foreign key to customers table (nullable for kiosk carts)
+/// - kiosk_session_id: UUID for kiosk session identification (optional)
 class CartModel {
   final int cartId;
   final int? variantId;
   final String quantity;
   final int? customerId;
+  final String? kioskSessionId;
 
   /// Creates a new CartModel instance
   ///
@@ -23,6 +27,7 @@ class CartModel {
     this.variantId,
     required this.quantity,
     this.customerId,
+    this.kioskSessionId,
   });
 
   /// Creates an empty cart model for initialization purposes
@@ -33,6 +38,7 @@ class CartModel {
         variantId: null,
         quantity: "0",
         customerId: null,
+        kioskSessionId: null,
       );
 
   /// Converts model to JSON for database operations
@@ -46,6 +52,11 @@ class CartModel {
       'quantity': quantity,
       'customer_id': customerId,
     };
+
+    // Add kiosk_session_id if present
+    if (kioskSessionId != null && kioskSessionId!.isNotEmpty) {
+      data['kiosk_session_id'] = kioskSessionId;
+    }
 
     if (isUpdate && cartId > 0) {
       data['cart_id'] = cartId;
@@ -63,6 +74,7 @@ class CartModel {
       variantId: json['variant_id'] as int?,
       quantity: json['quantity'] as String? ?? "0",
       customerId: json['customer_id'] as int?,
+      kioskSessionId: json['kiosk_session_id'] as String?,
     );
   }
 
@@ -74,12 +86,14 @@ class CartModel {
     int? variantId,
     String? quantity,
     int? customerId,
+    String? kioskSessionId,
   }) {
     return CartModel(
       cartId: cartId ?? this.cartId,
       variantId: variantId ?? this.variantId,
       quantity: quantity ?? this.quantity,
       customerId: customerId ?? this.customerId,
+      kioskSessionId: kioskSessionId ?? this.kioskSessionId,
     );
   }
 
@@ -88,7 +102,9 @@ class CartModel {
 
   /// Validates if the cart item is valid
   bool get isValid =>
-      variantId != null && quantityAsInt > 0 && customerId != null;
+      variantId != null &&
+      quantityAsInt > 0 &&
+      (customerId != null || kioskSessionId != null);
 
   @override
   bool operator ==(Object other) =>
@@ -103,7 +119,35 @@ class CartModel {
 
   @override
   String toString() {
-    return 'CartModel{cartId: $cartId, variantId: $variantId, quantity: $quantity, customer_id: $customerId}';
+    return 'CartModel{cartId: $cartId, variantId: $variantId, quantity: $quantity, customer_id: $customerId, kiosk_session_id: $kioskSessionId}';
+  }
+
+  /// Converts a KioskCartModel to CartModel
+  ///
+  /// This method creates a CartModel from a KioskCartModel with customerId set to null
+  /// and kioskSessionId populated from the kiosk cart data.
+  ///
+  /// @param kioskCart The KioskCartModel to convert
+  /// @return CartModel The converted cart model
+  static CartModel fromKioskCart(KioskCartModel kioskCart) {
+    return CartModel(
+      cartId: kioskCart.kioskId,
+      variantId: kioskCart.variantId,
+      quantity: kioskCart.quantity.toString(),
+      customerId: null, // Kiosk carts don't have customer IDs
+      kioskSessionId: kioskCart.kioskSessionId,
+    );
+  }
+
+  /// Converts a list of KioskCartModel to list of CartModel
+  ///
+  /// This method converts multiple KioskCartModel instances to CartModel instances
+  /// for batch processing.
+  ///
+  /// @param kioskCarts The list of KioskCartModel to convert
+  /// @return List<CartModel> The converted list of cart models
+  static List<CartModel> fromKioskCartList(List<KioskCartModel> kioskCarts) {
+    return kioskCarts.map((kioskCart) => fromKioskCart(kioskCart)).toList();
   }
 }
 
