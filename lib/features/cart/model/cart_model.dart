@@ -195,6 +195,7 @@ class CartItemModel {
         variantId: data['variant_id'] as int?,
         quantity: data['quantity']?.toString() ?? "0",
         customerId: data['customer_id'] as int?,
+        kioskSessionId: data['kiosk_session_id'] as String?,
       ),
       // Product data
       productName: data['name'] as String? ?? '',
@@ -207,7 +208,7 @@ class CartItemModel {
       sellPrice: data['sell_price'] as double? ?? 0.0,
       buyPrice: data['buy_price'] as double?,
       stock: data['stock'] as int? ?? 0,
-      isVisible: data['isVisible'] as bool? ?? false,
+      isVisible: data['is_visible'] as bool? ?? false,
     );
   }
 

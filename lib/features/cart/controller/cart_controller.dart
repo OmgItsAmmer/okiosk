@@ -241,7 +241,15 @@ class CartController extends GetxController {
 
       if (kDebugMode) {
         print(
-            'CartController: Successfully fetched ${fetchedItems.length} items for session: $sessionId');
+            'CartController: ✅ Successfully fetched ${fetchedItems.length} items for session: $sessionId');
+        print(
+            'CartController: cartItems list updated with ${cartItems.length} items');
+        print(
+            'CartController: Cart summary updated - Total: ${cartSummary.value.totalItems} items');
+        for (int i = 0; i < fetchedItems.length; i++) {
+          print(
+              'CartController: Item $i - ${fetchedItems[i].productName} (Qty: ${fetchedItems[i].cart.quantityAsInt})');
+        }
       }
 
       // Show success message if items were loaded from e-commerce
@@ -1054,6 +1062,40 @@ class CartController extends GetxController {
       }
       // Show error for manual operations
       _handleError('Failed to check for existing cart: ${e.toString()}');
+    }
+  }
+
+  /// Manual test method to verify realtime subscription is working
+  ///
+  /// This method can be called from a debug button to test realtime functionality
+  Future<void> testRealtimeConnection() async {
+    try {
+      if (kDebugMode) {
+        print('CartController: === TESTING REALTIME CONNECTION ===');
+        print('CartController: Current kiosk UUID: ${_kioskUUID.value}');
+        print('CartController: Current cart items count: ${cartItems.length}');
+
+        // Check realtime status
+        print('CartController: Realtime active: ${isRealtimeActive()}');
+
+        // Test direct database insertion for debugging
+        print('CartController: Testing direct database insertion...');
+        final testResult = await supabase.from('kiosk_cart').insert({
+          'kiosk_session_id': _kioskUUID.value,
+          'variant_id': 15, // Test with variant ID 1
+          'quantity': 1,
+        });
+        print('CartController: Test insertion result: $testResult');
+
+        // Wait 2 seconds to see if realtime triggers
+        await Future.delayed(const Duration(seconds: 2));
+
+        print('CartController: === END REALTIME TEST ===');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('CartController: Test realtime error: $e');
+      }
     }
   }
 

@@ -56,8 +56,19 @@ class PosController extends GetxController {
 
     // Mirror cart items from CartController so sidebar stays in sync
     ever<List<CartItemModel>>(cartController.cartItems, (items) {
+      if (kDebugMode) {
+        print(
+            'PosController: CartController items changed - ${items.length} items');
+        for (int i = 0; i < items.length; i++) {
+          print('PosController: Syncing item $i - ${items[i].productName}');
+        }
+      }
       _cartItems.assignAll(items);
       _updateCartTotals();
+      if (kDebugMode) {
+        print(
+            'PosController: Cart items synchronized - ${_cartItems.length} items in POS controller');
+      }
     });
   }
 

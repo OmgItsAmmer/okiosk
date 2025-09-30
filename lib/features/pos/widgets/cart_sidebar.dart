@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:okiosk/common/widgets/custom_shapes/containers/rounded_container.dart';
@@ -585,6 +586,93 @@ class CartSidebar extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 16)),
+          // Debug info widget (show cart state)
+          if (kDebugMode)
+            Container(
+              margin: EdgeInsets.only(
+                  bottom: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+              padding: EdgeInsets.all(
+                  PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+              decoration: BoxDecoration(
+                color: TColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border:
+                    Border.all(color: TColors.warning.withValues(alpha: 0.3)),
+              ),
+              child: Obx(() {
+                final cartController = Get.find<CartController>();
+                final kioskUUID = cartController.kioskUUID;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'DEBUG:\nKiosk UUID: ',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize:
+                                        PosLayoutTemplate.getResponsiveFontSize(
+                                            context, 10),
+                                    color: TColors.warning,
+                                    fontFamily: 'monospace',
+                                  ),
+                        ),
+                        SelectableText(
+                          kioskUUID,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize:
+                                        PosLayoutTemplate.getResponsiveFontSize(
+                                            context, 10),
+                                    color: TColors.warning,
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.copy,
+                              size: 14, color: TColors.warning),
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          tooltip: 'Copy Kiosk UUID',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: kioskUUID));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Kiosk UUID copied to clipboard'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                        ),
+                        Text(
+                          '...',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize:
+                                        PosLayoutTemplate.getResponsiveFontSize(
+                                            context, 10),
+                                    color: TColors.warning,
+                                    fontFamily: 'monospace',
+                                  ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Cart Items: ${cartController.cartItems.length}\nScanned Session: ${cartController.scannedKioskSessionId.isNotEmpty ? cartController.scannedKioskSessionId.substring(0, 8) + "..." : "none"}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                                context, 10),
+                            color: TColors.warning,
+                            fontFamily: 'monospace',
+                          ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+
           // Action Buttons
           Row(
             children: [
@@ -655,35 +743,77 @@ class CartSidebar extends StatelessWidget {
             ],
           ),
           SizedBox(height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
-          // Debug button (only show in debug mode)
-          if (kDebugMode)
-            ElevatedButton.icon(
-              onPressed: () => _debugCart(context),
-              icon: Icon(
-                Icons.bug_report,
-                size: PosLayoutTemplate.getResponsiveFontSize(context, 16),
-              ),
-              label: Text(
-                'Debug Cart',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize:
-                          PosLayoutTemplate.getResponsiveFontSize(context, 12),
-                      fontWeight: FontWeight.w600,
+          // Debug buttons (only show in debug mode)
+          if (kDebugMode) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _debugCart(context),
+                    icon: Icon(
+                      Icons.bug_report,
+                      size:
+                          PosLayoutTemplate.getResponsiveFontSize(context, 14),
                     ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TColors.error.withValues(alpha: 0.8),
-                foregroundColor: TColors.lightModeTextWhite,
-                padding: EdgeInsets.symmetric(
-                  horizontal:
-                      PosLayoutTemplate.getResponsiveSpacing(context, 12),
-                  vertical: PosLayoutTemplate.getResponsiveSpacing(context, 8),
+                    label: Text(
+                      'Debug',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                                context, 11),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: TColors.error.withValues(alpha: 0.8),
+                      foregroundColor: TColors.lightModeTextWhite,
+                      padding: EdgeInsets.symmetric(
+                        horizontal:
+                            PosLayoutTemplate.getResponsiveSpacing(context, 8),
+                        vertical:
+                            PosLayoutTemplate.getResponsiveSpacing(context, 6),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                SizedBox(
+                    width: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _testRealtimeConnection(context),
+                    icon: Icon(
+                      Icons.wifi_tethering,
+                      size:
+                          PosLayoutTemplate.getResponsiveFontSize(context, 14),
+                    ),
+                    label: Text(
+                      'Test RT',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: PosLayoutTemplate.getResponsiveFontSize(
+                                context, 11),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: TColors.warning.withValues(alpha: 0.8),
+                      foregroundColor: TColors.lightModeTextWhite,
+                      padding: EdgeInsets.symmetric(
+                        horizontal:
+                            PosLayoutTemplate.getResponsiveSpacing(context, 8),
+                        vertical:
+                            PosLayoutTemplate.getResponsiveSpacing(context, 6),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
+          ],
         ],
       ),
     );
@@ -913,6 +1043,12 @@ class CartSidebar extends StatelessWidget {
   void _debugCart(BuildContext context) {
     final cartController = Get.find<CartController>();
     cartController.debugCheckAllKioskCartItems();
+  }
+
+  /// Test realtime connection
+  void _testRealtimeConnection(BuildContext context) {
+    final cartController = Get.find<CartController>();
+    cartController.testRealtimeConnection();
   }
 
   /// Show dialog to confirm clearing kiosk session

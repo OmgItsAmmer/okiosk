@@ -627,38 +627,77 @@ class CartRepository {
 
       if (kDebugMode) {
         print('CartRepository: Join query found ${response.length} items');
+        for (var item in response) {
+          print('CartRepository: Raw item data: $item');
+        }
       }
 
-      return response
-          .map<CartItemModel>((data) {
-            // Flatten the nested structure for easier access
-            final variant = data['product_variants'];
-            final product = variant['products'];
+      return response.map<CartItemModel>((data) {
+        try {
+          // Flatten the nested structure for easier access
+          final variant = data['product_variants'];
+          final product = variant['products'];
 
-            final flattenedData = {
-              'cart_id':
-                  data['kiosk_id'], // Use kiosk_id as cart_id for compatibility
-              'variant_id': data['variant_id'],
-              'quantity': data['quantity']
-                  .toString(), // Convert to string for compatibility
-              'customer_id': null, // Kiosk cart doesn't have customer_id
-              'sell_price': variant['sell_price'],
-              'buy_price': variant['buy_price'],
-              'product_id': variant['product_id'],
-              'variant_name': variant['variant_name'],
-              'stock': variant['stock'] as int,
-              'is_visible': variant['is_visible'],
-              'name': product['name'],
-              'description': product['description'],
-              'base_price': product['base_price'],
-              'sale_price': product['sale_price'],
-              'brandID': product['brandID'],
-            };
+          if (kDebugMode) {
+            print(
+                'CartRepository: Processing item - Variant: $variant, Product: $product');
+          }
 
-            return CartItemModel.fromMergedData(flattenedData);
-          })
-          .where((item) => item.cart.isValid)
-          .toList();
+          final flattenedData = {
+            'cart_id':
+                data['kiosk_id'], // Use kiosk_id as cart_id for compatibility
+            'variant_id': data['variant_id'],
+            'quantity': data['quantity']
+                .toString(), // Convert to string for compatibility
+            'customer_id': null, // Kiosk cart doesn't have customer_id
+            'kiosk_session_id': data[
+                'kiosk_session_id'], // Include kiosk session ID for validation
+            'sell_price': variant['sell_price'],
+            'buy_price': variant['buy_price'],
+            'product_id': variant['product_id'],
+            'variant_name': variant['variant_name'],
+            'stock': variant['stock'] as int,
+            'is_visible': variant['is_visible'],
+            'name': product['name'],
+            'description': product['description'],
+            'base_price': product['base_price'] ?? '', // Handle null base_price
+            'sale_price': product['sale_price'] ?? '', // Handle null sale_price
+            'brandID': product['brandID'],
+          };
+
+          if (kDebugMode) {
+            print('CartRepository: Flattened data: $flattenedData');
+          }
+
+          final cartItemModel = CartItemModel.fromMergedData(flattenedData);
+
+          if (kDebugMode) {
+            print(
+                'CartRepository: Created CartItemModel with cart.isValid: ${cartItemModel.cart.isValid}');
+            print(
+                'CartRepository: Cart validation details - variantId: ${cartItemModel.cart.variantId}, quantity: ${cartItemModel.cart.quantityAsInt}, customerId: ${cartItemModel.cart.customerId}, kioskSessionId: ${cartItemModel.cart.kioskSessionId}');
+          }
+
+          return cartItemModel;
+        } catch (e) {
+          if (kDebugMode) {
+            print('CartRepository: Error processing cart item: $e');
+            print('CartRepository: Raw data: $data');
+          }
+          rethrow;
+        }
+      }).where((item) {
+        final isValid = item.cart.isValid;
+        if (kDebugMode) {
+          print(
+              'CartRepository: Item validation - ${item.productName}: $isValid');
+          if (!isValid) {
+            print(
+                'CartRepository: Invalid item details - variantId: ${item.cart.variantId}, quantity: ${item.cart.quantityAsInt}, customerId: ${item.cart.customerId}, kioskSessionId: ${item.cart.kioskSessionId}');
+          }
+        }
+        return isValid;
+      }).toList();
     } catch (e) {
       if (kDebugMode) {
         print('CartRepository: Error in fetchCompleteKioskCartItems: $e');
