@@ -33,7 +33,6 @@ class PosKioskScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = THelperFunctions.isDarkMode(context);
     // Initialize controllers
     Get.put(PosController());
     Get.put(MediaController());
@@ -44,7 +43,7 @@ class PosKioskScreen extends StatelessWidget {
     Get.put(ShopController());
 
     return Scaffold(
-      backgroundColor: dark ? TColors.black : TColors.lightGrey,
+      backgroundColor: TColors.primaryBackground,
       body: _buildResponsiveLayout(context),
     );
   }
@@ -56,36 +55,35 @@ class PosKioskScreen extends StatelessWidget {
       return _buildWarningScreen(context);
     }
 
-    return Column(
+    return Row(
       children: [
-        const KioskHeader(),
-        // Category Selector at the top
-
-        // Main content area with product grid and cart sidebar
+        // Main Content Column (Left side - 65% of width)
         Expanded(
-          child: Row(
-            children: [
-              // Product Grid Area (60-70% width)
-              const Expanded(
-                flex: 65,
-                child: Column(
-                  children: [
-                    CategorySelector(),
+          flex: 85,
+          child: Container(
+            color: TColors.lightContainer,
+            child: const Column(
+              children: [
+                // Header at the top
+                KioskHeader(),
 
-                    //  CategoryHeader(),
-                    Expanded(child: ProductGrid()),
-                  ],
-                ),
-              ),
+                // Category Selector below header
+                CategorySelector(),
 
-              // Cart Sidebar (30-35% width)
-              Expanded(
-                flex: 25,
-                child: CartSidebar(
-                  mediaController: Get.find<MediaController>(),
+                // Product Grid takes remaining space
+                Expanded(
+                  child: ProductGrid(),
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        ),
+
+        // Cart Sidebar Column (Right side - 35% of width)
+        Expanded(
+          flex: 35,
+          child: CartSidebar(
+            mediaController: Get.find<MediaController>(),
           ),
         ),
       ],
@@ -224,35 +222,36 @@ class _PosKioskScreenForced extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: TColors.lightGrey,
-      body: Column(
+      backgroundColor: TColors.primaryBackground,
+      body: Row(
         children: [
-          // Category Selector at the top
-          const CategorySelector(),
-
-          // Main content area with product grid and cart sidebar
+          // Main Content Column (Left side - 65% of width)
           Expanded(
-            child: Row(
-              children: [
-                // Product Grid Area (60-70% width)
-                const Expanded(
-                  flex: 65,
-                  child: Column(
-                    children: [
-                      CategoryHeader(),
-                      Expanded(child: ProductGrid()),
-                    ],
-                  ),
-                ),
+            flex: 65,
+            child: Container(
+              color: TColors.lightContainer,
+              child: const Column(
+                children: [
+                  // Header at the top
+                  KioskHeader(),
 
-                // Cart Sidebar (30-35% width)
-                Expanded(
-                  flex: 35,
-                  child: CartSidebar(
-                    mediaController: Get.find<MediaController>(),
+                  // Category Selector below header
+                  CategorySelector(),
+
+                  // Product Grid takes remaining space
+                  Expanded(
+                    child: ProductGrid(),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+          ),
+
+          // Cart Sidebar Column (Right side - 35% of width)
+          Expanded(
+            flex: 35,
+            child: CartSidebar(
+              mediaController: Get.find<MediaController>(),
             ),
           ),
         ],
@@ -279,38 +278,39 @@ class PosKioskScreenDebug extends StatelessWidget {
     Get.put(ShopController());
 
     return Scaffold(
-      backgroundColor: TColors.lightGrey,
+      backgroundColor: TColors.primaryBackground,
       body: Stack(
         children: [
           // Main layout
-          Column(
+          Row(
             children: [
-              // Category Selector at the top
-              const CategorySelector(),
-
-              // Main content area with product grid and cart sidebar
+              // Main Content Column (Left side - 65% of width)
               Expanded(
-                child: Row(
-                  children: [
-                    // Product Grid Area (60-70% width)
-                    const Expanded(
-                      flex: 65,
-                      child: Column(
-                        children: [
-                          CategoryHeader(),
-                          Expanded(child: ProductGrid()),
-                        ],
-                      ),
-                    ),
+                flex: 65,
+                child: Container(
+                  color: TColors.lightContainer,
+                  child: const Column(
+                    children: [
+                      // Header at the top
+                      KioskHeader(),
 
-                    // Cart Sidebar (30-35% width)
-                    Expanded(
-                      flex: 35,
-                      child: CartSidebar(
-                        mediaController: Get.find<MediaController>(),
+                      // Category Selector below header
+                      CategorySelector(),
+
+                      // Product Grid takes remaining space
+                      Expanded(
+                        child: ProductGrid(),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+              ),
+
+              // Cart Sidebar Column (Right side - 35% of width)
+              Expanded(
+                flex: 35,
+                child: CartSidebar(
+                  mediaController: Get.find<MediaController>(),
                 ),
               ),
             ],

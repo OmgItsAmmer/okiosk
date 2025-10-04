@@ -40,6 +40,9 @@ class CartController extends GetxController {
   // Reactive state variables
   final RxBool isLoading = false.obs;
   final RxList<CartItemModel> cartItems = <CartItemModel>[].obs;
+  // Search state for filtering cart items in UI
+  final RxString _cartSearchQuery = ''.obs;
+  final RxList<CartItemModel> _filteredCartItems = <CartItemModel>[].obs;
   final Rx<CartSummary> cartSummary = CartSummary.empty().obs;
   final RxString errorMessage = ''.obs;
   final RxList<CartStockValidation> stockAdjustments =
@@ -61,6 +64,12 @@ class CartController extends GetxController {
     generateKioskUUID(); // Generate kiosk UUID on initialization
     _initializeKioskCart(); // Initialize kiosk cart functionality
     // _initializeDependencies();
+
+    // Keep filtered list in sync with items and query
+    ever<List<CartItemModel>>(cartItems, (_) => _recomputeFilteredCartItems());
+    ever<String>(_cartSearchQuery, (_) => _recomputeFilteredCartItems());
+    // Initial compute
+    _recomputeFilteredCartItems();
   }
 
   @override
@@ -141,6 +150,42 @@ class CartController extends GetxController {
   /// This UUID can be used to generate QR codes that customers can scan
   /// to connect to this specific kiosk instance.
   String get kioskUUID => _kioskUUID.value;
+
+  /// Public getter for current search query
+  String get cartSearchQuery => _cartSearchQuery.value;
+
+  /// Public getter for filtered cart items (reactive via Obx)
+  List<CartItemModel> get filteredCartItems => _filteredCartItems;
+
+  /// Updates the cart search query and triggers filtering
+  void setCartSearchQuery(String query) {
+    _cartSearchQuery.value = query.trim().toLowerCase();
+  }
+
+  /// Clears the cart search query
+  void clearCartSearch() {
+    _cartSearchQuery.value = '';
+  }
+
+  /// Recomputes the filtered cart items list based on query and items
+  void _recomputeFilteredCartItems() {
+    final query = _cartSearchQuery.value;
+    if (query.isEmpty) {
+      _filteredCartItems.assignAll(cartItems);
+      return;
+    }
+
+    final List<CartItemModel> results = cartItems.where((item) {
+      final product = item.productName.toLowerCase();
+      final variant = item.variantName.toLowerCase();
+      final description = item.productDescription.toLowerCase();
+      return product.contains(query) ||
+          variant.contains(query) ||
+          description.contains(query);
+    }).toList();
+
+    _filteredCartItems.assignAll(results);
+  }
 
   /// Fetches complete cart data with optimized single query
   ///

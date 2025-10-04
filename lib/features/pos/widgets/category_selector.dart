@@ -5,7 +5,6 @@ import 'package:okiosk/utils/layouts/template.dart';
 import 'package:okiosk/utils/constants/colors.dart';
 import 'package:okiosk/utils/constants/sizes.dart';
 
-import '../../../utils/helpers/helper_functions.dart';
 import '../../categories/controller/category_controller.dart';
 
 /// Category Selector Widget for POS Kiosk
@@ -17,19 +16,15 @@ class CategorySelector extends GetView<CategoryController> {
 
   @override
   Widget build(BuildContext context) {
-    final dark = THelperFunctions.isDarkMode(context);
-
     return Container(
       //  height: context.categoryBarHeight,
       width: double.infinity,
       padding: const EdgeInsets.all(TSizes.defaultSpace / 2),
       decoration: BoxDecoration(
-        color: dark ? TColors.black : TColors.white,
+        color: TColors.primaryBackground,
         boxShadow: [
           BoxShadow(
-            color: dark
-                ? TColors.darkGrey.withValues(alpha: 0.1)
-                : TColors.lightGrey.withValues(alpha: 0.1),
+            color: TColors.borderPrimary.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -128,9 +123,8 @@ class CategorySelector extends GetView<CategoryController> {
     required bool isSelected,
   }) {
     return SizedBox(
-      height: context.touchTargetSize,
+      height: context.touchTargetSize * 1.3,
       child: TChoiceChip(
-        
         text: categoryName,
         selected: isSelected,
         onSelected: (selected) {
@@ -151,7 +145,6 @@ class CategoryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<CategoryController>();
-    final dark = THelperFunctions.isDarkMode(context);
 
     return Obx(() {
       final selectedCategory = controller.selectedCategory;
@@ -171,8 +164,7 @@ class CategoryHeader extends StatelessWidget {
                     fontSize:
                         PosLayoutTemplate.getResponsiveFontSize(context, 20),
                     fontWeight: FontWeight.bold,
-                    color:
-                        dark ? TColors.primary : TColors.lightModePrimaryText,
+                    color: TColors.lightModePrimaryText,
                   ),
             ),
             const Spacer(),
@@ -182,7 +174,7 @@ class CategoryHeader extends StatelessWidget {
                 vertical: TSizes.xs,
               ),
               decoration: BoxDecoration(
-                color: TColors.primary.withValues(alpha: 0.1),
+                color: TColors.primaryBackground,
                 borderRadius: BorderRadius.circular(
                   context.responsiveBorderRadius,
                 ),

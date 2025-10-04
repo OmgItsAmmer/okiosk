@@ -38,7 +38,7 @@ class PosController extends GetxController {
   // Getters for reactive state
   List<ProductModel> get products => _products;
   List<ProductModel> get filteredProducts =>
-      categoryController.filteredProducts;
+      productController.filteredProductsForPOS;
   List<CartItemModel> get cartItems => _cartItems;
   PaymentMethods get selectedPaymentMethod => _selectedPaymentMethod.value;
   ShippingMethods get selectedShippingMethod => _selectedShippingMethod.value;

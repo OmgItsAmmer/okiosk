@@ -11,3 +11,14 @@ cached media logic
 cart qr logic 
 
 checkout 
+
+
+
+Front End 
+animations
+urdu english support
+
+backend
+
+help button
+quicky go through the enitre app

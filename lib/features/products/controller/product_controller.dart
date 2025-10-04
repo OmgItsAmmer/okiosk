@@ -94,27 +94,39 @@ class ProductController extends GetxController {
   // Optimized search with debouncing and caching
   Future<void> searchProducts(String query) async {
     if (query.isEmpty) {
-      filteredProducts.assignAll(popularProducts);
+      // If query is empty, show all products for POS
+      if (allProducts.isNotEmpty) {
+        filteredProducts.assignAll(allProducts);
+      } else {
+        filteredProducts.assignAll(popularProducts);
+      }
       return;
     }
 
     try {
       isSearching.value = true;
 
-      // First check if we can filter from existing popular products
-      final localResults = popularProducts
-          .where((product) =>
-              product.name.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      // First check if we can filter from existing all products (for POS)
+      if (allProducts.isNotEmpty) {
+        final localResults = allProducts
+            .where((product) =>
+                product.name.toLowerCase().contains(query.toLowerCase()) ||
+                (product.description
+                        ?.toLowerCase()
+                        .contains(query.toLowerCase()) ??
+                    false))
+            .toList();
 
-      if (localResults.isNotEmpty) {
-        filteredProducts.assignAll(localResults);
-      } else {
-        // If no local results, search database
-        final searchResults =
-            await productRepository.searchProducts(query, page: 0);
-        filteredProducts.assignAll(searchResults);
+        if (localResults.isNotEmpty) {
+          filteredProducts.assignAll(localResults);
+          return;
+        }
       }
+
+      // If no local results, search database
+      final searchResults =
+          await productRepository.searchProducts(query, page: 0);
+      filteredProducts.assignAll(searchResults);
     } catch (e) {
       TLoader.errorSnackBar(title: 'Search Error', message: e.toString());
     } finally {

@@ -5,7 +5,12 @@ class TImages {
   // -- App Logos
   static const String darkAppLogo = "assets/logos/kks_new_logo_dark2.png";
   static const String lightAppLogo = "assets/logos/kks_new_logo_light.png";
+  static const String appIcon = "assets/logos/app_icon_dark.png";
   // static const String kksLogo = "assets/logos/kks_logo.png";
+
+  //AI agent doodle
+  static const String aiAgentDoodle = "assets/images/AI/AI_agent_mini.png";
+  static const String aiAgentHovered = "assets/images/AI/ai_agent_smiling_mini.png";
 
   // -- Social Logos
   static const String google = "assets/logos/google-icon.png";

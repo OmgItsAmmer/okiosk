@@ -20,20 +20,20 @@ class TChoiceChip extends StatelessWidget {
   final bool showCheckmark;
   @override
   Widget build(BuildContext context) {
-    final bool dark = THelperFunctions.isDarkMode(context);
     return Theme(
       data: Theme.of(context).copyWith(canvasColor: Colors.transparent),
       child: ChoiceChip(
+        
         label: THelperFunctions.getColor(text) != null
             ? const SizedBox()
             : Text(
                 text,
                 style: TextStyle(
                   color: isOutOfStock
-                      ? (dark ? TColors.grey : TColors.black)
+                      ? TColors.black
                       : (selected
                           ? TColors.white
-                          : (dark ? TColors.white : TColors.black)),
+                          : TColors.lightModePrimaryText),
                   decoration: isOutOfStock ? TextDecoration.lineThrough : null,
                 ),
               ),
@@ -42,23 +42,21 @@ class TChoiceChip extends StatelessWidget {
         showCheckmark: showCheckmark,
         labelStyle: TextStyle(
           color: isOutOfStock
-              ? (dark ? TColors.grey : TColors.black)
-              : (selected
-                  ? TColors.white
-                  : (dark ? TColors.white : TColors.black)),
+              ? TColors.black
+              : (selected ? TColors.white : TColors.lightModePrimaryText),
           decoration: isOutOfStock ? TextDecoration.lineThrough : null,
         ),
         avatar: THelperFunctions.getColor(text) != null
             ? TCircularContainer(
-                width: 50,
-                height: 50,
+                width: 80,
+                height: 80,
                 backgroundColor: isOutOfStock
                     ? TColors.grey.withValues(alpha: 0.5)
                     : THelperFunctions.getColor(text)!,
                 child: isOutOfStock
                     ? Icon(
                         Icons.close,
-                        color: (dark) ? TColors.white : TColors.black,
+                        color: TColors.lightModePrimaryText,
                         size: 20,
                       )
                     : null,
@@ -66,14 +64,15 @@ class TChoiceChip extends StatelessWidget {
             : isOutOfStock
                 ? Icon(
                     Icons.close,
-                    color: (dark) ? TColors.white : TColors.black,
+                    color: TColors.lightModePrimaryText,
                     size: 16,
                   )
                 : null,
         shape: THelperFunctions.getColor(text) != null ? CircleBorder() : null,
         backgroundColor: isOutOfStock
             ? TColors.grey.withValues(alpha: 0.5)
-            : (THelperFunctions.getColor(text)),
+            : (THelperFunctions.getColor(text) ??
+                TColors.lightContainer.withValues(alpha: 0.6)),
         labelPadding: THelperFunctions.getColor(text) != null
             ? const EdgeInsets.all(0)
             : null,
@@ -83,10 +82,8 @@ class TChoiceChip extends StatelessWidget {
             ? TColors.grey.withValues(alpha: 0.5)
             : (THelperFunctions.getColor(text) != null
                 ? THelperFunctions.getColor(text)!
-                : TColors.primary),
-        disabledColor: (dark)
-            ? TColors.white.withValues(alpha: 0.5)
-            : TColors.black.withValues(alpha: 0.5),
+                : TColors.buttonPrimary),
+        disabledColor: TColors.grey.withValues(alpha: 0.5),
       ),
     );
   }
