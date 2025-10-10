@@ -96,7 +96,7 @@ class PosController extends GetxController {
         print('Error initializing POS data: $e');
       }
       // Fallback to dummy data if real data fails
-      categoryController.initializeWithDummyCategories();
+    //  categoryController.initializeWithDummyCategories();
       _products.assignAll(_generateDummyProducts());
       categoryController.setProducts(_products);
     } finally {

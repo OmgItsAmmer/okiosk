@@ -1,7 +1,7 @@
 import 'package:okiosk/common/widgets/loaders/tloaders.dart';
 import 'package:get/get.dart';
 
-import '../../../data/repositories/categories/category_repository.dart';
+import '../../../data/repositories/categories/backend_category_repository.dart';
 import '../models/category_model.dart';
 import '../../products/models/product_model.dart';
 
@@ -9,7 +9,7 @@ class CategoryController extends GetxController {
   static CategoryController get instance => Get.find();
 
   final isLoading = false.obs;
-  final _categoryRepository = Get.put(CategoroyRepostirory());
+  final _categoryRepository = Get.find<BackendCategoryRepository>();
   final RxList<CategoryModel> allCategories = <CategoryModel>[].obs;
 
   // Category selection state
@@ -83,55 +83,5 @@ class CategoryController extends GetxController {
     return allCategories.firstWhereOrNull(
       (cat) => cat.categoryId == _selectedCategoryId.value,
     );
-  }
-
-  /// Initialize with dummy categories for testing
-  void initializeWithDummyCategories() {
-    final dummyCategories = [
-      CategoryModel(
-        categoryId: 1,
-        categoryName: 'Electronics',
-        isFeatured: true,
-        createdAt: DateTime.now(),
-        productCount: 5,
-      ),
-      CategoryModel(
-        categoryId: 2,
-        categoryName: 'Clothing',
-        isFeatured: true,
-        createdAt: DateTime.now(),
-        productCount: 4,
-      ),
-      CategoryModel(
-        categoryId: 3,
-        categoryName: 'Books',
-        isFeatured: false,
-        createdAt: DateTime.now(),
-        productCount: 3,
-      ),
-      CategoryModel(
-        categoryId: 4,
-        categoryName: 'Home & Garden',
-        isFeatured: true,
-        createdAt: DateTime.now(),
-        productCount: 4,
-      ),
-      CategoryModel(
-        categoryId: 5,
-        categoryName: 'Sports',
-        isFeatured: false,
-        createdAt: DateTime.now(),
-        productCount: 3,
-      ),
-      CategoryModel(
-        categoryId: 6,
-        categoryName: 'Food & Beverage',
-        isFeatured: true,
-        createdAt: DateTime.now(),
-        productCount: 6,
-      ),
-    ];
-
-    allCategories.assignAll(dummyCategories);
   }
 }

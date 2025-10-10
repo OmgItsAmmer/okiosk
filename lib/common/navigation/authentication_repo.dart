@@ -16,6 +16,7 @@ import '../../features/products/controller/product_controller.dart';
 import '../../features/shop/controller/shop_controller.dart';
 import '../../main.dart';
 import '../../routes/routes.dart';
+import '../../data/backend/di/backend_dependency_injection.dart';
 
 class AuthenticationRepository extends GetxController {
   @override
@@ -35,7 +36,7 @@ class AuthenticationRepository extends GetxController {
 
   Future<void> screenRedirect() async {
     if (await checkSession()) {
-      _initlizePostSignInControllers();
+      await _initlizePostSignInControllers();
       Get.off(() => const PosKioskScreen());
     } else {
       Get.off(() => const LoginScreen());
@@ -53,6 +54,9 @@ class AuthenticationRepository extends GetxController {
 
   void _initlizeCritcalControllers() {
     try {
+      // Ensure backend services are registered before any controllers that depend on them
+      BackendDependencyInjection.init();
+
       Get.put(NetworkManager(), permanent: true);
       Get.lazyPut(() => LoginController(), fenix: true);
       Get.lazyPut(() => ShopController(), fenix: true);
@@ -85,12 +89,12 @@ class AuthenticationRepository extends GetxController {
 
   //initilize Supabase auth listener
   void _initlizeSupabaseAuthListener() {
-    supabase.auth.onAuthStateChange.listen((event) {
+    supabase.auth.onAuthStateChange.listen((event) async {
       if (event.event == AuthChangeEvent.signedIn) {
-        _initlizePostSignInControllers();
-        screenRedirect();
+        await _initlizePostSignInControllers();
+        await screenRedirect();
       } else if (event.event == AuthChangeEvent.signedOut) {
-        screenRedirect();  
+        await screenRedirect();
       }
     });
   }

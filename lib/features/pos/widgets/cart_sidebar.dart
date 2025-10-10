@@ -36,8 +36,6 @@ class CartSidebar extends StatelessWidget {
     final controller = Get.find<PosController>();
 
     return Container(
-      width: context.cartSidebarWidth,
-      height: context.mainContentHeight,
       decoration: BoxDecoration(
         color: TColors.primaryBackground,
         border: Border(

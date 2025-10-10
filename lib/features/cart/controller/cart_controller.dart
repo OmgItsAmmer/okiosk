@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../../common/widgets/loaders/tloaders.dart';
-import '../../../data/repositories/cart/cart_repository.dart';
+import '../../../data/repositories/cart/backend_cart_repository.dart';
 import '../../../data/realtime/kiosk_cart_realtime.dart';
 import '../../../main.dart';
 import '../../customer/controller/customer_controller.dart';
@@ -31,7 +31,8 @@ class CartController extends GetxController {
 
   // Dependencies - Dependency Injection following SOLID principles
   final CustomerController _customerController = Get.find<CustomerController>();
-  final CartRepository _cartRepository = Get.put(CartRepository());
+  final BackendCartRepository _cartRepository =
+      Get.find<BackendCartRepository>();
   final ProductController _productController = Get.find<ProductController>();
   final ProductVariationController _variationController =
       Get.find<ProductVariationController>();

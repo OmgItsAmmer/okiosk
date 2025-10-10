@@ -1,12 +1,10 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:okiosk/features/products/controller/product_controller.dart';
 
 import '../../../common/widgets/loaders/tloaders.dart';
-import '../../../data/repositories/products/product_repository.dart';
+import '../../../data/repositories/products/backend_product_repository.dart';
 import '../models/product_variation_model.dart';
-
 
 /// A controller class for managing product variations, including variant availability,
 /// selection, and stock checks.
@@ -18,7 +16,7 @@ class ProductVariationController extends GetxController {
   static ProductVariationController get instance => Get.find();
 
   /// Repository for fetching product-related data.
-  final productRepository = Get.find<ProductRepository>();
+  final productRepository = Get.find<BackendProductRepository>();
 
   /// Observable flag indicating whether the controller is loading data.
   final isLoading = false.obs;

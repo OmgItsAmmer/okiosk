@@ -4,6 +4,9 @@ class CategoryModel {
   bool isFeatured;
   DateTime? createdAt;
   final int productCount;
+
+
+  
   CategoryModel({
     required this.categoryId,
     required this.categoryName,

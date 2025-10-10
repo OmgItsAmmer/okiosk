@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../../common/widgets/loaders/tloaders.dart';
-import '../../../data/repositories/products/product_repository.dart';
+import '../../../data/repositories/products/backend_product_repository.dart';
 import '../models/product_model.dart';
 import '../models/product_variation_model.dart';
 
 class ProductController extends GetxController {
   static ProductController get instance => Get.find();
-  final productRepository = Get.put(ProductRepository());
+  final productRepository = Get.put(BackendProductRepository());
 
   // Optimized product lists
   RxList<ProductModel> popularProducts = <ProductModel>[].obs;

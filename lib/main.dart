@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 
 import 'common/navigation/authentication_repo.dart';
+import 'data/backend/di/backend_dependency_injection.dart';
 import 'features/media/services/cache_initialization_service.dart';
 import 'supabase/supabase_strings.dart';
 
@@ -20,6 +21,9 @@ Future<void> main() async {
       WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await GetStorage.init();
+
+  // Initialize backend API services
+  BackendDependencyInjection.init();
 
   try {
     await Supabase.initialize(
