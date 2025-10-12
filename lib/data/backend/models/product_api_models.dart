@@ -155,77 +155,110 @@ class ProductApiModel {
 
 /// Backend API model for Product Variation
 class ProductVariationApiModel {
-  final int id;
+  final int variantId;
+  final String sellPrice;
+  final String? buyPrice;
   final int productId;
   final String? variantName;
-  final String? variantValue;
-  final String price;
-  final String? salePrice;
-  final int stockQuantity;
+  final int stock;
   final bool isVisible;
-  final bool isDefault;
-  final String? sku;
-  final String? barcode;
-  final Map<String, dynamic>? attributes;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
 
   const ProductVariationApiModel({
-    required this.id,
+    required this.variantId,
+    required this.sellPrice,
+    this.buyPrice,
     required this.productId,
     this.variantName,
-    this.variantValue,
-    required this.price,
-    this.salePrice,
-    required this.stockQuantity,
+    required this.stock,
     required this.isVisible,
-    required this.isDefault,
-    this.sku,
-    this.barcode,
-    this.attributes,
-    required this.createdAt,
-    this.updatedAt,
   });
 
   factory ProductVariationApiModel.fromJson(Map<String, dynamic> json) {
+    // Helper function to get value with multiple possible key names
+    dynamic getValueMultiple(List<String> possibleKeys) {
+      for (var key in possibleKeys) {
+        if (json.containsKey(key) && json[key] != null) {
+          return json[key];
+        }
+      }
+      return null;
+    }
+
+    // Helper to convert to string if needed
+    String toStringValue(dynamic value, String defaultValue) {
+      if (value == null) return defaultValue;
+      return value.toString();
+    }
+
+    // Helper to convert to int if needed
+    int toIntValue(dynamic value, int defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      if (value is double) return value.toInt();
+      return defaultValue;
+    }
+
+    // Helper to convert to bool if needed
+    bool toBoolValue(dynamic value, bool defaultValue) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is int) return value != 0;
+      if (value is String) {
+        return value.toLowerCase() == 'true' || value == '1';
+      }
+      return defaultValue;
+    }
+
     return ProductVariationApiModel(
-      id: json['id'] ?? 0,
-      productId: json['productId'] ?? 0,
-      variantName: json['variantName'],
-      variantValue: json['variantValue'],
-      price: json['price'] ?? '0',
-      salePrice: json['salePrice'],
-      stockQuantity: json['stockQuantity'] ?? 0,
-      isVisible: json['isVisible'] ?? true,
-      isDefault: json['isDefault'] ?? false,
-      sku: json['sku'],
-      barcode: json['barcode'],
-      attributes: json['attributes'] != null
-          ? Map<String, dynamic>.from(json['attributes'])
-          : null,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'])
-          : null,
+      // Backend uses 'variant_id'
+      variantId: toIntValue(
+        getValueMultiple(['variant_id', 'variantId', 'id']),
+        0,
+      ),
+
+      // Backend uses 'sell_price'
+      sellPrice: toStringValue(
+        getValueMultiple(['sell_price', 'sellPrice']),
+        '0',
+      ),
+
+      // Backend uses 'buy_price'
+      buyPrice: getValueMultiple(['buy_price', 'buyPrice'])?.toString(),
+
+      // Backend uses 'product_id'
+      productId: toIntValue(
+        getValueMultiple(['product_id', 'productId']),
+        0,
+      ),
+
+      // Backend uses 'variant_name'
+      variantName:
+          getValueMultiple(['variant_name', 'variantName'])?.toString(),
+
+      // Backend uses 'stock'
+      stock: toIntValue(
+        getValueMultiple(['stock', 'stockQuantity', 'stock_quantity']),
+        0,
+      ),
+
+      // Backend uses 'is_visible'
+      isVisible: toBoolValue(
+        getValueMultiple(['is_visible', 'isVisible']),
+        true,
+      ),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'productId': productId,
-      'variantName': variantName,
-      'variantValue': variantValue,
-      'price': price,
-      'salePrice': salePrice,
-      'stockQuantity': stockQuantity,
-      'isVisible': isVisible,
-      'isDefault': isDefault,
-      'sku': sku,
-      'barcode': barcode,
-      'attributes': attributes,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'variant_id': variantId,
+      'sell_price': sellPrice,
+      'buy_price': buyPrice,
+      'product_id': productId,
+      'variant_name': variantName,
+      'stock': stock,
+      'is_visible': isVisible,
     };
   }
 }

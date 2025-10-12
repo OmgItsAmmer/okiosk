@@ -7,8 +7,8 @@ class CategoryModel {
 
 
   
-  CategoryModel({
-    required this.categoryId,
+  CategoryModel({ 
+    required this.categoryId, 
     required this.categoryName,
     this.isFeatured = false,
     this.createdAt,

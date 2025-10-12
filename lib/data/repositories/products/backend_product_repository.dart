@@ -71,12 +71,12 @@ class BackendProductRepository extends GetxController {
   ProductVariationModel _convertApiVariationToVariation(
       ProductVariationApiModel apiModel) {
     return ProductVariationModel(
-      variantId: apiModel.id,
+      variantId: apiModel.variantId,
       productId: apiModel.productId,
       variantName: apiModel.variantName,
-      sellPrice: apiModel.price, // Map price to sellPrice
-      buyPrice: apiModel.salePrice, // Map salePrice to buyPrice
-      stockQuantity: apiModel.stockQuantity.toString(),
+      sellPrice: apiModel.sellPrice,
+      buyPrice: apiModel.buyPrice,
+      stockQuantity: apiModel.stock.toString(),
       isVisible: apiModel.isVisible,
     );
   }

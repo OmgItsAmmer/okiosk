@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 
-import '../../../../../routes/routes.dart';
 import '../../../../../utils/effects/shimmer effect.dart';
 import '../../../../common/navigation/navigation_helper.dart';
 import '../../../../common/widgets/chips/choice_chip.dart';
@@ -20,6 +19,7 @@ import '../../../../utils/constants/sizes.dart';
 import '../../../cart/controller/cart_controller.dart';
 import '../../../shop/controller/shop_controller.dart';
 import '../../controller/product_varaintion_controller.dart';
+import '../../controller/product_controller.dart';
 import '../../models/product_model.dart';
 import '../../models/product_variation_model.dart';
 
@@ -41,6 +41,7 @@ class QuickAddToCartDialog extends StatefulWidget {
 
 class _QuickAddToCartDialogState extends State<QuickAddToCartDialog> {
   late ProductVariationController variationController;
+  late ProductController productController;
   late CartController cartController;
   int quantity = 1;
   final isAddingToCart = false.obs;
@@ -53,6 +54,7 @@ class _QuickAddToCartDialogState extends State<QuickAddToCartDialog> {
   void initState() {
     super.initState();
     variationController = Get.find<ProductVariationController>();
+    productController = Get.find<ProductController>();
     cartController = Get.put(CartController());
 
     // Reset variation controller for this product
@@ -64,17 +66,26 @@ class _QuickAddToCartDialogState extends State<QuickAddToCartDialog> {
     // Load max quantity from DB
     _loadMaxQuantityFromDB();
 
-    // Fetch variations for this product
+    // Fetch variations for this product using ProductController
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      variationController
-          .fetchProductVariantByProductId(widget.product.productId)
-          .then((_) {
+      productController
+          .fetchProductVariations(widget.product.productId)
+          .then((variations) {
+        // Update the variation controller with the fetched variations
+        variationController.allProductVariations.assignAll(variations);
+        variationController.allProductVariations.refresh();
+
         // Auto-select first available variant after loading
         final availableVariants = variationController.getAvailableVariants();
         if (availableVariants.isNotEmpty &&
             variationController.selectedVariant.value.isEmpty) {
           variationController.selectVariant(availableVariants.first);
           setState(() {}); // Trigger rebuild to update UI
+        }
+      }).catchError((e) {
+        if (kDebugMode) {
+          print(
+              'Error fetching variations for product ${widget.product.productId}: $e');
         }
       });
     });

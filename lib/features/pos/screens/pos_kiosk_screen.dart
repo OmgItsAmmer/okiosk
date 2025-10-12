@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:okiosk/features/pos/controller/pos_controller.dart';
+import 'package:okiosk/features/pos/controller/animation_controller.dart';
 import 'package:okiosk/features/categories/controller/category_controller.dart';
 import 'package:okiosk/features/products/controller/product_controller.dart';
 import 'package:okiosk/features/products/controller/product_varaintion_controller.dart';
@@ -10,6 +11,7 @@ import 'package:okiosk/features/shop/controller/shop_controller.dart';
 import 'package:okiosk/features/pos/widgets/category_selector.dart';
 import 'package:okiosk/features/pos/widgets/product_grid.dart';
 import 'package:okiosk/features/pos/widgets/cart_sidebar.dart';
+import 'package:okiosk/features/pos/widgets/ai_assistant_screen.dart';
 import 'package:okiosk/features/media/controller/media_controller.dart';
 import 'package:okiosk/utils/layouts/template.dart';
 import 'package:okiosk/utils/constants/colors.dart';
@@ -41,6 +43,7 @@ class PosKioskScreen extends StatelessWidget {
     Get.put(ProductVariationController());
     Get.put(CartController());
     Get.put(ShopController());
+    Get.put(PosAnimationController());
 
     return Scaffold(
       backgroundColor: TColors.primaryBackground,
@@ -55,38 +58,81 @@ class PosKioskScreen extends StatelessWidget {
       return _buildWarningScreen(context);
     }
 
-    return Row(
-      children: [
-        // Main Content Column (Left side - 65% of width)
-        Expanded(
-          flex: 85,
-          child: Container(
-            color: TColors.lightContainer,
-            child: const Column(
-              children: [
-                // Header at the top
-                KioskHeader(),
+    return GetBuilder<PosAnimationController>(
+      builder: (animationController) {
+        return Stack(
+          children: [
+            // Main layout with animations
+            AnimatedBuilder(
+              animation: animationController.animationController,
+              builder: (context, child) {
+                return Row(
+                  children: [
+                    // Main Content Column (Left side - animated width)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeInOut,
+                      width: MediaQuery.of(context).size.width *
+                          (animationController.isAiScreenVisible ? 0.5 : 0.65),
+                      child: Container(
+                        color: TColors.lightContainer,
+                        child: Column(
+                          children: [
+                            // Header at the top (with fade animation)
+                            FadeTransition(
+                              opacity: animationController.headerOpacity,
+                              child: const KioskHeader(),
+                            ),
 
-                // Category Selector below header
-                CategorySelector(),
+                            // Category Selector below header (with fade animation)
+                            FadeTransition(
+                              opacity: animationController.headerOpacity,
+                              child: const CategorySelector(),
+                            ),
 
-                // Product Grid takes remaining space
-                Expanded(
-                  child: ProductGrid(),
-                ),
-              ],
+                            // Product Grid takes remaining space (with fade animation)
+                            Expanded(
+                              child: FadeTransition(
+                                opacity: animationController.productGridOpacity,
+                                child: const ProductGrid(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Cart Sidebar Column (Right side - animated expansion)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeInOut,
+                      width: MediaQuery.of(context).size.width *
+                          (animationController.isAiScreenVisible ? 0.5 : 0.35),
+                      child: CartSidebar(
+                        mediaController: Get.find<MediaController>(),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-          ),
-        ),
 
-        // Cart Sidebar Column (Right side - 35% of width)
-        Expanded(
-          flex: 35,
-          child: CartSidebar(
-            mediaController: Get.find<MediaController>(),
-          ),
-        ),
-      ],
+            // AI Assistant Screen (overlay in left half)
+            if (animationController.isAiScreenVisible)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: MediaQuery.of(context).size.width * 0.5,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: const AiAssistantScreen(),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -220,41 +266,92 @@ class _PosKioskScreenForced extends StatelessWidget {
     if (!Get.isRegistered<ShopController>()) {
       Get.put(ShopController());
     }
+    if (!Get.isRegistered<PosAnimationController>()) {
+      Get.put(PosAnimationController());
+    }
 
     return Scaffold(
       backgroundColor: TColors.primaryBackground,
-      body: Row(
-        children: [
-          // Main Content Column (Left side - 65% of width)
-          Expanded(
-            flex: 65,
-            child: Container(
-              color: TColors.lightContainer,
-              child: const Column(
-                children: [
-                  // Header at the top
-                  KioskHeader(),
+      body: GetBuilder<PosAnimationController>(
+        builder: (animationController) {
+          return Stack(
+            children: [
+              // Main layout with animations
+              AnimatedBuilder(
+                animation: animationController.animationController,
+                builder: (context, child) {
+                  return Row(
+                    children: [
+                      // Main Content Column (Left side - animated width)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.easeInOut,
+                        width: MediaQuery.of(context).size.width *
+                            (animationController.isAiScreenVisible
+                                ? 0.5
+                                : 0.65),
+                        child: Container(
+                          color: TColors.lightContainer,
+                          child: Column(
+                            children: [
+                              // Header at the top (with fade animation)
+                              FadeTransition(
+                                opacity: animationController.headerOpacity,
+                                child: const KioskHeader(),
+                              ),
 
-                  // Category Selector below header
-                  CategorySelector(),
+                              // Category Selector below header (with fade animation)
+                              FadeTransition(
+                                opacity: animationController.headerOpacity,
+                                child: const CategorySelector(),
+                              ),
 
-                  // Product Grid takes remaining space
-                  Expanded(
-                    child: ProductGrid(),
-                  ),
-                ],
+                              // Product Grid takes remaining space (with fade animation)
+                              Expanded(
+                                child: FadeTransition(
+                                  opacity:
+                                      animationController.productGridOpacity,
+                                  child: const ProductGrid(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Cart Sidebar Column (Right side - animated expansion)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.easeInOut,
+                        width: MediaQuery.of(context).size.width *
+                            (animationController.isAiScreenVisible
+                                ? 0.5
+                                : 0.35),
+                        child: CartSidebar(
+                          mediaController: Get.find<MediaController>(),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            ),
-          ),
 
-          // Cart Sidebar Column (Right side - 35% of width)
-          Expanded(
-            flex: 35,
-            child: CartSidebar(
-              mediaController: Get.find<MediaController>(),
-            ),
-          ),
-        ],
+              // AI Assistant Screen (overlay)
+              if (animationController.isAiScreenVisible)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: MediaQuery.of(context).size.width * 0.5,
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    child: const AiAssistantScreen(),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -276,6 +373,7 @@ class PosKioskScreenDebug extends StatelessWidget {
     Get.put(ProductVariationController());
     Get.put(CartController());
     Get.put(ShopController());
+    Get.put(PosAnimationController());
 
     return Scaffold(
       backgroundColor: TColors.primaryBackground,
@@ -401,5 +499,6 @@ class PosKioskBinding extends Bindings {
     Get.lazyPut<ProductVariationController>(() => ProductVariationController());
     Get.lazyPut<CartController>(() => CartController());
     Get.lazyPut<ShopController>(() => ShopController());
+    Get.lazyPut<PosAnimationController>(() => PosAnimationController());
   }
 }

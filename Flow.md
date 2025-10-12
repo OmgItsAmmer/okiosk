@@ -16,9 +16,17 @@ checkout
 
 Front End 
 animations
-urdu english support
 
 backend
 
-help button
 quicky go through the enitre app
+
+
+urdu english support
+help button
+AI chatbot (RAG)
+AI Background functions
+
+
+
+

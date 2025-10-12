@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:okiosk/common/widgets/images/t_rounded_image.dart';
 import 'package:okiosk/utils/constants/sizes.dart';
+import 'package:okiosk/features/pos/controller/animation_controller.dart';
 
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/image_strings.dart';
@@ -34,6 +36,29 @@ class _KioskHeaderState extends State<KioskHeader> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  /// Handle AI agent tap to trigger screen transition
+  void _onAiAgentTapped() {
+    try {
+      // Initialize animation controller if not already initialized
+      if (!Get.isRegistered<PosAnimationController>()) {
+        Get.put(PosAnimationController());
+        print('Animation controller initialized');
+      }
+
+      final animationController = Get.find<PosAnimationController>();
+      print('Animation controller found, triggering showAiScreen');
+      print(
+          'Current AI screen visible: ${animationController.isAiScreenVisible}');
+      print('Current animation status: ${animationController.isAnimating}');
+
+      animationController.showAiScreen();
+      print('showAiScreen called');
+    } catch (e) {
+      // Handle error gracefully
+      print('Error triggering AI screen animation: $e');
+    }
   }
 
   @override
@@ -114,23 +139,27 @@ class _KioskHeaderState extends State<KioskHeader> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Animated AI Agent Image
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-                child: TRoundedImage(
-                  key: ValueKey<bool>(_showHoveredImage),
-                  imageurl: _showHoveredImage
-                      ? TImages.aiAgentHovered
-                      : TImages.aiAgentDoodle,
-                  isNetworkImage: false,
-                  width: 80,
-                  height: 80,
+              // Animated AI Agent Image (Clickable)
+              GestureDetector(
+                onTap: () => _onAiAgentTapped(),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                  child: TRoundedImage(
+                    key: ValueKey<bool>(_showHoveredImage),
+                    imageurl: _showHoveredImage
+                        ? TImages.aiAgentHovered
+                        : TImages.aiAgentDoodle,
+                    isNetworkImage: false,
+                    width: 80,
+                    height: 80,
+                  ),
                 ),
               ),
             ],

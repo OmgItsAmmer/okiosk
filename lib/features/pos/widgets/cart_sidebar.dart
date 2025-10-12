@@ -16,7 +16,7 @@ import '../../../common/widgets/custom_shapes/containers/rounded_container.dart'
 import '../../../common/widgets/icons/t_circular_icon.dart';
 import '../../../utils/constants/sizes.dart';
 import '../../../utils/helpers/helper_functions.dart';
-import 'package:okiosk/features/checkout/screens/checkout_screen.dart';
+import 'package:okiosk/features/checkout/screens/checkout_dialog.dart';
 import 'package:okiosk/features/checkout/controller/checkout_controller.dart';
 
 /// Cart Sidebar Widget for POS Kiosk
@@ -263,16 +263,28 @@ class CartSidebar extends StatelessWidget {
   /// Build individual cart item with redesigned two-row layout
   Widget _buildCartItem(
       BuildContext context, PosController controller, CartItemModel cartItem) {
+    final cartController = Get.find<CartController>();
+
+    // Check if this item has stock issues
+    final hasStockIssue =
+        cartController.getAdjustmentForCartItem(cartItem.cart.cartId) != null;
+    final stockAdjustment =
+        cartController.getAdjustmentForCartItem(cartItem.cart.cartId);
+
     return Container(
       margin: EdgeInsets.symmetric(
         vertical: PosLayoutTemplate.getResponsiveSpacing(context, 4),
       ),
       decoration: BoxDecoration(
-        color: TColors.primary,
+        color: hasStockIssue ? TColors.error : TColors.primary,
         borderRadius: BorderRadius.circular(12),
+        border:
+            hasStockIssue ? Border.all(color: TColors.error, width: 2) : null,
         boxShadow: [
           BoxShadow(
-            color: TColors.borderPrimary.withValues(alpha: 0.2),
+            color: hasStockIssue
+                ? TColors.error.withValues(alpha: 0.3)
+                : TColors.borderPrimary.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -305,6 +317,40 @@ class CartSidebar extends StatelessWidget {
 
             SizedBox(
                 height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+
+            // Stock warning (if applicable)
+            if (hasStockIssue && stockAdjustment != null) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: TColors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: TColors.error,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        stockAdjustment.adjustmentReason,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: TColors.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                  height: PosLayoutTemplate.getResponsiveSpacing(context, 8)),
+            ],
 
             // Second row: Total price + quantity controls
             Row(
@@ -702,12 +748,29 @@ class CartSidebar extends StatelessWidget {
   }
 
   /// Open checkout dialog
-  void _openCheckoutDialog(BuildContext context, PosController controller) {
+  Future<void> _openCheckoutDialog(
+      BuildContext context, PosController controller) async {
     // Initialize checkout controller if not already initialized
     if (!Get.isRegistered<CheckoutController>()) {
       Get.put(CheckoutController());
     }
-    Get.to(() => const CheckoutScreen());
+
+    final checkoutController = CheckoutController.instance;
+    final cartController = Get.find<CartController>();
+
+    // Validate stock before opening dialog
+    final stockValid = await checkoutController.validateStockBeforeCheckout();
+
+    if (!stockValid) {
+      // Mark items with insufficient stock as red
+      // The cart controller already has the stock adjustments
+      // We just need to refresh the UI to show the issues
+      cartController.cartItems.refresh();
+      return;
+    }
+
+    // Stock is valid, open checkout dialog
+    Get.dialog(const CheckoutDialog());
   }
 
   // removed: clear session dialog (not used after header simplification)

@@ -289,20 +289,39 @@ class ProductApiService extends GetxService {
   Future<ApiResponse<List<ProductVariationApiModel>>> getProductVariations(
       int productId) async {
     try {
+      if (kDebugMode) {
+        print('Fetching product variations for product ID: $productId');
+      }
+
       final response = await _apiClient.get<List<ProductVariationApiModel>>(
         '/api/products/$productId/variations',
         fromJson: (data) => (data as List)
-            .map((item) => ProductVariationApiModel.fromJson(item))
+            .map((item) =>
+                ProductVariationApiModel.fromJson(item as Map<String, dynamic>))
             .toList(),
       );
+
+      if (kDebugMode) {
+        print('Raw response success: ${response.success}');
+        print('Raw response message: ${response.message}');
+        print('Raw response data type: ${response.data?.runtimeType}');
+        if (response.data != null) {
+          print('Found ${response.data!.length} variations');
+          if (response.data!.isNotEmpty) {
+            print('First variation: ${response.data!.first.toJson()}');
+          }
+        }
+      }
+
       return response;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Get product variations error: $e');
+        print('Stack trace: $stackTrace');
       }
       return ApiResponse<List<ProductVariationApiModel>>(
         success: false,
-        message: 'Failed to get product variations',
+        message: 'Failed to get product variations: ${e.toString()}',
       );
     }
   }

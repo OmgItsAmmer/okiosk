@@ -162,6 +162,14 @@ class ApiClient {
     try {
       final String bodyText = response.body;
 
+      if (kDebugMode) {
+        print('ApiClient: ========== RAW RESPONSE ==========');
+        print('ApiClient: Status Code: ${response.statusCode}');
+        print('ApiClient: Body Length: ${bodyText.length}');
+        print('ApiClient: Body: $bodyText');
+        print('ApiClient: ====================================');
+      }
+
       // Success HTTP status
       final bool isOk = response.statusCode >= 200 && response.statusCode < 300;
 
@@ -210,20 +218,26 @@ class ApiClient {
 
       // Fallback: unknown payload type
       if (kDebugMode) {
-        print('Unexpected response shape: ${response.body}');
+        print('ApiClient: WARNING - Unexpected response shape');
+        print('ApiClient: Response body: ${response.body}');
+        print('ApiClient: Decoded type: ${decoded.runtimeType}');
       }
       return ApiResponse<T>(
         success: isOk,
         message: isOk ? 'Success' : 'Request failed',
         statusCode: response.statusCode,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        print('Response parsing error: $e');
+        print('ApiClient: ❌ PARSING ERROR ❌');
+        print('ApiClient: Error: $e');
+        print('ApiClient: Error Type: ${e.runtimeType}');
+        print('ApiClient: Response Body: ${response.body}');
+        print('ApiClient: Stack Trace: $stackTrace');
       }
       return ApiResponse<T>(
         success: false,
-        message: 'Failed to parse response',
+        message: 'Failed to parse response: ${e.toString()}',
         statusCode: response.statusCode,
       );
     }

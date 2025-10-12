@@ -472,4 +472,35 @@ class ProductController extends GetxController {
   void setProductsForCategoryFiltering(List<ProductModel> products) {
     filteredProducts.assignAll(products);
   }
+
+  /// Fetch product variations by product ID
+  Future<List<ProductVariationModel>> fetchProductVariations(
+      int productId) async {
+    try {
+      if (kDebugMode) {
+        print('Fetching variations for product ID: $productId');
+      }
+
+      final variations =
+          await productRepository.fetchProductVariationsWithID(productId);
+
+      if (kDebugMode) {
+        print('Fetched ${variations.length} variations for product $productId');
+        if (variations.isNotEmpty) {
+          print(
+              'Sample variation: ${variations.first.variantName} (Price: ${variations.first.sellPrice}, Stock: ${variations.first.stockQuantity})');
+        }
+      }
+
+      return variations;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error fetching variations for product $productId: $e');
+      }
+      TLoader.errorSnackBar(
+          title: 'Error',
+          message: 'Failed to fetch product variations: ${e.toString()}');
+      return [];
+    }
+  }
 }
