@@ -69,6 +69,8 @@ class AiActionExecutor {
           return await _executeGenerateBillAction(action);
         case 'checkout':
           return await _executeCheckoutAction(action);
+        case 'variant_selection':
+          return await _executeVariantSelectionAction(action);
         default:
           if (kDebugMode) {
             print(
@@ -350,6 +352,50 @@ class AiActionExecutor {
     } catch (e) {
       if (kDebugMode) {
         print('AiActionExecutor: Checkout error: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Executes variant_selection action - displays variant selection in chat
+  /// Updated to handle the new backend response format from CART_AI_MODULE.md
+  Future<bool> _executeVariantSelectionAction(AiAction action) async {
+    try {
+      final data = action.variantSelectionData;
+      if (data == null) {
+        if (kDebugMode) {
+          print('AiActionExecutor: Missing data for variant_selection action');
+        }
+        return false;
+      }
+
+      if (kDebugMode) {
+        print(
+            'AiActionExecutor: Variant selection required for ${data.productName}');
+        print(
+            'AiActionExecutor: Available variants: ${data.availableVariants.length}');
+        print(
+            'AiActionExecutor: In stock variants: ${data.inStockVariants.length}');
+        print(
+            'AiActionExecutor: Out of stock variants: ${data.outOfStockVariants.length}');
+      }
+
+      // Validate that we have variants to show
+      if (!data.hasVariants) {
+        if (kDebugMode) {
+          print('AiActionExecutor: No variants available for selection');
+        }
+        return false;
+      }
+
+      // For variant_selection, we don't execute anything locally
+      // The chat controller will handle displaying the variant selection bubble
+      // This action just indicates that variant selection is needed
+      // The UI will show the available variants for user selection
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('AiActionExecutor: Variant selection error: $e');
       }
       return false;
     }

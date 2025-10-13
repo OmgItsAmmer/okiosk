@@ -115,6 +115,32 @@ class AiAction {
     }
   }
 
+  /// Helper method to get typed data for variant_selection actions
+  VariantSelectionActionData? get variantSelectionData {
+    if (actionType != 'variant_selection' || data == null) return null;
+    try {
+      return VariantSelectionActionData.fromJson(data!);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Check if this action requires variant selection
+  bool get requiresVariantSelection =>
+      actionType == 'variant_selection' && success;
+
+  /// Check if this is a successful add_to_cart action
+  bool get isSuccessfulAddToCart => actionType == 'add_to_cart' && success;
+
+  /// Check if this is a failed add_to_cart action
+  bool get isFailedAddToCart => actionType == 'add_to_cart' && !success;
+
+  /// Get error message for failed actions
+  String get errorMessage => error ?? 'Unknown error occurred';
+
+  /// Check if this action has valid data
+  bool get hasValidData => data != null && data!.isNotEmpty;
+
   /// Check if this is an add_to_cart action
   bool get isAddToCart => actionType == 'add_to_cart';
 
@@ -132,6 +158,9 @@ class AiAction {
 
   /// Check if this is a search_product action
   bool get isSearchProduct => actionType == 'search_product';
+
+  /// Check if this is a variant_selection action
+  bool get isVariantSelection => actionType == 'variant_selection';
 
   /// Check if this is a generate_bill action
   bool get isGenerateBill => actionType == 'generate_bill';

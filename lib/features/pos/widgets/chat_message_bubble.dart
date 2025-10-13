@@ -4,6 +4,7 @@ import 'package:iconsax/iconsax.dart';
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/sizes.dart';
 import '../models/chat_message.dart';
+import 'variant_selection_bubble.dart';
 
 /// Chat Message Bubble Widget
 ///
@@ -21,6 +22,14 @@ class ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Handle variant selection messages specially
+    if (message.variantSelectionData != null) {
+      return VariantSelectionBubble(
+        variantData: message.variantSelectionData!,
+        message: message.content,
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(
         bottom: TSizes.spaceBtwItems,

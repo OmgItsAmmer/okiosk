@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../data/backend/models/action_data_models.dart';
 
 /// Chat Message Model
 ///
@@ -10,6 +11,7 @@ class ChatMessage {
   final DateTime timestamp;
   final bool isLoading;
   final List<String>? actionsExecuted;
+  final VariantSelectionActionData? variantSelectionData;
 
   ChatMessage({
     required this.id,
@@ -18,6 +20,7 @@ class ChatMessage {
     required this.timestamp,
     this.isLoading = false,
     this.actionsExecuted,
+    this.variantSelectionData,
   });
 
   /// Create a user message
@@ -38,6 +41,7 @@ class ChatMessage {
     required String content,
     String? id,
     List<String>? actionsExecuted,
+    VariantSelectionActionData? variantSelectionData,
   }) {
     return ChatMessage(
       id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -45,6 +49,7 @@ class ChatMessage {
       type: ChatMessageType.assistant,
       timestamp: DateTime.now(),
       actionsExecuted: actionsExecuted,
+      variantSelectionData: variantSelectionData,
     );
   }
 
@@ -95,6 +100,7 @@ class ChatMessage {
     DateTime? timestamp,
     bool? isLoading,
     List<String>? actionsExecuted,
+    VariantSelectionActionData? variantSelectionData,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -103,6 +109,7 @@ class ChatMessage {
       timestamp: timestamp ?? this.timestamp,
       isLoading: isLoading ?? this.isLoading,
       actionsExecuted: actionsExecuted ?? this.actionsExecuted,
+      variantSelectionData: variantSelectionData ?? this.variantSelectionData,
     );
   }
 
@@ -115,7 +122,8 @@ class ChatMessage {
         other.type == type &&
         other.timestamp == timestamp &&
         other.isLoading == isLoading &&
-        other.actionsExecuted == actionsExecuted;
+        other.actionsExecuted == actionsExecuted &&
+        other.variantSelectionData == variantSelectionData;
   }
 
   @override
@@ -127,12 +135,13 @@ class ChatMessage {
       timestamp,
       isLoading,
       actionsExecuted,
+      variantSelectionData,
     );
   }
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, content: $content, type: $type, timestamp: $timestamp, isLoading: $isLoading, actionsExecuted: $actionsExecuted)';
+    return 'ChatMessage(id: $id, content: $content, type: $type, timestamp: $timestamp, isLoading: $isLoading, actionsExecuted: $actionsExecuted, hasVariantSelection: ${variantSelectionData != null})';
   }
 }
 

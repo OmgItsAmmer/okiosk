@@ -5,6 +5,7 @@ import 'api_client.dart';
 import 'ai_action_executor.dart';
 import '../models/api_response.dart';
 import '../models/ai_command_response_model.dart';
+import '../models/ai_action_model.dart';
 
 /// AI Command Service with Action Response Support
 ///
@@ -171,14 +172,17 @@ class AiCommandService {
       }
 
       // Execute all actions from JSON strings (as returned by backend)
+      // Updated to handle the new backend response format from CART_AI_MODULE.md
+      // Variant selection actions should be executed to show UI, but not add to cart
       final results = await _actionExecutor
           .executeActionsFromStrings(aiResponse.actionsExecutedRaw);
 
-      // Return result with AI message
+      // Return result with AI message and parsed actions
       final allSuccess = results.every((result) => result);
       return ProcessResult(
         success: allSuccess,
         message: aiResponse.message,
+        actionsExecuted: aiResponse.actionsExecuted,
       );
     } catch (e) {
       return ProcessResult(
@@ -193,9 +197,11 @@ class AiCommandService {
 class ProcessResult {
   final bool success;
   final String message;
+  final List<AiAction>? actionsExecuted;
 
   ProcessResult({
     required this.success,
     required this.message,
+    this.actionsExecuted,
   });
 }

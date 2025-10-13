@@ -6,6 +6,7 @@ class ProductVariationModel {
   final String? variantName;
   final String stockQuantity;
   final bool isVisible;
+  final Map<String, dynamic>? attributes;
 
   ProductVariationModel({
     required this.variantId,
@@ -15,6 +16,7 @@ class ProductVariationModel {
     this.variantName = '',
     this.stockQuantity = '',
     this.isVisible = false,
+    this.attributes,
   });
 
   // Empty constructor
@@ -34,6 +36,7 @@ class ProductVariationModel {
       'variant_name': variantName,
       'stock': stockQuantity,
       'is_visible': isVisible,
+      'attributes': attributes,
     };
   }
 
@@ -49,8 +52,41 @@ class ProductVariationModel {
       variantName: data['variant_name'] ?? '',
       stockQuantity: data['stock']?.toString() ?? '',
       isVisible: data['is_visible'] ?? false,
+      attributes: data['attributes'],
     );
   }
 
   void addAll(ProductVariationModel firstWhere) {}
+
+  /// Get stock as integer (for AI action compatibility)
+  int get stockAsInt {
+    try {
+      return int.parse(stockQuantity.isEmpty ? '0' : stockQuantity);
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Get sell price as double (for AI action compatibility)
+  double get sellPriceAsDouble {
+    try {
+      return double.parse(sellPrice.isEmpty ? '0' : sellPrice);
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  /// Check if variant is out of stock
+  bool get isOutOfStock => stockAsInt <= 0;
+
+  /// Get formatted price string
+  String get formattedPrice => '\$${sellPriceAsDouble.toStringAsFixed(2)}';
+
+  /// Get stock status text
+  String get stockStatus {
+    final stock = stockAsInt;
+    if (isOutOfStock) return 'Out of Stock';
+    if (stock < 5) return 'Low Stock ($stock)';
+    return 'In Stock ($stock)';
+  }
 }

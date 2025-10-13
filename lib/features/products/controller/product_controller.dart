@@ -419,38 +419,18 @@ class ProductController extends GetxController {
     try {
       isLoading.value = true;
 
-      if (kDebugMode) {
-        print('Loading all products for POS...');
-      }
+     
 
       // Fetch ALL products from the database (not just popular ones)
       final products = await productRepository.fetchAllProductsForPOS();
 
-      if (kDebugMode) {
-        print('Fetched ${products.length} products from database');
-      }
+    
 
       // Assign products to both allProducts and filteredProducts for POS
       allProducts.assignAll(products);
       filteredProducts.assignAll(products);
 
-      if (kDebugMode) {
-        print('POS Products loaded: ${products.length} products');
-        print('allProducts length: ${allProducts.length}');
-        print('filteredProducts length: ${filteredProducts.length}');
-
-        // Print first few products for debugging
-        if (products.isNotEmpty) {
-          print('Sample products:');
-          for (int i = 0;
-              i < (products.length > 3 ? 3 : products.length);
-              i++) {
-            final product = products[i];
-            print(
-                '  ${i + 1}. ${product.name} (ID: ${product.productId}, Category: ${product.categoryId})');
-          }
-        }
-      }
+     
     } catch (e) {
       if (kDebugMode) {
         print('Error loading POS products: $e');
@@ -477,20 +457,12 @@ class ProductController extends GetxController {
   Future<List<ProductVariationModel>> fetchProductVariations(
       int productId) async {
     try {
-      if (kDebugMode) {
-        print('Fetching variations for product ID: $productId');
-      }
+      
 
       final variations =
           await productRepository.fetchProductVariationsWithID(productId);
 
-      if (kDebugMode) {
-        print('Fetched ${variations.length} variations for product $productId');
-        if (variations.isNotEmpty) {
-          print(
-              'Sample variation: ${variations.first.variantName} (Price: ${variations.first.sellPrice}, Stock: ${variations.first.stockQuantity})');
-        }
-      }
+      
 
       return variations;
     } catch (e) {

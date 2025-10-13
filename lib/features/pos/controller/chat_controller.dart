@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../../../data/backend/services/ai_command_service.dart';
+import '../../../data/backend/models/action_data_models.dart';
 import '../models/chat_message.dart';
 
 /// Chat Controller - Manages AI assistant chat state and API calls
@@ -74,11 +75,26 @@ class ChatController extends GetxController {
       _isTyping.value = false;
 
       if (result.success) {
-        // Add AI message (works for both action-based and message-based responses)
-        _addAssistantMessage(
-          result.message,
-          actionsExecuted: ['executed'],
-        );
+        // Check if there's a variant selection action
+        final variantSelectionAction = result.actionsExecuted
+            ?.where((action) => action.requiresVariantSelection)
+            .firstOrNull;
+
+        if (variantSelectionAction != null) {
+          // Add AI message with variant selection data
+          // Updated to handle the new backend response format from CART_AI_MODULE.md
+          _addAssistantMessage(
+            result.message,
+            actionsExecuted: ['variant_selection'],
+            variantSelectionData: variantSelectionAction.variantSelectionData,
+          );
+        } else {
+          // Add AI message (works for both action-based and message-based responses)
+          _addAssistantMessage(
+            result.message,
+            actionsExecuted: ['executed'],
+          );
+        }
       } else {
         // Add error message
         _addErrorMessage(
@@ -111,10 +127,15 @@ class ChatController extends GetxController {
   }
 
   /// Add AI assistant message to chat
-  void _addAssistantMessage(String content, {List<String>? actionsExecuted}) {
+  void _addAssistantMessage(
+    String content, {
+    List<String>? actionsExecuted,
+    VariantSelectionActionData? variantSelectionData,
+  }) {
     final message = ChatMessage.assistant(
       content: content,
       actionsExecuted: actionsExecuted,
+      variantSelectionData: variantSelectionData,
     );
     _messages.add(message);
 
