@@ -7,6 +7,7 @@ import '../services/cart_api_service.dart';
 import '../services/category_api_service.dart';
 import '../services/checkout_api_service.dart';
 import '../services/ai_command_service.dart';
+import '../services/ai_action_executor.dart';
 import '../../repositories/products/backend_product_repository.dart';
 import '../../repositories/cart/backend_cart_repository.dart';
 import '../../repositories/categories/backend_category_repository.dart';
@@ -24,6 +25,7 @@ class BackendDependencyInjection {
     Get.lazyPut<CategoryApiService>(() => CategoryApiService());
     Get.lazyPut<CheckoutApiService>(() => CheckoutApiService());
     Get.lazyPut<AiCommandService>(() => AiCommandService());
+    Get.lazyPut<AiActionExecutor>(() => AiActionExecutor());
 
     // Register Backend Repositories
     Get.lazyPut<BackendProductRepository>(() => BackendProductRepository());
@@ -43,6 +45,7 @@ class BackendDependencyInjection {
     Get.lazyPut<CategoryApiService>(() => CategoryApiService());
     Get.lazyPut<CheckoutApiService>(() => CheckoutApiService());
     Get.lazyPut<AiCommandService>(() => AiCommandService());
+    Get.lazyPut<AiActionExecutor>(() => AiActionExecutor());
 
     // Register Backend Repositories
     Get.lazyPut<BackendProductRepository>(() => BackendProductRepository());

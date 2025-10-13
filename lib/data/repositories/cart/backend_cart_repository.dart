@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../common/widgets/loaders/tloaders.dart';
 import '../../../features/cart/model/cart_model.dart';
 import '../../backend/services/cart_api_service.dart';
+import '../../backend/services/product_api_service.dart';
 
 /// Backend Cart Repository - Handles all cart-related API operations
 ///
@@ -242,9 +243,35 @@ class BackendCartRepository {
   /// Note: This validation is now done on the backend
   /// Returns true by default, actual validation happens during addToCart
   Future<bool> validateVariantStock(int variantId, int quantity) async {
-    // Backend will validate this when we call addToCart
-    // For now, we return true and let the backend handle validation
-    return true;
+    try {
+      final response = await ProductApiService.instance
+          .validateVariantStock(variantId, quantity);
+
+      if (response.success && response.data != null) {
+        // Backend should return data indicating if stock is available
+        // Expected response format: {"available": true/false, "available_quantity": int}
+        final available = response.data!['available'] as bool? ?? false;
+        final availableQuantity =
+            response.data!['available_quantity'] as int? ?? 0;
+
+        if (kDebugMode) {
+          print(
+              'Stock validation result: available=$available, available_quantity=$availableQuantity, requested=$quantity');
+        }
+
+        return available && availableQuantity >= quantity;
+      } else {
+        if (kDebugMode) {
+          print('Stock validation failed: ${response.message}');
+        }
+        return false;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error validating variant stock: $e');
+      }
+      return false;
+    }
   }
 
   // ========== Kiosk Cart Methods ==========

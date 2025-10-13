@@ -235,9 +235,18 @@ class ApiClient {
         print('ApiClient: Response Body: ${response.body}');
         print('ApiClient: Stack Trace: $stackTrace');
       }
+      // Provide more detailed error information
+      String errorMessage = 'Failed to parse response: ${e.toString()}';
+      if (e
+          .toString()
+          .contains('type \'String\' is not a subtype of type \'Map')) {
+        errorMessage =
+            'Backend returned string response instead of JSON: ${response.body}';
+      }
+
       return ApiResponse<T>(
         success: false,
-        message: 'Failed to parse response: ${e.toString()}',
+        message: errorMessage,
         statusCode: response.statusCode,
       );
     }

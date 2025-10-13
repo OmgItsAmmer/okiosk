@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
+import 'package:okiosk/features/checkout/controller/checkout_controller.dart';
 import 'package:okiosk/features/products/controller/product_varaintion_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -74,6 +75,7 @@ class AuthenticationRepository extends GetxController {
       final categoryController = Get.put(CategoryController(), permanent: true);
       Get.lazyPut(() => CartController(), fenix: true);
       Get.lazyPut(() => ProductVariationController(), fenix: true);
+      Get.lazyPut(() => CheckoutController(), fenix: true);
 
       // Load ALL products for POS system (not just popular ones)
       await productController.loadAllProductsForPOS();

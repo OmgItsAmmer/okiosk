@@ -338,42 +338,49 @@ class CartController extends GetxController {
   ///
   /// @param variantId The ID of the product variant to add
   /// @param quantity The quantity to add (default: 1)
-  Future<bool> addToCart(int variantId, {int quantity = 1}) async {
+  /// @param skipValidation Skip stock validation (used when AI has already validated)
+  Future<bool> addToCart(int variantId,
+      {int quantity = 1, bool skipValidation = false}) async {
     try {
       // Check if we have an active kiosk session first
       if (_scannedKioskSessionId.value.isNotEmpty) {
-        return await addToKioskCart(variantId, quantity: quantity);
-      }
-
-      if (isKioskMode.value) {
-        return await _addToLocalCart(variantId, quantity);
+        return await addToKioskCart(variantId,
+            quantity: quantity, skipValidation: skipValidation);
       } else {
-        // Normal e-commerce mode
-        final customerId = _customerController.currentCustomer.value.customerId;
-
-        // Validate variant availability
-        final isValidVariant =
-            await _cartRepository.canAddToCart(variantId, quantity);
-        if (!isValidVariant) {
-          TLoader.errorSnackBar(
-              title: 'Whoa, Slow Down!',
-              message: " You've already hit the max quantity for this item");
-          return false;
-        }
-
-        // Add to cart through repository
-        final success =
-            await _cartRepository.addToCart(customerId!, variantId, quantity);
-
-        if (success) {
-          // Refresh cart to get updated data
-          await fetchCart();
-          return true;
-        } else {
-          _handleError('Failed to add item to cart');
-          return false;
-        }
+        return await _addToLocalCart(variantId, quantity,
+            skipValidation: skipValidation);
       }
+
+      // if (isKioskMode.value) {
+
+      // }
+      // else {
+      //   // Normal e-commerce mode
+      //   final customerId = _customerController.currentCustomer.value.customerId;
+
+      //   // Validate variant availability
+      //   final isValidVariant =
+      //       await _cartRepository.canAddToCart(variantId, quantity);
+      //   if (!isValidVariant) {
+      //     TLoader.errorSnackBar(
+      //         title: 'Whoa, Slow Down!',
+      //         message: " You've already hit the max quantity for this item");
+      //     return false;
+      //   }
+
+      //   // Add to cart through repository
+      //   final success =
+      //       await _cartRepository.addToCart(customerId!, variantId, quantity);
+
+      //   if (success) {
+      //     // Refresh cart to get updated data
+      //     await fetchCart();
+      //     return true;
+      //   } else {
+      //     _handleError('Failed to add item to cart');
+      //     return false;
+      //   }
+      // }
     } catch (e) {
       _handleError('Error adding item to cart: ${e.toString()}');
       return false;
@@ -688,14 +695,16 @@ class CartController extends GetxController {
   ///
   /// @param variantId The ID of the product variant to add
   /// @param quantity The quantity to add
-  Future<bool> _addToLocalCart(int variantId, int quantity) async {
+  /// @param skipValidation Skip stock validation (used when AI has already validated)
+  Future<bool> _addToLocalCart(int variantId, int quantity,
+      {bool skipValidation = false}) async {
     try {
-      // Validate variant availability and stock first
-
-      // Validate variant availability and stock
-      final isValid = await _validateVariantForLocalCart(variantId, quantity);
-      if (!isValid) {
-        return false;
+      // Validate variant availability and stock first (unless skipped by AI)
+      if (!skipValidation) {
+        final isValid = await _validateVariantForLocalCart(variantId, quantity);
+        if (!isValid) {
+          return false;
+        }
       }
 
       // Check max quantity limit from shop controller
@@ -1220,18 +1229,23 @@ class CartController extends GetxController {
   ///
   /// @param variantId The ID of the product variant to add
   /// @param quantity The quantity to add
+  /// @param skipValidation Skip stock validation (used when AI has already validated)
   /// @return Future<bool> Success status
-  Future<bool> addToKioskCart(int variantId, {int quantity = 1}) async {
+  Future<bool> addToKioskCart(int variantId,
+      {int quantity = 1, bool skipValidation = false}) async {
     try {
       if (_scannedKioskSessionId.value.isEmpty) {
         // No active kiosk session, add to local cart instead
-        return await _addToLocalCart(variantId, quantity);
+        return await _addToLocalCart(variantId, quantity,
+            skipValidation: skipValidation);
       }
 
-      // Validate variant availability and stock
-      final isValid = await _validateVariantForLocalCart(variantId, quantity);
-      if (!isValid) {
-        return false;
+      // Validate variant availability and stock (unless skipped by AI)
+      if (!skipValidation) {
+        final isValid = await _validateVariantForLocalCart(variantId, quantity);
+        if (!isValid) {
+          return false;
+        }
       }
 
       // Check max quantity limit from shop controller
@@ -1343,6 +1357,42 @@ class CartController extends GetxController {
       }
     } catch (e) {
       _handleError('Error removing item from kiosk cart: ${e.toString()}');
+      return false;
+    }
+  }
+
+  /// Adds item to cart from AI command with pre-validated data
+  ///
+  /// This function is specifically designed to be called from the AI command service
+  /// when processing add_to_cart actions. It skips stock validation since the AI
+  /// has already validated the stock and returned validated data.
+  ///
+  /// @param variantId The ID of the product variant to add
+  /// @param quantity The quantity to add
+  /// @param sellPrice The validated sell price from AI response
+  /// @param availableStock The validated available stock from AI response
+  /// @param productName The product name from AI response
+  /// @param variantName The variant name from AI response
+  /// @return Future<bool> Success status
+  Future<bool> addToCartFromAI({
+    required int variantId,
+    required int quantity,
+    required double sellPrice,
+    required int availableStock,
+    required String productName,
+    required String variantName,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print(
+            'CartController: Adding item from AI - $productName ($variantName) x$quantity');
+      }
+
+      // Skip validation since AI has already validated the data
+      return await addToCart(variantId,
+          quantity: quantity, skipValidation: true);
+    } catch (e) {
+      _handleError('Error adding item from AI: ${e.toString()}');
       return false;
     }
   }

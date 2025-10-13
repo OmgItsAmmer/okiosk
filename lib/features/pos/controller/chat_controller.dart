@@ -64,8 +64,8 @@ class ChatController extends GetxController {
     _isTyping.value = true;
 
     try {
-      // Send message to AI backend
-      final response = await _aiCommandService.processCommand(
+      // Send message to AI backend and execute actions automatically
+      final result = await _aiCommandService.processCommandAndExecute(
         prompt: message.trim(),
         sessionId: _currentSessionId.value,
       );
@@ -73,17 +73,17 @@ class ChatController extends GetxController {
       // Remove typing indicator
       _isTyping.value = false;
 
-      if (response.success && response.data != null) {
-        // Add AI response
+      if (result.success) {
+        // Add AI message (works for both action-based and message-based responses)
         _addAssistantMessage(
-          response.data!.message,
-          actionsExecuted: response.data!.actionsExecuted,
+          result.message,
+          actionsExecuted: ['executed'],
         );
       } else {
         // Add error message
         _addErrorMessage(
-          response.message.isNotEmpty
-              ? response.message
+          result.message.isNotEmpty
+              ? result.message
               : 'Sorry, I couldn\'t process your request. Please try again.',
         );
       }

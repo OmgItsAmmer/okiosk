@@ -326,6 +326,39 @@ class ProductApiService extends GetxService {
     }
   }
 
+  /// Check stock for a specific variant
+  Future<ApiResponse<Map<String, dynamic>>> validateVariantStock(
+      int variantId, int quantity) async {
+    try {
+      if (kDebugMode) {
+        print(
+            'Validating stock for variant ID: $variantId, quantity: $quantity');
+      }
+
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/api/variations/$variantId/stock',
+        queryParams: {'quantity': quantity},
+      );
+
+      if (kDebugMode) {
+        print('Stock validation response success: ${response.success}');
+        print('Stock validation response message: ${response.message}');
+        print('Stock validation response data: ${response.data}');
+      }
+
+      return response;
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Validate variant stock error: $e');
+        print('Stack trace: $stackTrace');
+      }
+      return ApiResponse<Map<String, dynamic>>(
+        success: false,
+        message: 'Failed to validate variant stock: ${e.toString()}',
+      );
+    }
+  }
+
   @override
   void onClose() {
     _apiClient.dispose();
