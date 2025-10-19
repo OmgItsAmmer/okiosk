@@ -42,7 +42,7 @@ class ImageCacheController extends GetxController {
     // Check if there's already a pending request for this image
     if (_pendingRequests.containsKey(cacheKey)) {
       if (kDebugMode) {
-        print('⏳ ImageCacheController: Reusing pending request for $cacheKey');
+        // // print('⏳ ImageCacheController: Reusing pending request for $cacheKey');
       }
       return await _pendingRequests[cacheKey]!;
     }
@@ -82,13 +82,13 @@ class ImageCacheController extends GetxController {
       _loadingStates[cacheKey] = true;
 
       if (kDebugMode) {
-        print(
-            '🔄 ImageCacheController: Processing image request for $cacheKey');
+            // // print(
+            //     '🔄 ImageCacheController: Processing image request for $cacheKey');
       }
 
       // Step 1: Check local cache first
       if (kDebugMode) {
-        print('📁 ImageCacheController: Checking cache for $cacheKey');
+        // // print('📁 ImageCacheController: Checking cache for $cacheKey');
       }
 
       final CachedImageModel? cachedImage =
@@ -97,8 +97,8 @@ class ImageCacheController extends GetxController {
       // If we have a cached image, use it immediately
       if (cachedImage != null) {
         if (kDebugMode) {
-          print(
-              '✅ ImageCacheController: Cache HIT for $cacheKey - loading from: ${cachedImage.filePath}');
+          //// print(
+             // '✅ ImageCacheController: Cache HIT for $cacheKey - loading from: ${cachedImage.filePath}');
         }
 
         // Return cached image immediately for better UX
@@ -114,8 +114,8 @@ class ImageCacheController extends GetxController {
 
       // Step 2: No cache found, need to fetch from server
       if (kDebugMode) {
-        print('❌ ImageCacheController: Cache MISS for $cacheKey');
-        print('🌐 ImageCacheController: Fetching from server...');
+        // print('❌ ImageCacheController: Cache MISS for $cacheKey');
+        // print('🌐 ImageCacheController: Fetching from server...');
       }
 
       // Get server metadata
@@ -124,8 +124,8 @@ class ImageCacheController extends GetxController {
 
       if (serverMetadata == null) {
         if (kDebugMode) {
-          print(
-              '❌ ImageCacheController: No server metadata found for $cacheKey');
+          // print(
+          //    '❌ ImageCacheController: No server metadata found for $cacheKey');
         }
         return ImageCacheResult(
           success: false,
@@ -135,8 +135,8 @@ class ImageCacheController extends GetxController {
       }
 
       if (kDebugMode) {
-        print('📊 ImageCacheController: Server metadata found for $cacheKey');
-        print('   URL: ${serverMetadata.imageUrl}');
+        // print('📊 ImageCacheController: Server metadata found for $cacheKey');
+        // print('   URL: ${serverMetadata.imageUrl}');
       }
 
       // Step 3: Fetch and cache the image
@@ -149,7 +149,7 @@ class ImageCacheController extends GetxController {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error processing image request: $e');
+        // print('❌ ImageCacheController: Error processing image request: $e');
       }
       return ImageCacheResult(
         success: false,
@@ -176,8 +176,8 @@ class ImageCacheController extends GetxController {
       // Check if the image URL is a local file path
       if (_isLocalFilePath(serverMetadata.imageUrl)) {
         if (kDebugMode) {
-          print(
-              '⚠️ ImageCacheController: Local file path detected: ${serverMetadata.imageUrl}');
+          // print(
+           //   '⚠️ ImageCacheController: Local file path detected: ${serverMetadata.imageUrl}');
         }
 
         // For local file paths, we cannot cache them as they're not accessible via HTTP
@@ -191,8 +191,8 @@ class ImageCacheController extends GetxController {
 
       // Download image as bytes for immediate display
       if (kDebugMode) {
-        print('⬇️ ImageCacheController: Downloading image for $cacheKey');
-        print('   From URL: ${serverMetadata.imageUrl}');
+        // print('⬇️ ImageCacheController: Downloading image for $cacheKey');
+        // print('   From URL: ${serverMetadata.imageUrl}');
       }
 
       final downloadResult =
@@ -200,8 +200,8 @@ class ImageCacheController extends GetxController {
 
       if (!downloadResult.success || downloadResult.imageBytes == null) {
         if (kDebugMode) {
-          print('❌ ImageCacheController: Download failed for $cacheKey');
-          print('   Error: ${downloadResult.message}');
+          // print('❌ ImageCacheController: Download failed for $cacheKey');
+          // print('   Error: ${downloadResult.message}');
         }
         return ImageCacheResult(
           success: false,
@@ -211,8 +211,8 @@ class ImageCacheController extends GetxController {
       }
 
       if (kDebugMode) {
-        print('✅ ImageCacheController: Download successful for $cacheKey');
-        print('   Size: ${downloadResult.fileSize} bytes');
+        // print('✅ ImageCacheController: Download successful for $cacheKey');
+        // print('   Size: ${downloadResult.fileSize} bytes');
       }
 
       _downloadProgress[cacheKey] = 0.5;
@@ -240,19 +240,19 @@ class ImageCacheController extends GetxController {
       );
 
       if (kDebugMode) {
-        print('💾 ImageCacheController: Saving to cache: $cacheFilePath');
+        // print('💾 ImageCacheController: Saving to cache: $cacheFilePath');
       }
 
       final bool saved = await _cacheService.saveCachedImage(newCachedImage);
 
       if (!saved) {
         if (kDebugMode) {
-          print(
-              '⚠️ ImageCacheController: Failed to save cache metadata for $cacheKey');
+          // print(
+            //  '⚠️ ImageCacheController: Failed to save cache metadata for $cacheKey');
         }
       } else {
         if (kDebugMode) {
-          print('✅ ImageCacheController: Cache metadata saved for $cacheKey');
+          // print('✅ ImageCacheController: Cache metadata saved for $cacheKey');
         }
       }
 
@@ -260,9 +260,9 @@ class ImageCacheController extends GetxController {
       updateCacheStats();
 
       if (kDebugMode) {
-        print(
-            '🎉 ImageCacheController: Image fetched and cached successfully for $cacheKey');
-        print('   Local path: $cacheFilePath');
+        // print(
+      //      '🎉 ImageCacheController: Image fetched and cached successfully for $cacheKey');
+        // print('   Local path: $cacheFilePath');
       }
 
       return ImageCacheResult(
@@ -276,7 +276,7 @@ class ImageCacheController extends GetxController {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error fetching and caching image: $e');
+        // print('❌ ImageCacheController: Error fetching and caching image: $e');
       }
       return ImageCacheResult(
         success: false,
@@ -314,14 +314,14 @@ class ImageCacheController extends GetxController {
       final String? folderType = imageResponse['folderType'] as String?;
 
       if (kDebugMode) {
-        print('📋 ImageCacheController: Image metadata retrieved:');
-        print('   Filename: $filename');
-        print('   FolderType: $folderType');
+        // print('📋 ImageCacheController: Image metadata retrieved:');
+        // print('   Filename: $filename');
+        // print('   FolderType: $folderType');
       }
 
       if (filename == null || filename.isEmpty) {
         if (kDebugMode) {
-          print('❌ ImageCacheController: No filename found in database');
+          // print('❌ ImageCacheController: No filename found in database');
         }
         return null;
       }
@@ -329,10 +329,10 @@ class ImageCacheController extends GetxController {
       // Check if filename is actually a local file path (data issue)
       if (_isLocalFilePath(filename)) {
         if (kDebugMode) {
-          print(
-              '⚠️ ImageCacheController: Local file path detected in filename: $filename');
-          print(
-              '   This should be a storage filename. Skipping cache for this image.');
+          // print(
+             // '⚠️ ImageCacheController: Local file path detected in filename: $filename');
+          // print(
+          //    '   This should be a storage filename. Skipping cache for this image.');
         }
         return null; // Skip caching for local paths
       }
@@ -341,7 +341,7 @@ class ImageCacheController extends GetxController {
       final String bucketName = folderType ?? entityCategory;
 
       if (kDebugMode) {
-        print('🪣 ImageCacheController: Using bucket: $bucketName');
+        // print('🪣 ImageCacheController: Using bucket: $bucketName');
       }
 
       // Generate signed URL from your private bucket
@@ -352,8 +352,8 @@ class ImageCacheController extends GetxController {
             .createSignedUrl(filename, 86400); // 24 hours
       } catch (e) {
         if (kDebugMode) {
-          print('❌ ImageCacheController: Error generating signed URL: $e');
-          print('   Bucket: $bucketName, Filename: $filename');
+          // print('❌ ImageCacheController: Error generating signed URL: $e');
+          // print('   Bucket: $bucketName, Filename: $filename');
         }
         return null;
       }
@@ -364,8 +364,8 @@ class ImageCacheController extends GetxController {
       );
     } catch (e) {
       if (kDebugMode) {
-        print(
-            '❌ ImageCacheController: Error getting server image metadata: $e');
+        // /print(
+         //   '❌ ImageCacheController: Error getting server image metadata: $e');
       }
       return null;
     }
@@ -401,7 +401,7 @@ class ImageCacheController extends GetxController {
       );
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error getting main image: $e');
+        // print('❌ ImageCacheController: Error getting main image: $e');
       }
       return ImageCacheResult(
         success: false,
@@ -434,7 +434,7 @@ class ImageCacheController extends GetxController {
       return success;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error clearing entity cache: $e');
+        // print('❌ ImageCacheController: Error clearing entity cache: $e');
       }
       return false;
     }
@@ -454,7 +454,7 @@ class ImageCacheController extends GetxController {
       return success;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error clearing all cache: $e');
+        // print('❌ ImageCacheController: Error clearing all cache: $e');
       }
       return false;
     }
@@ -467,7 +467,7 @@ class ImageCacheController extends GetxController {
       cacheStats.value = stats;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error updating cache stats: $e');
+        // print('❌ ImageCacheController: Error updating cache stats: $e');
       }
     }
   }
@@ -523,19 +523,19 @@ class ImageCacheController extends GetxController {
         // Don't await - let them load in parallel
         getMainImageWithCache(entityId, entityCategory).then((result) {
           if (kDebugMode && result.success) {
-            print(
-                '🚀 ImageCacheController: Preloaded image for ${entityCategory}_$entityId');
+            // print(
+             //   '🚀 ImageCacheController: Preloaded image for ${entityCategory}_$entityId');
           }
         }).catchError((e) {
           if (kDebugMode) {
-            print(
-                '❌ ImageCacheController: Error preloading image for ${entityCategory}_$entityId: $e');
+            // print(
+           //     '❌ ImageCacheController: Error preloading image for ${entityCategory}_$entityId: $e');
           }
         });
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error in preload images: $e');
+        // print('❌ ImageCacheController: Error in preload images: $e');
       }
     }
   }
@@ -559,8 +559,8 @@ class ImageCacheController extends GetxController {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        print(
-            '❌ ImageCacheController: Error getting all cached images for entity: $e');
+        // print(
+        //    '❌ ImageCacheController: Error getting all cached images for entity: $e');
       }
       return [];
     }
@@ -577,7 +577,7 @@ class ImageCacheController extends GetxController {
       return deletedCount;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error cleaning up old images: $e');
+        // print('❌ ImageCacheController: Error cleaning up old images: $e');
       }
       return 0;
     }
@@ -593,7 +593,7 @@ class ImageCacheController extends GetxController {
       return cleanedCount;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ ImageCacheController: Error cleaning up orphaned entries: $e');
+        // print('❌ ImageCacheController: Error cleaning up orphaned entries: $e');
       }
       return 0;
     }

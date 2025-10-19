@@ -50,6 +50,12 @@ class AiActionExecutor {
         return false;
       }
 
+      // Check for multi-variant selection first (based on CART_AI_MODULE.md)
+      // Detection: pending_selections != null
+      if (action.requiresMultiVariantSelection) {
+        return await _executeMultiVariantSelectionAction(action);
+      }
+
       switch (action.actionType) {
         case 'add_to_cart':
           return await _executeAddToCartAction(action);
@@ -87,7 +93,11 @@ class AiActionExecutor {
     }
   }
 
-  /// Executes multiple AI actions from JSON strings (as returned by backend)
+  /// Executes multiple AI actions from JSON strings using queue-based approach
+  ///
+  /// This method processes actions in sequence, supporting multiple backend functions
+  /// like "add lux and rice into cart" where the backend processes multiple functions
+  /// in a queue-based manner.
   ///
   /// @param actionStrings List of JSON strings containing actions
   /// @return Future<List<bool>> Success status for each action
@@ -95,27 +105,55 @@ class AiActionExecutor {
       List<String> actionStrings) async {
     if (kDebugMode) {
       print(
-          'AiActionExecutor: Received ${actionStrings.length} action strings to execute');
+          'AiActionExecutor: Received ${actionStrings.length} action strings to execute (queue-based approach)');
     }
 
     final List<bool> results = [];
+    int successCount = 0;
+    int failureCount = 0;
 
     for (int i = 0; i < actionStrings.length; i++) {
       final actionString = actionStrings[i];
       try {
+        if (kDebugMode) {
+          print(
+              'AiActionExecutor: Processing action ${i + 1}/${actionStrings.length}');
+        }
+
         // Parse the JSON string to get the action object
         final action = AiAction.fromJsonString(actionString);
+
+        if (kDebugMode) {
+          print(
+              'AiActionExecutor: Action ${i + 1} - Type: ${action.actionType}, Success: ${action.success}');
+        }
+
         final result = await executeAction(action);
         results.add(result);
+
+        if (result) {
+          successCount++;
+          if (kDebugMode) {
+            print('AiActionExecutor: Action ${i + 1} executed successfully');
+          }
+        } else {
+          failureCount++;
+          if (kDebugMode) {
+            print('AiActionExecutor: Action ${i + 1} failed to execute');
+          }
+        }
       } catch (e) {
         if (kDebugMode) {
-          print('AiActionExecutor: Error parsing action string $i: $e');
+          print('AiActionExecutor: Error parsing action string ${i + 1}: $e');
         }
         results.add(false);
+        failureCount++;
       }
     }
 
     if (kDebugMode) {
+      print(
+          'AiActionExecutor: Queue execution completed - Success: $successCount, Failed: $failureCount');
       print('AiActionExecutor: Execution results: $results');
     }
 
@@ -357,7 +395,7 @@ class AiActionExecutor {
     }
   }
 
-  /// Executes variant_selection action - displays variant selection in chat
+  /// Executes variant_selection action - displays variant selection in chat (single item)
   /// Updated to handle the new backend response format from CART_AI_MODULE.md
   Future<bool> _executeVariantSelectionAction(AiAction action) async {
     try {
@@ -371,7 +409,7 @@ class AiActionExecutor {
 
       if (kDebugMode) {
         print(
-            'AiActionExecutor: Variant selection required for ${data.productName}');
+            'AiActionExecutor: Single variant selection required for ${data.productName}');
         print(
             'AiActionExecutor: Available variants: ${data.availableVariants.length}');
         print(
@@ -396,6 +434,53 @@ class AiActionExecutor {
     } catch (e) {
       if (kDebugMode) {
         print('AiActionExecutor: Variant selection error: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Executes multi-variant selection action - displays variant selection for multiple items
+  /// Based on CART_AI_MODULE.md: handles "add lux and rice to cart" scenarios
+  /// Detection: pending_selections != null
+  Future<bool> _executeMultiVariantSelectionAction(AiAction action) async {
+    try {
+      final data = action.multiVariantSelectionData;
+      if (data == null) {
+        if (kDebugMode) {
+          print(
+              'AiActionExecutor: Missing data for multi_variant_selection action');
+        }
+        return false;
+      }
+
+      if (kDebugMode) {
+        print(
+            'AiActionExecutor: Multi-variant selection required for ${data.totalItems} items');
+        print(
+            'AiActionExecutor: Products requiring selection: ${data.productNames.join(", ")}');
+        for (int i = 0; i < data.pendingSelections.length; i++) {
+          final item = data.pendingSelections[i];
+          print(
+              'AiActionExecutor: Item ${i + 1}: ${item.productName} - ${item.totalVariants} variants available');
+        }
+      }
+
+      // Validate that we have pending selections
+      if (!data.hasPendingSelections) {
+        if (kDebugMode) {
+          print('AiActionExecutor: No pending selections available');
+        }
+        return false;
+      }
+
+      // For multi_variant_selection, we don't execute anything locally
+      // The chat controller will handle displaying the multi-variant selection UI
+      // This action just indicates that multiple items need variant selection
+      // The UI will show variant options for ALL products at once
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('AiActionExecutor: Multi-variant selection error: $e');
       }
       return false;
     }

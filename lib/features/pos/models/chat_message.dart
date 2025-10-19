@@ -12,6 +12,7 @@ class ChatMessage {
   final bool isLoading;
   final List<String>? actionsExecuted;
   final VariantSelectionActionData? variantSelectionData;
+  final MultiVariantSelectionData? multiVariantSelectionData;
 
   ChatMessage({
     required this.id,
@@ -21,6 +22,7 @@ class ChatMessage {
     this.isLoading = false,
     this.actionsExecuted,
     this.variantSelectionData,
+    this.multiVariantSelectionData,
   });
 
   /// Create a user message
@@ -42,6 +44,7 @@ class ChatMessage {
     String? id,
     List<String>? actionsExecuted,
     VariantSelectionActionData? variantSelectionData,
+    MultiVariantSelectionData? multiVariantSelectionData,
   }) {
     return ChatMessage(
       id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -50,6 +53,7 @@ class ChatMessage {
       timestamp: DateTime.now(),
       actionsExecuted: actionsExecuted,
       variantSelectionData: variantSelectionData,
+      multiVariantSelectionData: multiVariantSelectionData,
     );
   }
 
@@ -101,6 +105,7 @@ class ChatMessage {
     bool? isLoading,
     List<String>? actionsExecuted,
     VariantSelectionActionData? variantSelectionData,
+    MultiVariantSelectionData? multiVariantSelectionData,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -110,6 +115,8 @@ class ChatMessage {
       isLoading: isLoading ?? this.isLoading,
       actionsExecuted: actionsExecuted ?? this.actionsExecuted,
       variantSelectionData: variantSelectionData ?? this.variantSelectionData,
+      multiVariantSelectionData:
+          multiVariantSelectionData ?? this.multiVariantSelectionData,
     );
   }
 
@@ -123,7 +130,8 @@ class ChatMessage {
         other.timestamp == timestamp &&
         other.isLoading == isLoading &&
         other.actionsExecuted == actionsExecuted &&
-        other.variantSelectionData == variantSelectionData;
+        other.variantSelectionData == variantSelectionData &&
+        other.multiVariantSelectionData == multiVariantSelectionData;
   }
 
   @override
@@ -136,13 +144,24 @@ class ChatMessage {
       isLoading,
       actionsExecuted,
       variantSelectionData,
+      multiVariantSelectionData,
     );
   }
 
   @override
   String toString() {
-    return 'ChatMessage(id: $id, content: $content, type: $type, timestamp: $timestamp, isLoading: $isLoading, actionsExecuted: $actionsExecuted, hasVariantSelection: ${variantSelectionData != null})';
+    return 'ChatMessage(id: $id, content: $content, type: $type, timestamp: $timestamp, isLoading: $isLoading, actionsExecuted: $actionsExecuted, hasVariantSelection: ${variantSelectionData != null}, hasMultiVariantSelection: ${multiVariantSelectionData != null})';
   }
+
+  /// Check if this message has variant selection (single item)
+  bool get hasVariantSelection => variantSelectionData != null;
+
+  /// Check if this message has multi-variant selection (multiple items)
+  bool get hasMultiVariantSelection => multiVariantSelectionData != null;
+
+  /// Check if this message requires any kind of variant selection
+  bool get requiresVariantSelection =>
+      hasVariantSelection || hasMultiVariantSelection;
 }
 
 /// Chat Message Types

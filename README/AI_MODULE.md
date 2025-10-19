@@ -26,11 +26,11 @@ src/
 ├── models/ai.rs              # AI models and data structures
 ├── services/
 │   ├── ai_service.rs         # Gemini API communication
-│   └── command_executor.rs   # Command execution logic
+│   └── command_executor.rs   # Command execution logic (Queue-based)
 └── handlers/ai_handlers.rs   # HTTP endpoint handler
 ```
 
-### Data Flow
+### Data Flow (Queue-Based Processing)
 
 ```
 User Command (Text/Voice)
@@ -41,13 +41,23 @@ AiService.parse_user_command()
     ↓
 Google Gemini Pro API
     ↓
-Structured JSON Actions
+Structured JSON Actions (Multiple Items)
     ↓
-CommandExecutor.execute_command()
+CommandExecutor.execute_command() [QUEUE PROCESSING]
     ↓
-Database Operations (Cart/Products)
+    ├─→ Process ALL actions in queue
+    ├─→ Separate completed vs variant selections
+    ├─→ Completed actions → Execute immediately
+    └─→ Variant selections → Queue for user choice
     ↓
-AiService.generate_confirmation_message()
+Check if variant selections exist?
+    ↓
+    ├─→ YES: Return MultiVariantSelectionData
+    │         (Show all variants at once)
+    │         Frontend handles selection
+    │         
+    └─→ NO:  Generate confirmation message
+              Return success response
     ↓
 JSON Response to Client
 ```
@@ -55,6 +65,10 @@ JSON Response to Client
 ## API Endpoint
 
 ### POST `/api/ai/command`
+
+⚠️ **IMPORTANT:** The full endpoint URL is
+`http://your-server:3000/api/ai/command`\
+❌ **NOT** `http://your-server:3000/ai/command` (missing `/api`)
 
 Process natural language commands and execute corresponding actions.
 
@@ -90,6 +104,89 @@ Process natural language commands and execute corresponding actions.
     "message": "Product 'xyz burger' not found",
     "actions_executed": [],
     "error": "Product 'xyz burger' not found"
+}
+```
+
+## Queue-Based Multi-Item Processing
+
+### Overview
+
+The AI module now uses a **queue-based processing system** that handles multiple
+items intelligently:
+
+1. **All items are processed** even if some require variant selection
+2. **Variant selections are collected** and returned together
+3. **Frontend displays all variant options** at once for user selection
+4. **No items are lost** in the queue
+
+### How It Works
+
+#### Example: "add lux and rice to cart"
+
+**Step 1: AI Parsing**
+
+```json
+{
+    "actions": [
+        { "action": "add_to_cart", "item": "lux", "quantity": 1 },
+        { "action": "add_to_cart", "item": "rice", "quantity": 1 }
+    ]
+}
+```
+
+**Step 2: Queue Processing**
+
+- Backend processes BOTH items
+- Lux has multiple variants → Added to variant selection queue
+- Rice has multiple variants → Added to variant selection queue
+
+**Step 3: Response**
+
+```json
+{
+    "success": true,
+    "message": "Please select variants for 2 item(s): lux, rice",
+    "actions_executed": [
+        "{
+      \"pending_selections\": [
+        {
+          \"product_name\": \"lux\",
+          \"quantity\": 1,
+          \"available_variants\": [...]
+        },
+        {
+          \"product_name\": \"rice\",
+          \"quantity\": 1,
+          \"available_variants\": [...]
+        }
+      ],
+      \"total_items\": 2,
+      \"message\": \"Please select variants for 2 item(s): lux, rice\"
+    }"
+    ]
+}
+```
+
+### Multi-Variant Selection Response Structure
+
+```typescript
+interface MultiVariantSelectionData {
+    pending_selections: Array<{
+        product_id: number;
+        product_name: string;
+        quantity: number;
+        session_id?: string;
+        customer_id?: number;
+        available_variants: Array<{
+            variant_id: number;
+            variant_name: string;
+            sell_price: number;
+            stock: number;
+            attributes?: any;
+        }>;
+    }>;
+    total_items: number;
+    message: string;
 }
 ```
 
@@ -251,7 +348,73 @@ Process natural language commands and execute corresponding actions.
 
 ## Client-Side Integration
 
-### Flutter Example
+⚠️ **CRITICAL:** Always use the full path `/api/ai/command` in your base URL!
+
+```
+✅ CORRECT: http://localhost:3000/api  (then call /ai/command)
+❌ WRONG:   http://localhost:3000       (missing /api prefix)
+```
+
+### Handling Multi-Variant Selections (Frontend)
+
+When the backend returns a multi-variant selection response, the frontend
+should:
+
+1. **Parse the response** from `actions_executed[0]`
+2. **Display all variant options** for each product
+3. **Allow user to select variants** for all items
+4. **Call the appropriate cart endpoints** with selected variant IDs
+
+#### Example Frontend Flow:
+
+```typescript
+// Step 1: Send AI command
+const response = await fetch("/api/ai/command", {
+    method: "POST",
+    body: JSON.stringify({
+        prompt: "add lux and rice to cart",
+        session_id: "kiosk-123",
+    }),
+});
+
+const data = await response.json();
+
+// Step 2: Check if variant selection is needed
+if (data.success && data.actions_executed.length > 0) {
+    const actionData = JSON.parse(data.actions_executed[0]);
+
+    if (actionData.pending_selections) {
+        // Multi-variant selection needed
+        const multiVariant = actionData as MultiVariantSelectionData;
+
+        // Display variant selection UI for ALL items
+        multiVariant.pending_selections.forEach((selection) => {
+            console.log(`Product: ${selection.product_name}`);
+            console.log(`Variants:`, selection.available_variants);
+
+            // Show UI for variant selection
+            // User selects variant_id for this product
+        });
+
+        // Step 3: After user selects all variants, add to cart
+        // Call /api/cart/add for each selected variant
+        await Promise.all(
+            userSelectedVariants.map((variant) =>
+                fetch("/api/cart/add", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        variant_id: variant.variant_id,
+                        quantity: variant.quantity,
+                        session_id: "kiosk-123",
+                    }),
+                })
+            ),
+        );
+    }
+}
+```
+
+### Flutter Example (with Multi-Variant Support)
 
 ```dart
 import 'dart:convert';
@@ -281,6 +444,24 @@ class AiCommandService {
       throw Exception('Failed to process command');
     }
   }
+  
+  Future<void> addToCart({
+    required int variantId,
+    required int quantity,
+    String? sessionId,
+    int? customerId,
+  }) async {
+    await http.post(
+      Uri.parse('$baseUrl/cart/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'variant_id': variantId,
+        'quantity': quantity,
+        'session_id': sessionId,
+        'customer_id': customerId,
+      }),
+    );
+  }
 }
 
 class AiCommandResponse {
@@ -304,21 +485,136 @@ class AiCommandResponse {
       error: json['error'],
     );
   }
+  
+  // Check if this response contains multi-variant selections
+  MultiVariantSelectionData? getMultiVariantSelection() {
+    if (actionsExecuted.isEmpty) return null;
+    
+    try {
+      final actionData = jsonDecode(actionsExecuted[0]);
+      if (actionData['pending_selections'] != null) {
+        return MultiVariantSelectionData.fromJson(actionData);
+      }
+    } catch (e) {
+      // Not a variant selection response
+    }
+    return null;
+  }
 }
 
-// Usage Example
+class MultiVariantSelectionData {
+  final List<VariantSelection> pendingSelections;
+  final int totalItems;
+  final String message;
+  
+  MultiVariantSelectionData({
+    required this.pendingSelections,
+    required this.totalItems,
+    required this.message,
+  });
+  
+  factory MultiVariantSelectionData.fromJson(Map<String, dynamic> json) {
+    return MultiVariantSelectionData(
+      pendingSelections: (json['pending_selections'] as List)
+          .map((item) => VariantSelection.fromJson(item))
+          .toList(),
+      totalItems: json['total_items'],
+      message: json['message'],
+    );
+  }
+}
+
+class VariantSelection {
+  final int productId;
+  final String productName;
+  final int quantity;
+  final List<ProductVariant> availableVariants;
+  
+  VariantSelection({
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.availableVariants,
+  });
+  
+  factory VariantSelection.fromJson(Map<String, dynamic> json) {
+    return VariantSelection(
+      productId: json['product_id'],
+      productName: json['product_name'],
+      quantity: json['quantity'],
+      availableVariants: (json['available_variants'] as List)
+          .map((item) => ProductVariant.fromJson(item))
+          .toList(),
+    );
+  }
+}
+
+class ProductVariant {
+  final int variantId;
+  final String variantName;
+  final double sellPrice;
+  final int stock;
+  
+  ProductVariant({
+    required this.variantId,
+    required this.variantName,
+    required this.sellPrice,
+    required this.stock,
+  });
+  
+  factory ProductVariant.fromJson(Map<String, dynamic> json) {
+    return ProductVariant(
+      variantId: json['variant_id'],
+      variantName: json['variant_name'],
+      sellPrice: (json['sell_price'] as num).toDouble(),
+      stock: json['stock'],
+    );
+  }
+}
+
+// Usage Example with Multi-Variant Handling
 void main() async {
   final service = AiCommandService();
   
   try {
+    // Step 1: Send AI command
     final response = await service.processCommand(
-      prompt: 'add 2 zinger burger to cart and bill bana do',
+      prompt: 'add lux and rice to cart',
       sessionId: 'kiosk-session-123',
     );
     
     if (response.success) {
-      print('✅ ${response.message}');
-      print('Actions: ${response.actionsExecuted.join(", ")}');
+      // Step 2: Check for multi-variant selection
+      final multiVariant = response.getMultiVariantSelection();
+      
+      if (multiVariant != null) {
+        print('🔄 Variant selection needed for ${multiVariant.totalItems} items');
+        
+        // Step 3: Display variant options to user
+        for (var selection in multiVariant.pendingSelections) {
+          print('\nProduct: ${selection.productName}');
+          print('Variants:');
+          for (var variant in selection.availableVariants) {
+            print('  - ${variant.variantName}: PKR ${variant.sellPrice}');
+          }
+          
+          // In real app, show UI for user to select variant
+          // For example, user selects first variant:
+          final selectedVariant = selection.availableVariants.first;
+          
+          // Step 4: Add selected variant to cart
+          await service.addToCart(
+            variantId: selectedVariant.variantId,
+            quantity: selection.quantity,
+            sessionId: 'kiosk-session-123',
+          );
+        }
+        
+        print('✅ All items added to cart!');
+      } else {
+        // No variant selection needed
+        print('✅ ${response.message}');
+      }
     } else {
       print('❌ Error: ${response.error}');
     }
@@ -706,6 +1002,103 @@ Action::ApplyCoupon { code } => {
 
 ## Troubleshooting
 
+### ⚠️ Issue: 404 Error - "Failed to parse response: FormatException: Unexpected end of input"
+
+**Symptoms:**
+
+- Client receives 404 error
+- Flutter/Dart shows:
+  `FormatException: Unexpected end of input (at character 1)`
+- Backend logs show: `status=404`
+
+**Cause:** Incorrect endpoint URL - missing `/api` prefix
+
+**Solution:**
+
+✅ **CORRECT URL:** `http://localhost:3000/api/ai/command`
+
+❌ **WRONG URL:** `http://localhost:3000/ai/command` (missing `/api`)
+
+**Flutter Fix:**
+
+```dart
+class AiCommandService {
+  // CORRECT ✅
+  final String baseUrl = 'http://localhost:3000/api';
+  
+  // WRONG ❌
+  // final String baseUrl = 'http://localhost:3000';
+  
+  Future<AiCommandResponse> processCommand({
+    required String prompt,
+    String? sessionId,
+    int? customerId,
+  }) async {
+    // This will correctly call /api/ai/command ✅
+    final response = await http.post(
+      Uri.parse('$baseUrl/ai/command'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'prompt': prompt,
+        'session_id': sessionId,
+        'customer_id': customerId,
+      }),
+    );
+    
+    if (response.statusCode == 200) {
+      return AiCommandResponse.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to process command: ${response.statusCode}');
+    }
+  }
+}
+```
+
+**JavaScript/TypeScript Fix:**
+
+```typescript
+class AiCommandService {
+    // CORRECT ✅
+    private baseUrl = "http://localhost:3000/api";
+
+    // WRONG ❌
+    // private baseUrl = "http://localhost:3000";
+
+    async processCommand(
+        request: AiCommandRequest,
+    ): Promise<AiCommandResponse> {
+        // This will correctly call /api/ai/command ✅
+        const response = await fetch(`${this.baseUrl}/ai/command`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    }
+}
+```
+
+**Quick Test:**
+
+```bash
+# Test the correct endpoint ✅
+curl -X POST http://localhost:3000/api/ai/command \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "show menu", "session_id": "test-123"}'
+
+# This will return 404 ❌
+curl -X POST http://localhost:3000/ai/command \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "show menu", "session_id": "test-123"}'
+```
+
+---
+
 ### Issue: "GEMINI_API_KEY must be set"
 
 **Solution:** Add `GEMINI_API_KEY` to your `.env` file
@@ -734,6 +1127,106 @@ Action::ApplyCoupon { code } => {
 - Use proper Urdu transliteration
 - Common words should work: "karo", "bana do", etc.
 
+## Queue-Based System Summary
+
+### Backend Changes (✅ Implemented)
+
+1. **CommandExecutor** now uses queue-based processing
+2. **All actions are processed** before returning response
+3. **Variant selections are collected** and returned together
+4. **New model**: `MultiVariantSelectionData` for multi-variant responses
+5. **CommandResult** includes `pending_variant_selections` field
+
+### Frontend Requirements (⚠️ Action Required)
+
+To support the new queue-based multi-variant system, the frontend needs to:
+
+#### 1. **Parse Multi-Variant Responses**
+
+```typescript
+// Check if response contains variant selections
+const actionData = JSON.parse(response.actions_executed[0]);
+if (actionData.pending_selections) {
+    // Handle multi-variant selection
+    const multiVariant = actionData as MultiVariantSelectionData;
+}
+```
+
+#### 2. **Display All Variant Options**
+
+Show variant selection UI for **ALL** items that require selection, not just the
+first one.
+
+```typescript
+multiVariant.pending_selections.forEach((selection) => {
+    // Display UI for this product's variants
+    showVariantSelectionUI(selection);
+});
+```
+
+#### 3. **Collect User Selections**
+
+Allow user to select variants for **ALL** products before proceeding.
+
+#### 4. **Add All Items to Cart**
+
+After user selects all variants, call the cart API for each item:
+
+```typescript
+await Promise.all(
+    selectedVariants.map((variant) =>
+        addToCart(variant.variant_id, variant.quantity, session_id)
+    ),
+);
+```
+
+### Key Differences from Previous System
+
+| **Previous System**                        | **New Queue-Based System**              |
+| ------------------------------------------ | --------------------------------------- |
+| Stops at first variant selection           | Processes ALL items in queue            |
+| Returns single variant selection           | Returns ALL variant selections together |
+| Items get lost if variant selection needed | NO items are lost                       |
+| Frontend shows one product at a time       | Frontend shows ALL products at once     |
+
+### Testing the Queue System
+
+#### Test Case 1: Multiple Items with Variants
+
+```bash
+curl -X POST http://localhost:3000/api/ai/command \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "add lux and rice to cart",
+    "session_id": "test-session-123"
+  }'
+```
+
+**Expected Response:**
+
+```json
+{
+    "success": true,
+    "message": "Please select variants for 2 item(s): lux, rice",
+    "actions_executed": [
+        "{\"pending_selections\":[{\"product_name\":\"lux\",\"available_variants\":[...]},{\"product_name\":\"rice\",\"available_variants\":[...]}],\"total_items\":2}"
+    ]
+}
+```
+
+#### Test Case 2: Mixed Items (Some with/without variants)
+
+```bash
+curl -X POST http://localhost:3000/api/ai/command \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "add lux and show menu",
+    "session_id": "test-session-123"
+  }'
+```
+
+**Expected:** Lux variants returned, menu displayed separately
+
 ## Future Enhancements
 
 - [ ] Voice input integration (Speech-to-Text)
@@ -743,6 +1236,8 @@ Action::ApplyCoupon { code } => {
 - [ ] Fuzzy product matching improvements
 - [ ] Offline mode with cached responses
 - [ ] Analytics dashboard for AI usage
+- [x] ✅ Queue-based multi-item processing
+- [x] ✅ Multi-variant selection support
 
 ## Support
 
@@ -752,6 +1247,7 @@ For issues or questions:
 2. Review example code
 3. Test with cURL/Postman
 4. Check server logs for detailed errors
+5. Test queue-based multi-variant flows
 
 ## License
 
@@ -759,4 +1255,4 @@ Part of KKS Online Backend - See main README for license information.
 
 ---
 
-**Last Updated:** October 2025 **Version:** 1.0.0
+**Last Updated:** October 2025 **Version:** 2.0.0 (Queue-Based System)

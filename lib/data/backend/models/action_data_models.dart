@@ -135,10 +135,50 @@ class UpdateQuantityActionData {
 /// Using the existing ProductVariationModel for variant selection
 typedef ProductVariant = ProductVariationModel;
 
+/// Queue Info Model
+///
+/// Contains information about the sequential queue position
+/// Used in the new Sequential Queue Orchestration model
+class QueueInfo {
+  final int position;
+  final int total;
+  final List<String> remaining;
+
+  QueueInfo({
+    required this.position,
+    required this.total,
+    required this.remaining,
+  });
+
+  factory QueueInfo.fromJson(Map<String, dynamic> json) {
+    return QueueInfo(
+      position: json['position'] ?? 0,
+      total: json['total'] ?? 0,
+      remaining:
+          json['remaining'] != null ? List<String>.from(json['remaining']) : [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'position': position,
+      'total': total,
+      'remaining': remaining,
+    };
+  }
+
+  /// Check if this is the last item in the queue
+  bool get isLastItem => position >= total;
+
+  /// Check if there are more items after this one
+  bool get hasMoreItems => position < total;
+}
+
 /// Variant Selection Action Data
 ///
 /// Data structure for variant_selection actions when user needs to choose a variant
 /// Updated to match the new backend response format from CART_AI_MODULE.md
+/// Supports both single variant selection and sequential queue orchestration
 class VariantSelectionActionData {
   final int productId;
   final String productName;
@@ -146,6 +186,7 @@ class VariantSelectionActionData {
   final String? sessionId;
   final int? customerId;
   final List<ProductVariant> availableVariants;
+  final QueueInfo? queueInfo; // NEW: For sequential multi-variant selection
 
   VariantSelectionActionData({
     required this.productId,
@@ -154,6 +195,7 @@ class VariantSelectionActionData {
     this.sessionId,
     this.customerId,
     required this.availableVariants,
+    this.queueInfo, // NEW
   });
 
   factory VariantSelectionActionData.fromJson(Map<String, dynamic> json) {
@@ -168,6 +210,9 @@ class VariantSelectionActionData {
               .map((variant) => _convertToProductVariationModel(variant))
               .toList()
           : [],
+      queueInfo: json['queue_info'] != null // NEW
+          ? QueueInfo.fromJson(json['queue_info'])
+          : null,
     );
   }
 
@@ -183,6 +228,148 @@ class VariantSelectionActionData {
       stockQuantity: (variantJson['stock'] ?? 0).toString(),
       isVisible: true, // Assume visible if provided by AI
       attributes: variantJson['attributes'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': productId,
+      'product_name': productName,
+      'quantity': quantity,
+      'session_id': sessionId,
+      'customer_id': customerId,
+      'available_variants': availableVariants.map((v) => v.toJson()).toList(),
+      if (queueInfo != null) 'queue_info': queueInfo!.toJson(), // NEW
+    };
+  }
+
+  /// Check if this is a sequential variant selection (part of a queue)
+  bool get isSequentialSelection => queueInfo != null;
+
+  /// Check if this is a single variant selection (not part of a queue)
+  bool get isSingleSelection => queueInfo == null;
+
+  /// Get variants that are in stock
+  List<ProductVariationModel> get inStockVariants =>
+      availableVariants.where((v) => !v.isOutOfStock).toList();
+
+  /// Get variants that are out of stock
+  List<ProductVariationModel> get outOfStockVariants =>
+      availableVariants.where((v) => v.isOutOfStock).toList();
+
+  /// Check if there are any available variants
+  bool get hasVariants => availableVariants.isNotEmpty;
+
+  /// Check if there are any in-stock variants
+  bool get hasInStockVariants => inStockVariants.isNotEmpty;
+
+  /// Get the total number of variants
+  int get totalVariants => availableVariants.length;
+
+  /// Get variant by ID
+  ProductVariationModel? getVariantById(int variantId) {
+    try {
+      return availableVariants.firstWhere((v) => v.variantId == variantId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get variant by name (case-insensitive)
+  ProductVariationModel? getVariantByName(String variantName) {
+    try {
+      return availableVariants.firstWhere(
+        (v) =>
+            (v.variantName?.toLowerCase() ?? '') == variantName.toLowerCase(),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+/// Multi-Variant Selection Data
+///
+/// Data structure for multiple items requiring variant selection
+/// Used when user requests "add lux and rice to cart" (2+ items with variants)
+/// Based on the new backend response format from CART_AI_MODULE.md
+class MultiVariantSelectionData {
+  final List<VariantSelectionItem> pendingSelections;
+  final int totalItems;
+  final String message;
+
+  MultiVariantSelectionData({
+    required this.pendingSelections,
+    required this.totalItems,
+    required this.message,
+  });
+
+  factory MultiVariantSelectionData.fromJson(Map<String, dynamic> json) {
+    return MultiVariantSelectionData(
+      pendingSelections: json['pending_selections'] != null
+          ? (json['pending_selections'] as List)
+              .map((item) => VariantSelectionItem.fromJson(item))
+              .toList()
+          : [],
+      totalItems: json['total_items'] ?? 0,
+      message: json['message'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'pending_selections':
+          pendingSelections.map((item) => item.toJson()).toList(),
+      'total_items': totalItems,
+      'message': message,
+    };
+  }
+
+  /// Check if there are any pending selections
+  bool get hasPendingSelections => pendingSelections.isNotEmpty;
+
+  /// Get the count of pending selections
+  int get pendingCount => pendingSelections.length;
+
+  /// Get all product names requiring variant selection
+  List<String> get productNames =>
+      pendingSelections.map((item) => item.productName).toList();
+}
+
+/// Variant Selection Item
+///
+/// Represents a single item requiring variant selection in multi-item scenario
+class VariantSelectionItem {
+  final int productId;
+  final String productName;
+  final int quantity;
+  final String? sessionId;
+  final int? customerId;
+  final List<ProductVariant> availableVariants;
+
+  VariantSelectionItem({
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    this.sessionId,
+    this.customerId,
+    required this.availableVariants,
+  });
+
+  factory VariantSelectionItem.fromJson(Map<String, dynamic> json) {
+    return VariantSelectionItem(
+      productId: json['product_id'] ?? 0,
+      productName: json['product_name'] ?? '',
+      quantity: json['quantity'] ?? 1,
+      sessionId: json['session_id'],
+      customerId: json['customer_id'],
+      availableVariants: json['available_variants'] != null
+          ? (json['available_variants'] as List)
+              .map((variant) =>
+                  VariantSelectionActionData._convertToProductVariationModel(
+                      variant))
+              .toList()
+          : [],
     );
   }
 

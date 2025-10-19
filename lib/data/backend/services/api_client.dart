@@ -162,13 +162,13 @@ class ApiClient {
     try {
       final String bodyText = response.body;
 
-      if (kDebugMode) {
-        print('ApiClient: ========== RAW RESPONSE ==========');
-        print('ApiClient: Status Code: ${response.statusCode}');
-        print('ApiClient: Body Length: ${bodyText.length}');
-        print('ApiClient: Body: $bodyText');
-        print('ApiClient: ====================================');
-      }
+      // if (kDebugMode) {
+      //   print('ApiClient: ========== RAW RESPONSE ==========');
+      //   print('ApiClient: Status Code: ${response.statusCode}');
+      //   print('ApiClient: Body Length: ${bodyText.length}');
+      //   print('ApiClient: Body: $bodyText');
+      //   print('ApiClient: ====================================');
+      // }
 
       // Success HTTP status
       final bool isOk = response.statusCode >= 200 && response.statusCode < 300;

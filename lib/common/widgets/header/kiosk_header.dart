@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:okiosk/common/widgets/images/t_rounded_image.dart';
 import 'package:okiosk/utils/constants/sizes.dart';
 import 'package:okiosk/features/pos/controller/animation_controller.dart';
+import 'package:okiosk/features/voice_assistant/voice_assistant.dart';
 
 import '../../../utils/constants/colors.dart';
 import '../../../utils/constants/image_strings.dart';
@@ -61,6 +62,71 @@ class _KioskHeaderState extends State<KioskHeader> {
     }
   }
 
+  /// Handle voice button tap to show voice assistant
+  void _onVoiceButtonTapped() {
+    try {
+      // Initialize voice controller if not already initialized
+      if (!Get.isRegistered<VoiceController>()) {
+        Get.put(VoiceController());
+        print('Voice controller initialized');
+      }
+
+      // Show voice assistant dialog
+      Get.dialog(
+        Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 400,
+            height: 500,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: VoiceAssistantWidget(
+              showTranscription: true,
+              compactMode: false,
+              onTranscriptionComplete: () {
+                // Close dialog and show transcription result
+                Get.back();
+                final voiceController = Get.find<VoiceController>();
+                final transcription = voiceController.getTranscriptionForAI();
+
+                if (transcription.isNotEmpty) {
+                  Get.snackbar(
+                    'Voice Transcription',
+                    transcription,
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: TColors.primary,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 5),
+                  );
+                }
+              },
+            ),
+          ),
+        ),
+        barrierDismissible: true,
+      );
+    } catch (e) {
+      // Handle error gracefully
+      print('Error showing voice assistant: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to open voice assistant: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: TColors.error,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dark = THelperFunctions.isDarkMode(context);
@@ -86,6 +152,30 @@ class _KioskHeaderState extends State<KioskHeader> {
           const SizedBox(width: TSizes.spaceBtwItems),
           Expanded(
             child: const AnimatedSearchBar(),
+          ),
+          const SizedBox(width: TSizes.spaceBtwItems),
+          // Voice Button
+          GestureDetector(
+            onTap: _onVoiceButtonTapped,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: TColors.primary,
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [
+                  BoxShadow(
+                    color: TColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.mic,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
           ),
           const SizedBox(width: TSizes.spaceBtwItems),
           // AI Agent with Chat Bubble

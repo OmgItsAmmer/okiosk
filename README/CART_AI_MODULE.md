@@ -4,8 +4,11 @@
 
 The Cart AI Module handles AI-driven cart operations with intelligent variant
 selection. When a user requests to add a product to cart via AI without
-specifying a variant, the system now returns all available variants instead of
+specifying a variant, the system returns all available variants instead of
 automatically selecting the first one.
+
+**Important:** The system now supports both **single item** and **multiple
+item** variant selection with different response formats.
 
 ## Key Features
 
@@ -33,6 +36,32 @@ automatically selecting the first one.
   "error": "string | null"
 }
 ```
+
+### Response Format Types
+
+The AI module returns different response formats based on the number of items
+requiring variant selection:
+
+#### 1. **Single Item Variant Selection**
+
+When user says "add lux to cart" (1 item with variants):
+
+- Returns **original single variant selection format**
+- Frontend can handle with existing logic
+
+#### 2. **Multiple Items Variant Selection**
+
+When user says "add lux and rice to cart" (2+ items with variants):
+
+- Returns **new multi-variant selection format**
+- Frontend needs to handle multiple selections together
+
+#### 3. **No Variant Selection Needed**
+
+When items have single variants or are added directly:
+
+- Returns **standard success format**
+- No special handling required
 
 ## Add to Cart Scenarios
 
@@ -395,17 +424,46 @@ The backend will automatically parse this and return either:
 ````
 ## Frontend Implementation Guide
 
-### 1. Handling Variant Selection Response
+### 1. Detecting Response Type
 
-When you receive an `action_type: "variant_selection"` response:
+The frontend needs to detect which type of response it receives:
 
 ```dart
-// Example Flutter/Dart implementation
-void handleVariantSelection(ActionResponse response) {
-  if (response.actionType == "variant_selection") {
-    final data = VariantSelectionActionData.fromJson(response.data);
+void handleAiResponse(AiCommandResponse response) {
+  if (response.success && response.actionsExecuted.isNotEmpty) {
+    try {
+      // Parse the first action
+      final actionData = jsonDecode(response.actionsExecuted[0]);
+      
+      // Check response type
+      if (actionData['action_type'] == 'variant_selection') {
+        // Single item variant selection (original format)
+        handleSingleVariantSelection(actionData);
+      } else if (actionData['pending_selections'] != null) {
+        // Multiple items variant selection (new format)
+        handleMultiVariantSelection(actionData);
+      } else {
+        // Standard success response
+        handleStandardResponse(response);
+      }
+    } catch (e) {
+      // Handle parsing error
+      handleError('Failed to parse AI response');
+    }
+  }
+}
+```
+
+### 2. Handling Single Item Variant Selection (Original Format)
+
+For single item requests like "add lux to cart":
+
+```dart
+void handleSingleVariantSelection(Map<String, dynamic> actionData) {
+  if (actionData['action_type'] == 'variant_selection') {
+    final data = VariantSelectionActionData.fromJson(actionData['data']);
     
-    // Show variant selection UI
+    // Show variant selection UI for single item
     showVariantSelectionDialog(
       productName: data.productName,
       quantity: data.quantity,
@@ -420,6 +478,36 @@ void handleVariantSelection(ActionResponse response) {
       },
     );
   }
+}
+```
+
+### 3. Handling Multiple Items Variant Selection (New Format)
+
+For multiple item requests like "add lux and rice to cart":
+
+```dart
+void handleMultiVariantSelection(Map<String, dynamic> actionData) {
+  if (actionData['pending_selections'] != null) {
+    final multiVariant = MultiVariantSelectionData.fromJson(actionData);
+    
+    // Show variant selection UI for ALL items at once
+    showMultiVariantSelectionDialog(
+      selections: multiVariant.pendingSelections,
+      onAllVariantsSelected: (selectedVariants) {
+        // Add all selected variants to cart
+        addAllVariantsToCart(selectedVariants);
+      },
+    );
+  }
+}
+
+void showMultiVariantSelectionDialog({
+  required List<VariantSelection> selections,
+  required Function(List<SelectedVariant>) onAllVariantsSelected,
+}) {
+  // Create UI that shows variant options for ALL products
+  // User must select variant for each product before proceeding
+  // When all selections are made, call onAllVariantsSelected
 }
 ````
 
@@ -600,16 +688,46 @@ void handleError(ActionResponse response) {
 4. **Bulk Operations**: Handle multiple product additions with variant selection
 5. **Price Comparison**: Show price differences between variants prominently
 
+## Response Format Summary
+
+### Quick Reference for Frontend
+
+| User Command                        | Response Type            | Detection Method                     | Frontend Action            |
+| ----------------------------------- | ------------------------ | ------------------------------------ | -------------------------- |
+| "add lux to cart"                   | Single variant selection | `action_type == 'variant_selection'` | Show single variant dialog |
+| "add lux and rice to cart"          | Multi-variant selection  | `pending_selections != null`         | Show multi-variant dialog  |
+| "add cola to cart" (single variant) | Standard success         | Neither above                        | Add to cart directly       |
+
+### Detection Logic
+
+```dart
+void detectResponseType(Map<String, dynamic> actionData) {
+  if (actionData['action_type'] == 'variant_selection') {
+    // Single item variant selection
+    handleSingleVariant(actionData);
+  } else if (actionData['pending_selections'] != null) {
+    // Multiple items variant selection  
+    handleMultiVariant(actionData);
+  } else {
+    // Standard success response
+    handleSuccess(actionData);
+  }
+}
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Variant Selection Not Showing**: Check if `action_type` is
-   "variant_selection"
+1. **Variant Selection Not Showing**:
+   - Check if `action_type` is "variant_selection" (single item)
+   - Check if `pending_selections` exists (multiple items)
 2. **Wrong Variant Added**: Verify `variant_id` is correctly passed in follow-up
    request
 3. **Stock Issues**: Always check `available_stock` before confirming addition
 4. **Session Lost**: Ensure `session_id` is maintained across requests
+5. **Multiple Items Not Showing**: Check if you're handling `pending_selections`
+   format
 
 ### Debug Tips
 
@@ -617,3 +735,12 @@ void handleError(ActionResponse response) {
 2. Validate JSON structure before parsing
 3. Check network connectivity for AI requests
 4. Verify product and variant IDs in database
+5. Test both single and multiple item scenarios
+
+### Testing Checklist
+
+- [ ] Single item with variants: "add lux to cart"
+- [ ] Multiple items with variants: "add lux and rice to cart"
+- [ ] Single item without variants: "add cola to cart"
+- [ ] Mixed items: "add lux and show menu"
+- [ ] Invalid product: "add xyz to cart"

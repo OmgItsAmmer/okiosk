@@ -40,6 +40,11 @@ dependencies:
   qr_flutter: ^4.1.0
   uuid: ^4.5.1
 
+  # Voice-to-Text Integration
+  record: ^6.1.2
+  permission_handler: ^11.0.0
+  web_socket_channel: ^2.0.1
+
   # Backend & Database
   firebase_core: ^3.15.1
   supabase_flutter: ^2.8.0

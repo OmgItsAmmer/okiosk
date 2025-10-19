@@ -36,5 +36,12 @@ AI Background functions
     -> checkout screen is not correct 
     -> generate should be in chat
 
+Issues:
+No products are not adding at a same time, i.e. Bhai ek zinger meal aur fries add karde
+
+
+Hello, I am Ammer I ordered 30 mints ago how much time left.
+
+I want to report an issue
 
 

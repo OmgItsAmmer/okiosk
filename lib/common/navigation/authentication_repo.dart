@@ -15,6 +15,7 @@ import '../../features/network_manager/network_manager.dart';
 import '../../features/pos/screens/pos_kiosk_screen.dart';
 import '../../features/products/controller/product_controller.dart';
 import '../../features/shop/controller/shop_controller.dart';
+import '../../features/voice_assistant/controller/voice_controller.dart';
 import '../../main.dart';
 import '../../routes/routes.dart';
 import '../../data/backend/di/backend_dependency_injection.dart';
@@ -76,6 +77,9 @@ class AuthenticationRepository extends GetxController {
       Get.lazyPut(() => CartController(), fenix: true);
       Get.lazyPut(() => ProductVariationController(), fenix: true);
       Get.lazyPut(() => CheckoutController(), fenix: true);
+
+      // Initialize Voice Controller for voice assistant functionality
+      Get.put(VoiceController(), permanent: true);
 
       // Load ALL products for POS system (not just popular ones)
       await productController.loadAllProductsForPOS();

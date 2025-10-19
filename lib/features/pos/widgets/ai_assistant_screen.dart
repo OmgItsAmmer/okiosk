@@ -6,6 +6,7 @@ import 'package:okiosk/features/pos/controller/chat_controller.dart';
 import 'package:okiosk/features/pos/widgets/chat_message_bubble.dart';
 import 'package:okiosk/features/pos/widgets/chat_input_field.dart';
 import 'package:okiosk/features/pos/widgets/quick_actions_bar.dart';
+import 'package:okiosk/features/voice_assistant/voice_assistant.dart';
 import 'package:okiosk/utils/constants/colors.dart';
 import 'package:okiosk/utils/constants/sizes.dart';
 import 'package:okiosk/utils/constants/image_strings.dart';
@@ -37,6 +38,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     // Initialize chat controller
     Get.put(ChatController());
     _chatController = Get.find<ChatController>();
+
+    // Initialize voice controller
+    if (!Get.isRegistered<VoiceController>()) {
+      Get.put(VoiceController());
+    }
 
     // Auto-scroll to bottom when new messages are added
     ever(_chatController.messagesObservable, (_) {
@@ -88,6 +94,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
                 // Quick actions bar
                 const QuickActionsBar(),
+
+                // Voice assistant section
+                _buildVoiceSection(),
 
                 // Chat messages area
                 Expanded(
@@ -338,6 +347,57 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ),
               textAlign: TextAlign.center,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build voice assistant section
+  Widget _buildVoiceSection() {
+    return Container(
+      margin: const EdgeInsets.all(TSizes.defaultSpace),
+      padding: const EdgeInsets.all(TSizes.defaultSpace),
+      decoration: BoxDecoration(
+        color: TColors.lightContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(TSizes.borderRadiusLg),
+        border: Border.all(
+          color: TColors.borderPrimary.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.mic,
+                color: TColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: TSizes.sm),
+              Text(
+                'Voice Assistant',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: TColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: TSizes.sm),
+          VoiceAssistantWidget(
+            showTranscription: true,
+            compactMode: true,
+            onTranscriptionComplete: () {
+              // Send transcription to chat
+              final voiceController = Get.find<VoiceController>();
+              final transcription = voiceController.getTranscriptionForAI();
+
+              if (transcription.isNotEmpty) {
+                _chatController.sendMessage(transcription);
+              }
+            },
           ),
         ],
       ),

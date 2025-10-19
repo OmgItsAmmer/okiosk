@@ -89,10 +89,70 @@ class VariantSelectionBubble extends StatelessWidget {
   Widget _buildVariantSelection(BuildContext context) {
     final inStockVariants = variantData.inStockVariants;
     final outOfStockVariants = variantData.outOfStockVariants;
+    final isSequential = variantData.isSequentialSelection;
+    final queueInfo = variantData.queueInfo;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Queue progress indicator (for sequential selection)
+        if (isSequential && queueInfo != null) ...[
+          Container(
+            padding: const EdgeInsets.all(TSizes.sm),
+            decoration: BoxDecoration(
+              color: TColors.accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(TSizes.borderRadiusSm),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.queue_outlined,
+                      size: 16,
+                      color: TColors.accent,
+                    ),
+                    const SizedBox(width: TSizes.xs),
+                    Text(
+                      'Item ${queueInfo.position} of ${queueInfo.total}',
+                      style: TextStyle(
+                        fontSize: TSizes.fontSizeSm,
+                        fontWeight: FontWeight.w600,
+                        color: TColors.accent,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: TSizes.xs),
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(TSizes.borderRadiusSm),
+                  child: LinearProgressIndicator(
+                    value: queueInfo.position / queueInfo.total,
+                    backgroundColor: TColors.accent.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(TColors.accent),
+                    minHeight: 4,
+                  ),
+                ),
+                // Show remaining items
+                if (queueInfo.remaining.isNotEmpty) ...[
+                  const SizedBox(height: TSizes.xs),
+                  Text(
+                    'Next: ${queueInfo.remaining.join(", ")}',
+                    style: TextStyle(
+                      fontSize: TSizes.fontSizeSm - 2,
+                      color: TColors.lightModeSecondaryText,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: TSizes.sm),
+        ],
+
         // Product info header
         Container(
           padding: const EdgeInsets.all(TSizes.sm),
@@ -214,25 +274,72 @@ class VariantSelectionBubble extends StatelessWidget {
   }
 
   /// Handle variant selection
-  /// Updated to use the new backend format from CART_AI_MODULE.md
-  void _selectVariant(ProductVariationModel variant) {
+  /// Updated to support both single and sequential variant selection
+  void _selectVariant(ProductVariationModel variant) async {
     final chatController = Get.find<ChatController>();
 
-    // Create a new AI command with the selected variant using the format:
-    // "Product Name (Variant Name)" - this will be parsed by the backend
-    final command =
-        'Add ${variantData.quantity} ${variantData.productName} (${variant.variantName}) to cart';
-
     if (kDebugMode) {
-      print('VariantSelectionBubble: Sending command: $command');
+      print('========== VARIANT SELECTED ==========');
+      print('VariantSelectionBubble: User selected a variant');
+      print('VariantSelectionBubble: Product: ${variantData.productName}');
+      print('VariantSelectionBubble: Variant ID: ${variant.variantId}');
+      print('VariantSelectionBubble: Variant Name: ${variant.variantName}');
+      print('VariantSelectionBubble: Quantity: ${variantData.quantity}');
       print(
-          'VariantSelectionBubble: Selected variant ID: ${variant.variantId}');
-      print(
-          'VariantSelectionBubble: Selected variant name: ${variant.variantName}');
+          'VariantSelectionBubble: Is Sequential: ${variantData.isSequentialSelection}');
+
+      if (variantData.isSequentialSelection && variantData.queueInfo != null) {
+        print(
+            'VariantSelectionBubble: Queue Position: ${variantData.queueInfo!.position}/${variantData.queueInfo!.total}');
+        print(
+            'VariantSelectionBubble: Remaining: ${variantData.queueInfo!.remaining.join(", ")}');
+      }
+      print('======================================');
     }
 
-    // Send the command to AI
-    chatController.sendMessage(command);
+    if (variantData.isSequentialSelection) {
+      // NEW: Sequential variant selection (queue-based)
+      // Works EXACTLY like single variant: Add to cart FIRST, then confirm with backend
+      if (kDebugMode) {
+        print(
+            'VariantSelectionBubble: Adding to cart locally (sequential flow)');
+      }
+
+      // Add to cart locally FIRST (same as single variant)
+      await chatController.addToCartFromVariantSelection(
+        productName: variantData.productName,
+        variantName: variant.variantName ?? 'Default',
+        variantId: variant.variantId,
+        quantity: variantData.quantity,
+        sellPrice: double.tryParse(variant.sellPrice) ?? 0.0,
+        stock: int.tryParse(variant.stockQuantity) ?? 0,
+      );
+
+      // Then confirm with backend to get next item from queue
+      if (kDebugMode) {
+        print('VariantSelectionBubble: Confirming with backend for next item');
+      }
+
+      chatController.confirmSequentialVariant(
+        productName: variantData.productName,
+        variantId: variant.variantId,
+        quantity: variantData.quantity,
+      );
+    } else {
+      // Original: Single variant selection
+      // Create a new AI command with the selected variant using the format:
+      // "Product Name (Variant Name)" - this will be parsed by the backend
+      final command =
+          'Add ${variantData.quantity} ${variantData.productName} (${variant.variantName}) to cart';
+
+      if (kDebugMode) {
+        print('VariantSelectionBubble: Single variant - sending new command');
+        print('VariantSelectionBubble: Command: $command');
+      }
+
+      // Send the command to AI
+      chatController.sendMessage(command);
+    }
 
     // Call callback if provided
     onVariantSelected?.call();
