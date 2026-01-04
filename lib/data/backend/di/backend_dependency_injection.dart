@@ -16,21 +16,24 @@ import '../../repositories/categories/backend_category_repository.dart';
 class BackendDependencyInjection {
   static void init() {
     // Register API Client
-    Get.lazyPut<ApiClient>(() => ApiClient());
+    Get.lazyPut<ApiClient>(() => ApiClient(), fenix: true);
 
     // Register API Services
-    Get.lazyPut<ProductApiService>(() => ProductApiService());
-    Get.lazyPut<VariationApiService>(() => VariationApiService());
-    Get.lazyPut<CartApiService>(() => CartApiService());
-    Get.lazyPut<CategoryApiService>(() => CategoryApiService());
-    Get.lazyPut<CheckoutApiService>(() => CheckoutApiService());
-    Get.lazyPut<AiCommandService>(() => AiCommandService());
-    Get.lazyPut<AiActionExecutor>(() => AiActionExecutor());
+    Get.lazyPut<ProductApiService>(() => ProductApiService(), fenix: true);
+    Get.lazyPut<VariationApiService>(() => VariationApiService(), fenix: true);
+    Get.lazyPut<CartApiService>(() => CartApiService(), fenix: true);
+    Get.lazyPut<CategoryApiService>(() => CategoryApiService(), fenix: true);
+    Get.lazyPut<CheckoutApiService>(() => CheckoutApiService(), fenix: true);
+    Get.lazyPut<AiCommandService>(() => AiCommandService(), fenix: true);
+    Get.lazyPut<AiActionExecutor>(() => AiActionExecutor(), fenix: true);
 
     // Register Backend Repositories
-    Get.lazyPut<BackendProductRepository>(() => BackendProductRepository());
-    Get.lazyPut<BackendCartRepository>(() => BackendCartRepository());
-    Get.put<BackendCategoryRepository>(BackendCategoryRepository());
+    Get.lazyPut<BackendProductRepository>(() => BackendProductRepository(),
+        fenix: true);
+    Get.lazyPut<BackendCartRepository>(() => BackendCartRepository(),
+        fenix: true);
+    Get.lazyPut<BackendCategoryRepository>(() => BackendCategoryRepository(),
+        fenix: true);
   }
 
   /// Initialize with custom base URL

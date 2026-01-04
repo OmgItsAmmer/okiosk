@@ -193,49 +193,22 @@ class VoiceRecordingService {
       },
     );
 
-    // Start a timer to simulate audio chunk streaming
-    // In a real implementation, you would read from the actual audio stream
-    _audioChunkTimer = Timer.periodic(
-      Duration(milliseconds: _audioConfig.chunkDurationMs),
-      (timer) {
-        if (_isRecording && _audioStreamController != null) {
-          // Generate a chunk of audio data
-          // Note: The record package doesn't provide direct access to raw audio data
-          // This is a limitation - we'll need to use a different approach for real-time streaming
-          final audioChunk = _generateAudioChunk();
-          _audioStreamController!.add(audioChunk);
-        }
-      },
-    );
+    // Note: The record package saves audio to a file.
+    // We'll send the complete file when recording stops rather than streaming chunks.
+    debugPrint(
+        '📝 Recording in progress - will send complete file when stopped');
   }
 
-  /// Generate audio chunk (placeholder - record package limitation)
-  Uint8List _generateAudioChunk() {
-    // This is a limitation of the record package - it doesn't provide direct access
-    // to raw audio data for real-time streaming. For true streaming, you might need
-    // to use a different approach or save to a file and read from it.
-
-    // For now, we'll generate a placeholder chunk
-    final chunkSize = _audioConfig.bufferSize;
-    final audioData = Uint8List(chunkSize);
-
-    // Fill with some test data
-    for (int i = 0; i < chunkSize; i++) {
-      audioData[i] = (i % 256);
-    }
-
-    return audioData;
-  }
-
-  /// Stop recording audio
-  Future<void> stopRecording() async {
-    if (!_isRecording) return;
+  /// Stop recording audio and return the recorded file bytes
+  Future<Uint8List?> stopRecording() async {
+    if (!_isRecording) return null;
 
     try {
       debugPrint('⏹️ Stopping audio recording...');
 
       // Stop the recorder
-      await _recorder.stop();
+      final path = await _recorder.stop();
+      debugPrint('📁 Recording stopped, saved to: $path');
 
       // Cancel subscriptions and timers
       await _amplitudeSubscription?.cancel();
@@ -244,24 +217,42 @@ class VoiceRecordingService {
       _audioChunkTimer?.cancel();
       _audioChunkTimer = null;
 
-      // Clean up temporary file
+      _isRecording = false;
+
+      // Read the recorded audio file
+      Uint8List? audioBytes;
       if (_recordingPath != null) {
         try {
           final file = File(_recordingPath!);
           if (await file.exists()) {
+            audioBytes = await file.readAsBytes();
+            debugPrint('📖 Read audio file: ${audioBytes.length} bytes');
+
+            // Send the complete audio file through stream
+            if (_audioStreamController != null &&
+                !_audioStreamController!.isClosed) {
+              _audioStreamController!.add(audioBytes);
+              debugPrint('📤 Sent complete audio file to stream');
+            }
+
+            // Clean up the temporary file
             await file.delete();
             debugPrint('🗑️ Deleted temporary recording file: $_recordingPath');
+          } else {
+            debugPrint('⚠️ Recording file not found: $_recordingPath');
           }
         } catch (e) {
-          debugPrint('⚠️ Failed to delete temporary file: $e');
+          debugPrint('❌ Failed to read/delete audio file: $e');
         }
         _recordingPath = null;
       }
 
-      _isRecording = false;
       debugPrint('⏹️ Stopped recording audio');
+      return audioBytes;
     } catch (e) {
       debugPrint('❌ Failed to stop recording: $e');
+      _isRecording = false;
+      return null;
     }
   }
 

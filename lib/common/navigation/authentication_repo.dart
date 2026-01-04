@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
+import 'package:okiosk/data/repositories/cart/backend_cart_repository.dart';
 import 'package:okiosk/features/checkout/controller/checkout_controller.dart';
 import 'package:okiosk/features/products/controller/product_varaintion_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -77,6 +78,7 @@ class AuthenticationRepository extends GetxController {
       Get.lazyPut(() => CartController(), fenix: true);
       Get.lazyPut(() => ProductVariationController(), fenix: true);
       Get.lazyPut(() => CheckoutController(), fenix: true);
+      Get.put(() => BackendCartRepository());
 
       // Initialize Voice Controller for voice assistant functionality
       Get.put(VoiceController(), permanent: true);

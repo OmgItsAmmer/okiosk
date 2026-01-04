@@ -7,6 +7,7 @@ import 'package:okiosk/features/pos/widgets/chat_message_bubble.dart';
 import 'package:okiosk/features/pos/widgets/chat_input_field.dart';
 import 'package:okiosk/features/pos/widgets/quick_actions_bar.dart';
 import 'package:okiosk/features/voice_assistant/voice_assistant.dart';
+import 'package:okiosk/features/webview/webview_temp.dart';
 import 'package:okiosk/utils/constants/colors.dart';
 import 'package:okiosk/utils/constants/sizes.dart';
 import 'package:okiosk/utils/constants/image_strings.dart';
@@ -386,19 +387,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ],
           ),
           const SizedBox(height: TSizes.sm),
-          VoiceAssistantWidget(
-            showTranscription: true,
-            compactMode: true,
-            onTranscriptionComplete: () {
-              // Send transcription to chat
-              final voiceController = Get.find<VoiceController>();
-              final transcription = voiceController.getTranscriptionForAI();
+          // VoiceAssistantWidget(
+          //   showTranscription: true,
+          //   compactMode: true,
+          //   onTranscriptionComplete: () {
+          //     // Send transcription to chat
+          //     final voiceController = Get.find<VoiceController>();
+          //     final transcription = voiceController.getTranscriptionForAI();
 
-              if (transcription.isNotEmpty) {
-                _chatController.sendMessage(transcription);
-              }
-            },
-          ),
+          //     if (transcription.isNotEmpty) {
+          //       _chatController.sendMessage(transcription);
+          //     }
+          //   },
+          // ),
+          WebViewExample()
         ],
       ),
     );

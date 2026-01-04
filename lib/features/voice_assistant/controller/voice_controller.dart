@@ -2,11 +2,14 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import '../../../utils/constants/enums.dart';
+import '../../../data/backend/services/ai_action_executor.dart';
+import '../../../data/backend/models/ai_action_model.dart';
 import '../models/audio_config.dart';
 import '../models/transcription_response.dart';
-import '../models/voice_state.dart';
 import '../services/voice_recording_service.dart';
 import '../services/voice_websocket_service.dart';
+import '../../pos/controller/chat_controller.dart';
 
 /// Voice Controller
 /// Manages voice recording, WebSocket connection, and transcription state
@@ -14,6 +17,7 @@ class VoiceController extends GetxController {
   // Services
   final VoiceRecordingService _recordingService = VoiceRecordingService();
   final VoiceWebSocketService _websocketService = VoiceWebSocketService();
+  final AiActionExecutor _actionExecutor = Get.find<AiActionExecutor>();
 
   // Observable state
   final Rx<VoiceState> _voiceState = VoiceState.idle.obs;
@@ -29,12 +33,16 @@ class VoiceController extends GetxController {
   StreamSubscription<TranscriptionResponse>? _transcriptionSubscription;
   StreamSubscription<VoiceState>? _connectionStateSubscription;
   StreamSubscription<dynamic>? _recordingProgressSubscription;
+  StreamSubscription<Map<String, dynamic>>? _aiResponseSubscription;
 
-  // WebSocket configuration
-  String _wsUrl = 'ws://localhost:8081/ws/voice';
+  // WebSocket configuration - Connect to Rust server
+  String _wsUrl = 'ws://localhost:3000/ws/voice';
 
   // Demo mode for testing without backend
   bool _demoMode = false;
+
+  // Completer to wait for transcription completion
+  Completer<void>? _transcriptionCompleter;
 
   // Getters
   VoiceState get voiceState => _voiceState.value;
@@ -97,6 +105,15 @@ class VoiceController extends GetxController {
         onError: (error) {
           debugPrint(
               '❌ Voice Controller: Connection state stream error: $error');
+        },
+      );
+
+      // Setup AI response listener
+      debugPrint('🔗 Voice Controller: Setting up AI response listener...');
+      _aiResponseSubscription = _websocketService.aiResponseStream.listen(
+        _onAiResponseReceived,
+        onError: (error) {
+          debugPrint('❌ Voice Controller: AI response stream error: $error');
         },
       );
 
@@ -167,35 +184,9 @@ class VoiceController extends GetxController {
         return;
       }
 
-      if (!_demoMode) {
-        // Listen to audio stream and send to WebSocket
-        _audioStreamSubscription = _recordingService.audioStream?.listen(
-          (audioChunk) {
-            _websocketService.sendAudioChunk(audioChunk);
-          },
-          onError: (error) {
-            debugPrint('❌ Audio stream error: $error');
-            _setError('Audio stream error: $error');
-            stopRecording();
-          },
-        );
-      } else {
-        // Demo mode: Just listen to audio stream for testing
-        _audioStreamSubscription = _recordingService.audioStream?.listen(
-          (audioChunk) {
-            debugPrint(
-                '🎤 Demo Mode: Audio chunk received (${audioChunk.length} bytes)');
-            // Simulate transcription updates
-            _currentTranscription.value =
-                'Demo Mode: Recording... (${audioChunk.length} bytes)';
-          },
-          onError: (error) {
-            debugPrint('❌ Demo Mode Audio stream error: $error');
-            _setError('Demo Mode Audio stream error: $error');
-            stopRecording();
-          },
-        );
-      }
+      // Note: No longer streaming audio chunks during recording
+      // The complete audio file will be sent when recording stops
+      debugPrint('🎤 Recording in progress - will send complete file on stop');
 
       // Listen to recording progress
       _recordingProgressSubscription = _recordingService.onProgress?.listen(
@@ -221,15 +212,15 @@ class VoiceController extends GetxController {
     }
   }
 
-  /// Stop voice recording and streaming
+  /// Stop voice recording and send complete audio file
   Future<void> stopRecording() async {
     if (!isRecording) return;
 
     try {
       _voiceState.value = VoiceState.processing;
 
-      // Stop recording
-      await _recordingService.stopRecording();
+      // Stop recording and get the complete audio file
+      final audioBytes = await _recordingService.stopRecording();
 
       // Cancel audio stream subscription
       await _audioStreamSubscription?.cancel();
@@ -240,13 +231,34 @@ class VoiceController extends GetxController {
       _recordingProgressSubscription = null;
 
       if (!_demoMode) {
-        // Send stop message to backend
-        _websocketService.sendControlMessage('stop');
+        if (audioBytes != null && audioBytes.isNotEmpty) {
+          debugPrint(
+              '📤 Sending complete audio file (${audioBytes.length} bytes) to backend');
 
-        // Wait a bit for final transcription
-        await Future.delayed(const Duration(milliseconds: 500));
+          // Create completer to wait for transcription
+          _transcriptionCompleter = Completer<void>();
 
-        // Disconnect WebSocket
+          // Send the complete audio file to backend
+          _websocketService.sendAudioChunk(audioBytes);
+
+          // Wait for transcription response with timeout
+          debugPrint('⏳ Waiting for transcription from backend...');
+          try {
+            await _transcriptionCompleter!.future.timeout(
+              const Duration(seconds: 120), // 2 minutes timeout for AssemblyAI
+              onTimeout: () {
+                debugPrint('⏰ Transcription timeout - proceeding anyway');
+              },
+            );
+          } catch (e) {
+            debugPrint('❌ Error waiting for transcription: $e');
+          }
+        } else {
+          debugPrint('⚠️ No audio data to send');
+          _setError('No audio recorded');
+        }
+
+        // Disconnect WebSocket after transcription is received
         await _websocketService.disconnect();
       } else {
         // Demo mode: Show final message
@@ -306,6 +318,13 @@ class VoiceController extends GetxController {
     if (transcription.isFinal) {
       _finalTranscription.value = transcription.text;
       debugPrint('✅ Final transcription: ${transcription.text}');
+
+      // Complete the transcription completer if it exists
+      if (_transcriptionCompleter != null &&
+          !_transcriptionCompleter!.isCompleted) {
+        _transcriptionCompleter!.complete();
+        debugPrint('✅ Transcription completer completed');
+      }
     } else {
       _currentTranscription.value = transcription.text;
     }
@@ -316,6 +335,142 @@ class VoiceController extends GetxController {
     if (state == VoiceState.error || state == VoiceState.disconnected) {
       if (isRecording) {
         stopRecording();
+      }
+    }
+  }
+
+  /// Handle AI response from voice WebSocket
+  Future<void> _onAiResponseReceived(Map<String, dynamic> aiResponse) async {
+    debugPrint('🤖 Voice Controller: Received AI response: $aiResponse');
+
+    final success = aiResponse['success'] as bool? ?? false;
+    final message = aiResponse['message'] as String? ?? '';
+    final actionsRaw = aiResponse['actions_executed'] as List<dynamic>? ?? [];
+    final error = aiResponse['error'] as String?;
+
+    debugPrint('🤖 Voice Controller: Success: $success');
+    debugPrint('🤖 Voice Controller: Message: $message');
+    debugPrint('🤖 Voice Controller: Actions raw: $actionsRaw');
+    if (error != null) debugPrint('🤖 Voice Controller: Error: $error');
+
+    // Convert actions to strings for processing
+    final actionStrings = actionsRaw.map((e) => e.toString()).toList();
+
+    if (!success) {
+      // Handle error case
+      try {
+        if (Get.isRegistered<ChatController>()) {
+          final chatController = Get.find<ChatController>();
+          chatController.addAssistantMessage(
+            message,
+            actionsExecuted: ['error'],
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Voice Controller: Failed to add error message: $e');
+      }
+      return;
+    }
+
+    try {
+      // Execute actions using the same logic as text-based AI flow
+      debugPrint(
+          '🔄 Voice Controller: Executing ${actionStrings.length} actions...');
+      final results =
+          await _actionExecutor.executeActionsFromStrings(actionStrings);
+
+      final successfulActions = results.where((result) => result).length;
+
+      debugPrint(
+          '✅ Voice Controller: Actions executed - Success: $successfulActions/${actionStrings.length}');
+
+      // Parse actions to get structured data for variant selection detection
+      final parsedActions = <AiAction>[];
+      for (final actionString in actionStrings) {
+        try {
+          final action = AiAction.fromJsonString(actionString);
+          parsedActions.add(action);
+        } catch (e) {
+          debugPrint('❌ Voice Controller: Failed to parse action: $e');
+        }
+      }
+
+      // Forward to chat controller with proper action data
+      if (Get.isRegistered<ChatController>()) {
+        final chatController = Get.find<ChatController>();
+
+        // Check for variant selection actions (same logic as text flow)
+        final sequentialVariantAction = parsedActions
+            .where((action) => action.requiresSequentialVariantSelection)
+            .firstOrNull;
+
+        final multiVariantAction = parsedActions
+            .where((action) => action.requiresMultiVariantSelection)
+            .firstOrNull;
+
+        final singleVariantAction = parsedActions
+            .where((action) => action.requiresVariantSelection)
+            .firstOrNull;
+
+        if (sequentialVariantAction != null) {
+          // Sequential variant selection
+          debugPrint(
+              '🔄 Voice Controller: Sequential variant selection detected');
+          chatController.addAssistantMessage(
+            message,
+            actionsExecuted: ['sequential_variant_selection'],
+            variantSelectionData: sequentialVariantAction.variantSelectionData,
+          );
+        } else if (multiVariantAction != null) {
+          // Multi-variant selection (deprecated but still supported)
+          debugPrint('🔄 Voice Controller: Multi-variant selection detected');
+          chatController.addAssistantMessage(
+            message,
+            actionsExecuted: ['multi_variant_selection'],
+            multiVariantSelectionData:
+                multiVariantAction.multiVariantSelectionData,
+          );
+        } else if (singleVariantAction != null) {
+          // Single variant selection
+          debugPrint('🔄 Voice Controller: Single variant selection detected');
+          chatController.addAssistantMessage(
+            message,
+            actionsExecuted: ['variant_selection'],
+            variantSelectionData: singleVariantAction.variantSelectionData,
+          );
+        } else {
+          // Normal actions executed
+          final actionTypes =
+              parsedActions.map((action) => action.actionType).toList();
+          debugPrint(
+              '✅ Voice Controller: Normal actions executed: $actionTypes');
+          chatController.addAssistantMessage(
+            message,
+            actionsExecuted:
+                actionTypes.isNotEmpty ? actionTypes : ['message_only'],
+          );
+        }
+
+        debugPrint(
+            '✅ Voice Controller: AI response processed and forwarded to chat');
+      } else {
+        debugPrint('⚠️ Voice Controller: ChatController not found');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Voice Controller: Failed to process AI response: $e');
+      debugPrint('📋 Voice Controller: Stack trace: $stackTrace');
+
+      // Show error in chat
+      try {
+        if (Get.isRegistered<ChatController>()) {
+          final chatController = Get.find<ChatController>();
+          chatController.addAssistantMessage(
+            'Failed to execute action: ${e.toString()}',
+            actionsExecuted: ['error'],
+          );
+        }
+      } catch (e2) {
+        debugPrint('❌ Voice Controller: Failed to add error message: $e2');
       }
     }
   }
@@ -342,6 +497,13 @@ class VoiceController extends GetxController {
     _transcriptionSubscription?.cancel();
     _connectionStateSubscription?.cancel();
     _recordingProgressSubscription?.cancel();
+    _aiResponseSubscription?.cancel();
+
+    // Complete any pending transcription completer
+    if (_transcriptionCompleter != null &&
+        !_transcriptionCompleter!.isCompleted) {
+      _transcriptionCompleter!.complete();
+    }
 
     // Dispose services
     _recordingService.dispose();

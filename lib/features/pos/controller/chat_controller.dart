@@ -130,7 +130,7 @@ class ChatController extends GetxController {
             print('=================================================');
           }
 
-          _addAssistantMessage(
+          addAssistantMessage(
             result.message,
             actionsExecuted: ['sequential_variant_selection'],
             variantSelectionData: sequentialVariantAction.variantSelectionData,
@@ -150,7 +150,7 @@ class ChatController extends GetxController {
             }
           }
 
-          _addAssistantMessage(
+          addAssistantMessage(
             result.message,
             actionsExecuted: ['multi_variant_selection'],
             multiVariantSelectionData:
@@ -169,7 +169,7 @@ class ChatController extends GetxController {
             }
           }
 
-          _addAssistantMessage(
+          addAssistantMessage(
             result.message,
             actionsExecuted: ['variant_selection'],
             variantSelectionData: singleVariantAction.variantSelectionData,
@@ -185,7 +185,7 @@ class ChatController extends GetxController {
 
           if (hasActions) {
             // Add AI message with executed actions info
-            _addAssistantMessage(
+            addAssistantMessage(
               result.message,
               actionsExecuted: actionTypes,
             );
@@ -202,7 +202,7 @@ class ChatController extends GetxController {
             }
           } else {
             // Message-only response (no actions to execute)
-            _addAssistantMessage(
+            addAssistantMessage(
               result.message,
               actionsExecuted: ['message_only'],
             );
@@ -246,7 +246,7 @@ class ChatController extends GetxController {
 
   /// Add AI assistant message to chat
   /// Updated to support both single and multi-variant selection based on CART_AI_MODULE.md
-  void _addAssistantMessage(
+  void addAssistantMessage(
     String content, {
     List<String>? actionsExecuted,
     VariantSelectionActionData? variantSelectionData,
@@ -353,7 +353,7 @@ class ChatController extends GetxController {
           }
 
           // Add message for current item confirmation
-          _addAssistantMessage(
+          addAssistantMessage(
             response.message,
             actionsExecuted: ['sequential_variant_selection'],
             variantSelectionData: response.nextVariantData,
@@ -364,7 +364,7 @@ class ChatController extends GetxController {
             print('ChatController: Queue complete - all items added');
           }
 
-          _addAssistantMessage(
+          addAssistantMessage(
             response.message,
             actionsExecuted: ['add_to_cart'],
           );
@@ -426,7 +426,7 @@ class ChatController extends GetxController {
 
       _isLoading.value = false;
 
-      _addAssistantMessage(
+      addAssistantMessage(
         response.message.isNotEmpty ? response.message : 'Action cancelled',
         actionsExecuted: ['cancel'],
       );

@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
+import '../../../utils/constants/enums.dart';
 import '../models/transcription_response.dart';
-import '../models/voice_state.dart';
 
 /// Voice WebSocket Service
 /// Handles WebSocket connection to backend for real-time audio streaming
@@ -20,6 +20,8 @@ class VoiceWebSocketService {
       StreamController<TranscriptionResponse>.broadcast();
   final StreamController<VoiceState> _connectionStateController =
       StreamController<VoiceState>.broadcast();
+  final StreamController<Map<String, dynamic>> _aiResponseController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   bool _isConnected = false;
   Timer? _reconnectTimer;
@@ -37,6 +39,10 @@ class VoiceWebSocketService {
   /// Stream of connection state changes
   Stream<VoiceState> get connectionStateStream =>
       _connectionStateController.stream;
+
+  /// Stream of AI responses
+  Stream<Map<String, dynamic>> get aiResponseStream =>
+      _aiResponseController.stream;
 
   /// Connect to WebSocket server
   Future<bool> connect(String wsUrl) async {
@@ -148,6 +154,21 @@ class VoiceWebSocketService {
           _connectionStateController.add(VoiceState.error);
           break;
 
+        case 'ai_response':
+          final success = json['success'] as bool? ?? false;
+          final message = json['message'] as String? ?? '';
+          final actions = json['actions_executed'] as List<dynamic>? ?? [];
+          final error = json['error'] as String?;
+
+          debugPrint('🤖 AI Response: $message');
+          debugPrint('🤖 Success: $success');
+          debugPrint('🤖 Actions: $actions');
+          if (error != null) debugPrint('🤖 Error: $error');
+
+          // Forward AI response to stream
+          _aiResponseController.add(json);
+          break;
+
         default:
           debugPrint('⚠️ Unknown message type: $messageType');
       }
@@ -205,6 +226,7 @@ class VoiceWebSocketService {
     await disconnect();
     await _transcriptionController.close();
     await _connectionStateController.close();
+    await _aiResponseController.close();
     _channel = null;
     debugPrint('🗑️ Voice WebSocket Service disposed');
   }

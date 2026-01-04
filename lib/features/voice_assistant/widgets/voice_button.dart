@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../utils/constants/enums.dart';
 import '../controller/voice_controller.dart';
-import '../models/voice_state.dart';
 
 /// Voice Button Widget
 /// A simple, reusable button for starting/stopping voice recording

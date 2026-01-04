@@ -23,7 +23,7 @@
 /// )
 /// ```
 
-library voice_assistant;
+library;
 
 // Models
 export 'models/audio_config.dart';
