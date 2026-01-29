@@ -1,0 +1,434 @@
+.dashboard-container {
+    min-height: 100vh;
+    background: #FFF3E0;
+    /* Light Beige background */
+    padding: 2rem;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #FFFFFF;
+    /* Soft White for cards */
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    color: #E63946;
+    /* Red primary */
+    font-size: 2rem;
+}
+
+.logout-btn {
+    background: #E63946;
+    /* Red primary */
+    color: #FFFFFF;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background: #D62839;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+}
+
+.dashboard-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.user-info-card,
+.welcome-message {
+    background: #FFFFFF;
+    /* Soft White */
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-info-card {
+    text-align: center;
+}
+
+.user-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+    border: 4px solid #E63946;
+    /* Red primary */
+}
+
+.user-info-card h2 {
+    margin: 0.5rem 0;
+    color: #212529;
+    /* Dark Gray text */
+}
+
+.user-info-card p {
+    color: #212529;
+    /* Dark Gray text */
+    opacity: 0.7;
+    margin: 0;
+}
+
+.welcome-message h3 {
+    color: #E63946;
+    /* Red primary */
+    margin-top: 0;
+}
+
+.welcome-message p {
+    color: #212529;
+    /* Dark Gray text */
+    line-height: 1.6;
+}
+
+.info-text {
+    background: #FFF3E0;
+    /* Light Beige */
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #E63946;
+    /* Red primary */
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .dashboard-container {
+        background: #121212;
+        /* Dark Gray background */
+    }
+
+    .dashboard-header,
+    .user-info-card,
+    .welcome-message {
+        background: #1E1E1E;
+        /* Darker Gray for cards */
+    }
+
+    .dashboard-header h1,
+    .user-info-card h2,
+    .user-info-card p,
+    .welcome-message p {
+        color: #EAEAEA;
+        /* Light Gray text */
+    }
+
+    .info-text {
+        background: #1E1E1E;
+        color: #EAEAEA;
+    }
+}
+
+/* Header Layout */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Guest Badge */
+.guest-badge {
+    background: #FF9800;
+    color: #FFFFFF;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Upgrade Button */
+.upgrade-btn {
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    color: #FFFFFF;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upgrade-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(66, 133, 244, 0.4);
+}
+
+.upgrade-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* User Avatar Placeholder */
+.user-avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+    border: 4px solid #E63946;
+    background: #FFF3E0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* User Type Badge */
+.user-type-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.user-type-badge[data-type="guest"] {
+    background: #FFF3E0;
+    color: #FF9800;
+    border: 2px solid #FF9800;
+}
+
+.user-type-badge[data-type="authenticated"] {
+    background: #E8F5E9;
+    color: #4CAF50;
+    border: 2px solid #4CAF50;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Upgrade Modal */
+.upgrade-modal {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 2.5rem;
+    max-width: 450px;
+    width: 90%;
+    position: relative;
+    animation: slideUp 0.3s ease-out;
+    text-align: center;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #E63946;
+}
+
+.upgrade-modal h2 {
+    margin: 0 0 0.5rem 0;
+    color: #212529;
+}
+
+.modal-subtitle {
+    color: #666;
+    margin: 0 0 1.5rem 0;
+}
+
+/* QR Container in Modal */
+.qr-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.upgrade-qr {
+    width: 250px;
+    height: 250px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.qr-timer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.qr-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f5f5f5;
+    border-top-color: #E63946;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Modal Instructions */
+.modal-instructions {
+    text-align: left;
+    background: #FFF3E0;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.modal-instructions p {
+    margin: 0.5rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Cancel Upgrade Button */
+.cancel-upgrade-btn {
+    background: transparent;
+    border: 2px solid #ccc;
+    color: #666;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cancel-upgrade-btn:hover {
+    border-color: #E63946;
+    color: #E63946;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .upgrade-btn,
+    .logout-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .upgrade-modal {
+        padding: 1.5rem;
+    }
+
+    .upgrade-qr {
+        width: 200px;
+        height: 200px;
+    }
+}
