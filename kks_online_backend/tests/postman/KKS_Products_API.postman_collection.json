@@ -1,0 +1,732 @@
+{
+	"info": {
+		"_postman_id": "kks-products-api-collection",
+		"name": "KKS Online - Products API",
+		"description": "Postman collection for testing KKS Online Backend Product APIs\n\n**Base URL**: `http://localhost:3000`\n\n**API Version**: v1\n\nThis collection includes:\n- V1 API endpoints (recommended)\n- Legacy endpoints (for backwards compatibility)\n- Product variations endpoints\n\n**Setup Instructions**:\n1. Import this collection into Postman\n2. Create an environment variable `base_url` with value `http://localhost:3000`\n3. Ensure the Rust backend is running on port 3000\n4. Start testing!",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "V1 API Endpoints",
+			"item": [
+				{
+					"name": "Get Products with Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products?page=1&pageSize=20&isPopular=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (1-based)"
+								},
+								{
+									"key": "pageSize",
+									"value": "20",
+									"description": "Number of items per page"
+								},
+								{
+									"key": "isPopular",
+									"value": "true",
+									"description": "Filter by popular products",
+									"disabled": true
+								},
+								{
+									"key": "q",
+									"value": "",
+									"description": "Search query",
+									"disabled": true
+								},
+								{
+									"key": "categoryId",
+									"value": "",
+									"description": "Filter by category ID",
+									"disabled": true
+								},
+								{
+									"key": "brandId",
+									"value": "",
+									"description": "Filter by brand ID",
+									"disabled": true
+								},
+								{
+									"key": "minPrice",
+									"value": "",
+									"description": "Minimum price filter",
+									"disabled": true
+								},
+								{
+									"key": "maxPrice",
+									"value": "",
+									"description": "Maximum price filter",
+									"disabled": true
+								},
+								{
+									"key": "tag",
+									"value": "",
+									"description": "Filter by tag",
+									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "name",
+									"description": "Sort field: name, price, created_at, popularity",
+									"disabled": true
+								},
+								{
+									"key": "sortOrder",
+									"value": "asc",
+									"description": "Sort order: asc, desc",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get products with optional filters and pagination.\n\n**Query Parameters:**\n- `page` (optional): Page number, defaults to 1\n- `pageSize` (optional): Items per page, defaults to 20\n- `q` (optional): Search query\n- `categoryId` (optional): Filter by category\n- `brandId` (optional): Filter by brand\n- `minPrice` (optional): Minimum price\n- `maxPrice` (optional): Maximum price\n- `isPopular` (optional): Filter popular products (true/false)\n- `tag` (optional): Filter by tag\n- `sortBy` (optional): Sort field (name, price, created_at, popularity)\n- `sortOrder` (optional): Sort order (asc, desc)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Popular Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/popular?page=1&pageSize=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"popular"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (1-based)"
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Number of items per page"
+								}
+							]
+						},
+						"description": "Get popular products with pagination.\n\n**Query Parameters:**\n- `page` (optional): Page number, defaults to 1\n- `pageSize` (optional): Items per page, defaults to 10"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Search Suggestions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/search/suggestions?q=mattress",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"search",
+								"suggestions"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "mattress",
+									"description": "Search query (minimum 2 characters)"
+								}
+							]
+						},
+						"description": "Get search suggestions based on query.\n\n**Query Parameters:**\n- `q` (required): Search query, minimum 2 characters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products by Category",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/category/:category_id?page=1&pageSize=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"category",
+								":category_id"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (1-based)"
+								},
+								{
+									"key": "pageSize",
+									"value": "20",
+									"description": "Number of items per page"
+								}
+							],
+							"variable": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Get products by category ID with pagination.\n\n**Path Parameters:**\n- `category_id` (required): Category ID\n\n**Query Parameters:**\n- `page` (optional): Page number, defaults to 1\n- `pageSize` (optional): Items per page, defaults to 20"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products by Brand",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/brand/:brand_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"brand",
+								":brand_id"
+							],
+							"variable": [
+								{
+									"key": "brand_id",
+									"value": "1",
+									"description": "Brand ID"
+								}
+							]
+						},
+						"description": "Get products by brand ID.\n\n**Path Parameters:**\n- `brand_id` (required): Brand ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/:product_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								":product_id"
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Get product details by product ID.\n\n**Path Parameters:**\n- `product_id` (required): Product ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Variants",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/:product_id/variants",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								":product_id",
+								"variants"
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Get product variants by product ID.\n\n**Path Parameters:**\n- `product_id` (required): Product ID"
+					},
+					"response": []
+				}
+			],
+			"description": "V1 API endpoints (recommended for new integrations)"
+		},
+		{
+			"name": "Legacy Endpoints",
+			"item": [
+				{
+					"name": "Get Popular Products Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/popular/count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"popular",
+								"count"
+							]
+						},
+						"description": "Get count of popular products.\n\n**Response:**\n```json\n{\n  \"count\": 150,\n  \"status\": \"success\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Popular Products (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/popular?limit=10&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"popular"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of products to fetch"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Offset for pagination"
+								}
+							]
+						},
+						"description": "Fetch popular products with limit and offset (legacy endpoint).\n\n**Query Parameters:**\n- `limit` (optional): Number of products, defaults to 10\n- `offset` (optional): Offset for pagination, defaults to 0"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Products for POS",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/pos/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"pos",
+								"all"
+							]
+						},
+						"description": "Get all visible products for POS system (no pagination).\n\n**Response:**\nReturns all visible products in a single response."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/search?query=mattress",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "mattress",
+									"description": "Search query"
+								}
+							]
+						},
+						"description": "Search products by query (legacy endpoint).\n\n**Query Parameters:**\n- `query` (required): Search query"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"stats"
+							]
+						},
+						"description": "Get product statistics.\n\n**Response:**\n```json\n{\n  \"total_products\": 500,\n  \"popular_products\": 150,\n  \"status\": \"success\"\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Products by Category (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/category/:category_id?page=0&page_size=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"category",
+								":category_id"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "page_size",
+									"value": "20",
+									"description": "Items per page"
+								}
+							],
+							"variable": [
+								{
+									"key": "category_id",
+									"value": "1",
+									"description": "Category ID"
+								}
+							]
+						},
+						"description": "Fetch products by category (legacy endpoint).\n\n**Path Parameters:**\n- `category_id` (required): Category ID\n\n**Query Parameters:**\n- `page` (optional): Page number (0-based), defaults to 0\n- `page_size` (optional): Items per page, defaults to 20"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Products by Brand (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/brand/:brand_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"brand",
+								":brand_id"
+							],
+							"variable": [
+								{
+									"key": "brand_id",
+									"value": "1",
+									"description": "Brand ID"
+								}
+							]
+						},
+						"description": "Fetch products by brand (legacy endpoint).\n\n**Path Parameters:**\n- `brand_id` (required): Brand ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Product by ID (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/:product_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":product_id"
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Fetch product by ID with variations (legacy endpoint).\n\n**Path Parameters:**\n- `product_id` (required): Product ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Product Variations (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/:product_id/variations",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								":product_id",
+								"variations"
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "1",
+									"description": "Product ID"
+								}
+							]
+						},
+						"description": "Fetch product variations (legacy endpoint).\n\n**Path Parameters:**\n- `product_id` (required): Product ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Legacy endpoints for backwards compatibility"
+		},
+		{
+			"name": "Product Variations",
+			"item": [
+				{
+					"name": "Get Variation by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/variations/:variant_id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"variations",
+								":variant_id"
+							],
+							"variable": [
+								{
+									"key": "variant_id",
+									"value": "1",
+									"description": "Variant ID"
+								}
+							]
+						},
+						"description": "Get product variation details by variant ID.\n\n**Path Parameters:**\n- `variant_id` (required): Variant ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Related Variations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/variations/:variant_id/related",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"variations",
+								":variant_id",
+								"related"
+							],
+							"variable": [
+								{
+									"key": "variant_id",
+									"value": "1",
+									"description": "Variant ID"
+								}
+							]
+						},
+						"description": "Get related variations for a variant.\n\n**Path Parameters:**\n- `variant_id` (required): Variant ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Variant Stock",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/variations/:variant_id/stock",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"variations",
+								":variant_id",
+								"stock"
+							],
+							"variable": [
+								{
+									"key": "variant_id",
+									"value": "1",
+									"description": "Variant ID"
+								}
+							]
+						},
+						"description": "Check stock availability for a variant.\n\n**Path Parameters:**\n- `variant_id` (required): Variant ID\n\n**Response:**\n```json\n{\n  \"variant_id\": 1,\n  \"stock\": 50,\n  \"in_stock\": true,\n  \"status\": \"success\"\n}\n```"
+					},
+					"response": []
+				}
+			],
+			"description": "Product variation endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}
