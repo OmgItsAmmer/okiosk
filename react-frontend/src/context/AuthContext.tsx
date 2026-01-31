@@ -6,7 +6,10 @@ import type { User, AuthContextType, QRSession } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// BACKEND_URL is used for API calls and WebSocket (can be localhost)
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+// PUBLIC_URL is used for QR codes - must be accessible from mobile devices (use ngrok URL)
+const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || BACKEND_URL;
 const QR_SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const GUEST_SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -37,33 +40,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const socketRef = useRef<Socket | null>(null);
 
-    // Load stored session on mount
+    // Load stored session on mount and verify token
     useEffect(() => {
-        const storedToken = localStorage.getItem('auth_token');
-        const storedUser = localStorage.getItem('user');
-        const storedExpiry = localStorage.getItem('session_expiry');
+        const checkAuth = async () => {
+            const storedToken = localStorage.getItem('auth_token');
+            const storedUser = localStorage.getItem('user');
+            const storedExpiry = localStorage.getItem('session_expiry');
 
-        if (storedToken && storedUser) {
-            const userData = JSON.parse(storedUser) as User;
+            if (storedToken && storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser) as User;
 
-            // Check if guest session has expired
-            if (userData.userType === 'guest' && storedExpiry) {
-                const expiryTime = new Date(storedExpiry).getTime();
-                if (Date.now() > expiryTime) {
-                    // Guest session expired, clear storage
+                    // Check if guest session has expired (frontend check)
+                    if (userData.userType === 'guest' && storedExpiry) {
+                        const expiryTime = new Date(storedExpiry).getTime();
+                        if (Date.now() > expiryTime) {
+                            throw new Error('Guest session expired');
+                        }
+                    }
+
+                    // Verify token with backend
+                    const response = await fetch(`${BACKEND_URL}/api/auth/verify`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${storedToken}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setToken(storedToken);
+                        setUser(data.user);
+                        setAuthState(data.user.userType === 'guest' ? AuthState.GUEST : AuthState.AUTHENTICATED);
+                    } else {
+                        throw new Error('Token verification failed');
+                    }
+                } catch (error) {
+                    console.error('Auth initialization error:', error);
+                    // Clear invalid session
                     localStorage.removeItem('auth_token');
                     localStorage.removeItem('user');
                     localStorage.removeItem('session_expiry');
-                    setIsLoading(false);
-                    return;
+                    setToken(null);
+                    setUser(null);
+                    setAuthState(AuthState.INITIAL);
                 }
+            } else {
+                setAuthState(AuthState.INITIAL);
             }
+            setIsLoading(false);
+        };
 
-            setToken(storedToken);
-            setUser(userData);
-            setAuthState(userData.userType === 'guest' ? AuthState.GUEST : AuthState.AUTHENTICATED);
-        }
-        setIsLoading(false);
+        checkAuth();
     }, []);
 
     // Initialize WebSocket connection
@@ -148,7 +176,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         setSessionId(newSessionId);
 
-        const qrUrl = `${BACKEND_URL}/api/auth/google?session_id=${newSessionId}`;
+        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${newSessionId}`;
         const expiresAt = new Date(Date.now() + QR_SESSION_TIMEOUT_MS);
 
         setQrSession({
@@ -213,7 +241,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const newSessionId = `upgrade_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         setSessionId(newSessionId);
 
-        const qrUrl = `${BACKEND_URL}/api/auth/google?session_id=${newSessionId}&upgrade_from=${user?.id}`;
+        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${newSessionId}&upgrade_from=${user?.id}`;
         const expiresAt = new Date(Date.now() + QR_SESSION_TIMEOUT_MS);
 
         setQrSession({

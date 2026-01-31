@@ -1,46 +1,387 @@
-| table_name              | create_table_sql                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| account_book            | CREATE TABLE public.account_book (transaction_date date NOT NULL, reference character varying, amount numeric NOT NULL, entity_id bigint NOT NULL, description text NOT NULL, entity_type character varying NOT NULL, entity_name character varying NOT NULL, transaction_type character varying NOT NULL, account_book_id bigint DEFAULT nextval('account_book_account_book_id_seq'::regclass) NOT NULL, created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP);                                                                 |
-| account_book_summary    | CREATE TABLE public.account_book_summary (latest_transaction date, max_amount numeric, min_amount numeric, average_amount numeric, total_amount numeric, transaction_count bigint, entity_type character varying, transaction_type character varying, earliest_transaction date);                                                                                                                                                                                                                                                                                                                        |
-| addresses               | CREATE TABLE public.addresses (latitude numeric, longitude numeric, user_id integer, salesman_id integer, vendor_id integer, customer_id integer, address_id integer NOT NULL, shipping_address text DEFAULT ''::text, phone_number text DEFAULT ''::text, postal_code text DEFAULT ''::text, city text DEFAULT ''::text, country text DEFAULT ''::text, full_name text NOT NULL, place_id text, formatted_address text);                                                                                                                                                                                |
-| app_versions            | CREATE TABLE public.app_versions (version text NOT NULL, app_locked boolean DEFAULT false NOT NULL, created_at timestamp with time zone DEFAULT now(), force_update boolean DEFAULT false NOT NULL, id bigint DEFAULT nextval('app_versions_id_seq'::regclass) NOT NULL, redirect_url text NOT NULL, description text);                                                                                                                                                                                                                                                                                  |
-| brands                  | CREATE TABLE public.brands (product_count bigint DEFAULT '0'::bigint NOT NULL, isVerified boolean DEFAULT false, isFeatured boolean, brandID integer NOT NULL, brandname text);                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| cart                    | CREATE TABLE public.cart (quantity text DEFAULT ''::text NOT NULL, customer_id integer, variant_id integer, cart_id integer NOT NULL);                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| categories              | CREATE TABLE public.categories (isFeatured boolean DEFAULT false, created_at timestamp with time zone DEFAULT now(), category_name text NOT NULL, product_count integer, category_id integer NOT NULL);                                                                                                                                                                                                                                                                                                                                                                                                  |
-| collection_cart         | CREATE TABLE public.collection_cart (collection_id integer NOT NULL, customer_id integer NOT NULL, created_at timestamp with time zone DEFAULT now(), updated_at timestamp with time zone DEFAULT now(), collection_cart_id integer DEFAULT nextval('collection_cart_collection_cart_id_seq'::regclass) NOT NULL);                                                                                                                                                                                                                                                                                       |
-| collection_cart_items   | CREATE TABLE public.collection_cart_items (collection_cart_item_id integer DEFAULT nextval('collection_cart_items_collection_cart_item_id_seq'::regclass) NOT NULL, variant_id integer NOT NULL, quantity integer DEFAULT 1 NOT NULL, created_at timestamp with time zone DEFAULT now(), collection_cart_id integer NOT NULL);                                                                                                                                                                                                                                                                           |
-| collection_items        | CREATE TABLE public.collection_items (collection_id integer NOT NULL, variant_id integer NOT NULL, default_quantity integer DEFAULT 1 NOT NULL, sort_order integer DEFAULT 0, created_at timestamp with time zone DEFAULT now(), collection_item_id integer DEFAULT nextval('collection_items_collection_item_id_seq'::regclass) NOT NULL);                                                                                                                                                                                                                                                              |
-| collection_items_detail | CREATE TABLE public.collection_items_detail (sell_price numeric, product_name text, sku character varying, image_url text, variant_name text, product_description text, collection_item_id integer, collection_id integer, variant_id integer, default_quantity integer, sort_order integer, product_id integer, stock integer, is_visible boolean, featured_image_id integer);                                                                                                                                                                                                                          |
-| collections             | CREATE TABLE public.collections (name text NOT NULL, description text, collection_id integer DEFAULT nextval('collections_collection_id_seq'::regclass) NOT NULL, is_active boolean DEFAULT true, is_featured boolean DEFAULT false, display_order integer DEFAULT 0, created_at timestamp with time zone DEFAULT now(), updated_at timestamp with time zone DEFAULT now(), is_premium boolean DEFAULT false, image_url text);                                                                                                                                                                           |
-| collections_summary     | CREATE TABLE public.collections_summary (collection_id integer, description text, name text, image_url text, is_active boolean, is_featured boolean, is_premium boolean, item_count bigint, updated_at timestamp with time zone, created_at timestamp with time zone, display_order integer, total_price numeric);                                                                                                                                                                                                                                                                                       |
-| customer_public_info    | CREATE TABLE public.customer_public_info (last_name text, customer_id integer, first_name text);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| customers               | CREATE TABLE public.customers (auth_uid character varying DEFAULT auth.uid(), email text DEFAULT ''::text NOT NULL, cnic text DEFAULT ''::text, last_name text DEFAULT ''::text, phone_number text DEFAULT ''::text, customer_id integer NOT NULL, created_at timestamp with time zone DEFAULT now(), first_name text DEFAULT ''::text NOT NULL, dob timestamp with time zone, gender USER-DEFINED, fcm_token text, token_version integer DEFAULT 0);                                                                                                                                                    |
-| expenses                | CREATE TABLE public.expenses (description text NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, expense_id integer NOT NULL, amount numeric DEFAULT 0.0);                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| extras                  | CREATE TABLE public.extras (extraId bigint NOT NULL, AdminKey text);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| guarantors              | CREATE TABLE public.guarantors (cnic text DEFAULT ''::text NOT NULL, guarantor_id integer NOT NULL, pfp text, first_name text DEFAULT ''::text NOT NULL, email text DEFAULT ''::text NOT NULL, last_name text DEFAULT ''::text, phone_number text DEFAULT ''::text, address text);                                                                                                                                                                                                                                                                                                                       |
-| image_entity            | CREATE TABLE public.image_entity (updated_at timestamp with time zone DEFAULT now(), entity_category text, image_entity_id integer NOT NULL, image_id integer, entity_id integer, isFeatured boolean DEFAULT false, created_at timestamp with time zone DEFAULT now() NOT NULL);                                                                                                                                                                                                                                                                                                                         |
-| images                  | CREATE TABLE public.images (folderType text, filename text, image_url text, created_at timestamp with time zone DEFAULT now(), image_id integer NOT NULL);                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| installment_payments    | CREATE TABLE public.installment_payments (is_paid boolean DEFAULT false, paid_date timestamp with time zone, sequence_no integer NOT NULL, installment_plan_id integer NOT NULL, due_date timestamp with time zone NOT NULL, created_at timestamp without time zone DEFAULT now(), paid_amount text, status text, amount_due text NOT NULL);                                                                                                                                                                                                                                                             |
-| installment_plans       | CREATE TABLE public.installment_plans (note text, total_amount text NOT NULL, status text DEFAULT 'active'::text, document_charges text, number_of_installments text NOT NULL, created_at timestamp with time zone DEFAULT now(), order_id integer NOT NULL, installment_plans_id integer NOT NULL, guarantor1_id integer, down_payment text NOT NULL, margin text, first_installment_date timestamp with time zone, frequency_in_month text, other_charges text, duration text, guarantor2_id integer);                                                                                                 |
-| inventory_reservations  | CREATE TABLE public.inventory_reservations (variant_id integer NOT NULL, quantity integer NOT NULL, expires_at timestamp with time zone NOT NULL, reservation_id character varying NOT NULL, created_at timestamp with time zone DEFAULT now());                                                                                                                                                                                                                                                                                                                                                         |
-| inventory_status        | CREATE TABLE public.inventory_status (product_name text, reserved_quantity bigint, sell_price numeric, total_stock integer, variant_id integer, available_stock bigint, variant_name text);                                                                                                                                                                                                                                                                                                                                                                                                              |
-| invoice_coupons         | CREATE TABLE public.invoice_coupons (created_at timestamp with time zone DEFAULT now() NOT NULL, discount_type text NOT NULL, coupon_code text NOT NULL, title text NOT NULL, coupon_id integer DEFAULT nextval('invoice_coupons_id_seq'::regclass) NOT NULL, amount numeric NOT NULL, usage_limit integer, used_count integer DEFAULT 0 NOT NULL, start_date timestamp with time zone NOT NULL, end_date timestamp with time zone NOT NULL, is_active boolean DEFAULT true NOT NULL);                                                                                                                   |
-| kiosk_cart              | CREATE TABLE public.kiosk_cart (kiosk_id integer DEFAULT nextval('kiosk_cart_id_seq'::regclass) NOT NULL, created_at timestamp without time zone DEFAULT now(), quantity integer NOT NULL, variant_id integer NOT NULL, kiosk_session_id uuid NOT NULL);                                                                                                                                                                                                                                                                                                                                                 |
-| monthly_account_summary | CREATE TABLE public.monthly_account_summary (transaction_count bigint, transaction_type character varying, entity_type character varying, month timestamp with time zone, total_amount numeric);                                                                                                                                                                                                                                                                                                                                                                                                         |
-| notifications           | CREATE TABLE public.notifications (product_id integer, notification_id integer NOT NULL, created_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text) NOT NULL, isRead boolean DEFAULT false, expires_at timestamp with time zone DEFAULT (now() + '10 days'::interval), order_id integer, installment_plan_id integer, description text, sub_description text, NotificationType text);                                                                                                                                                                                                  |
-| order_addresses         | CREATE TABLE public.order_addresses (formatted_address text, place_id text, user_id integer, salesman_id integer, country text DEFAULT ''::text, city text DEFAULT ''::text, vendor_id integer, customer_id integer, longitude numeric, shipping_address text DEFAULT ''::text, order_address_id integer NOT NULL, postal_code text DEFAULT ''::text, full_name text NOT NULL, phone_number text DEFAULT ''::text, latitude numeric, address_id integer);                                                                                                                                                |
-| order_items             | CREATE TABLE public.order_items (product_id integer NOT NULL, variant_id integer NOT NULL, created_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text), unit character varying, order_id integer NOT NULL, total_buy_price numeric DEFAULT 0.0, quantity integer NOT NULL, price numeric NOT NULL);                                                                                                                                                                                                                                                                                     |
-| orders                  | CREATE TABLE public.orders (user_id integer, shipping_method text, idempotency_key character varying, buying_price numeric, discount numeric DEFAULT 0.0, tax numeric DEFAULT 0.0, shipping_fee numeric DEFAULT 0.0, customer_id integer, payment_method USER-DEFINED DEFAULT 'cod'::"PaymentMethod", salesman_id integer, salesman_comission integer, order_id integer DEFAULT nextval('orders_order_id_seq'::regclass) NOT NULL, sub_total numeric NOT NULL, status USER-DEFINED NOT NULL, address_id integer, order_date date NOT NULL, paid_amount numeric, saletype text);                          |
-| product_discounts       | CREATE TABLE public.product_discounts (product_id integer NOT NULL, end_date timestamp with time zone NOT NULL, start_date timestamp with time zone NOT NULL, discount_id integer DEFAULT nextval('product_discounts_id_seq'::regclass) NOT NULL, discount_type text NOT NULL, amount numeric NOT NULL, created_at timestamp with time zone DEFAULT now() NOT NULL, is_active boolean DEFAULT true NOT NULL);                                                                                                                                                                                            |
-| product_variants        | CREATE TABLE public.product_variants (sku character varying, variant_id integer DEFAULT nextval('product_variants_variant_id_seq'::regclass) NOT NULL, alert_stock bigint DEFAULT '0'::bigint NOT NULL, stock integer DEFAULT 0, is_visible boolean DEFAULT true, updated_at timestamp with time zone DEFAULT now(), created_at timestamp with time zone DEFAULT now(), sell_price numeric NOT NULL, buy_price numeric NOT NULL, product_id integer NOT NULL, variant_name text NOT NULL);                                                                                                               |
-| products                | CREATE TABLE public.products (tag USER-DEFINED, description text DEFAULT ''::text, name text DEFAULT ''::text NOT NULL, base_price text DEFAULT ''::text, sale_price text DEFAULT ''::text, price_range text DEFAULT '--'::text, isVisible boolean DEFAULT false, alert_stock integer, brandID integer DEFAULT 20, created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, stock_quantity integer DEFAULT 0, ispopular boolean DEFAULT false, category_id integer DEFAULT 11, product_id integer DEFAULT nextval('products_product_id_seq'::regclass) NOT NULL);                                  |
-| purchase_items          | CREATE TABLE public.purchase_items (created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, purchase_item_id bigint DEFAULT nextval('purchase_items_purchase_item_id_seq'::regclass) NOT NULL, unit character varying, purchase_id bigint NOT NULL, product_id bigint NOT NULL, variant_id bigint, price numeric NOT NULL, quantity integer DEFAULT 1 NOT NULL);                                                                                                                                                                                                                                  |
-| purchases               | CREATE TABLE public.purchases (shipping_fee numeric DEFAULT 0.00, tax numeric DEFAULT 0.00, vendor_id bigint, sub_total numeric DEFAULT 0.00 NOT NULL, discount numeric DEFAULT 0.00, paid_amount numeric DEFAULT 0.00, purchase_date date DEFAULT CURRENT_DATE NOT NULL, status character varying DEFAULT 'pending'::character varying NOT NULL, purchase_id bigint DEFAULT nextval('purchases_purchase_id_seq'::regclass) NOT NULL, address_id bigint, user_id integer, updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP, created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP); |
-| reviews                 | CREATE TABLE public.reviews (product_id integer, customer_id integer, rating numeric, review text DEFAULT ''::text, sent_at timestamp with time zone DEFAULT now() NOT NULL, review_id bigint NOT NULL);                                                                                                                                                                                                                                                                                                                                                                                                 |
-| salesman                | CREATE TABLE public.salesman (email text DEFAULT ''::text NOT NULL, pfp text, salesman_id integer NOT NULL, created_at timestamp with time zone DEFAULT now(), comission integer, phone_number text DEFAULT ''::text, last_name text DEFAULT ''::text, cnic text DEFAULT ''::text NOT NULL, city text DEFAULT ''::text NOT NULL, first_name text DEFAULT ''::text NOT NULL, area text DEFAULT ''::text NOT NULL);                                                                                                                                                                                        |
-| security_audit_log      | CREATE TABLE public.security_audit_log (timestamp timestamp with time zone DEFAULT now(), log_id integer DEFAULT nextval('security_audit_log_log_id_seq'::regclass) NOT NULL, user_agent text, event_type character varying NOT NULL, severity character varying DEFAULT 'info'::character varying, event_data jsonb, customer_id integer, ip_address inet);                                                                                                                                                                                                                                             |
-| security_dashboard      | CREATE TABLE public.security_dashboard (event_type character varying, severity character varying, unique_customers bigint, event_count bigint, date date);                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| shop                    | CREATE TABLE public.shop (max_allowed_item_quantity bigint DEFAULT '50'::bigint NOT NULL, software_website_link text, software_contact_no text, software_company_name text, shopname text NOT NULL, shop_id integer NOT NULL, taxrate numeric NOT NULL, shipping_price numeric NOT NULL, threshold_free_shipping numeric, is_shipping_enable boolean DEFAULT false NOT NULL);                                                                                                                                                                                                                            |
-| users                   | CREATE TABLE public.users (first_name text DEFAULT ''::text NOT NULL, user_id integer NOT NULL, gender USER-DEFINED, created_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text), dob timestamp with time zone, auth_uid character varying, email text DEFAULT ''::text NOT NULL, phone_number text DEFAULT ''::text, last_name text DEFAULT ''::text);                                                                                                                                                                                                                                 |
-| vendors                 | CREATE TABLE public.vendors (phone_number text DEFAULT ''::text, last_name text DEFAULT ''::text, created_at timestamp with time zone DEFAULT now(), vendor_id integer NOT NULL, email text DEFAULT ''::text NOT NULL, cnic text DEFAULT ''::text, first_name text DEFAULT ''::text NOT NULL);                                                                                                                                                                                                                                                                                                           |
-| wishlist                | CREATE TABLE public.wishlist (created_at timestamp with time zone DEFAULT now() NOT NULL, wishlist_id bigint NOT NULL, product_id integer, customer_id integer);                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| table_name              | column_name               | data_type                   |
+| ----------------------- | ------------------------- | --------------------------- |
+| account_book            | account_book_id           | bigint                      |
+| account_book            | transaction_date          | date                        |
+| account_book            | reference                 | character varying           |
+| account_book            | amount                    | numeric                     |
+| account_book            | entity_id                 | bigint                      |
+| account_book            | description               | text                        |
+| account_book            | entity_type               | character varying           |
+| account_book            | entity_name               | character varying           |
+| account_book            | transaction_type          | character varying           |
+| account_book            | created_at                | timestamp with time zone    |
+| account_book            | updated_at                | timestamp with time zone    |
+| account_book_summary    | latest_transaction        | date                        |
+| account_book_summary    | max_amount                | numeric                     |
+| account_book_summary    | min_amount                | numeric                     |
+| account_book_summary    | average_amount            | numeric                     |
+| account_book_summary    | total_amount              | numeric                     |
+| account_book_summary    | transaction_count         | bigint                      |
+| account_book_summary    | entity_type               | character varying           |
+| account_book_summary    | transaction_type          | character varying           |
+| account_book_summary    | earliest_transaction      | date                        |
+| addresses               | address_id                | integer                     |
+| addresses               | latitude                  | numeric                     |
+| addresses               | longitude                 | numeric                     |
+| addresses               | user_id                   | integer                     |
+| addresses               | salesman_id               | integer                     |
+| addresses               | vendor_id                 | integer                     |
+| addresses               | customer_id               | integer                     |
+| addresses               | shipping_address          | text                        |
+| addresses               | phone_number              | text                        |
+| addresses               | postal_code               | text                        |
+| addresses               | city                      | text                        |
+| addresses               | country                   | text                        |
+| addresses               | full_name                 | text                        |
+| addresses               | place_id                  | text                        |
+| addresses               | formatted_address         | text                        |
+| app_versions            | id                        | bigint                      |
+| app_versions            | version                   | text                        |
+| app_versions            | app_locked                | boolean                     |
+| app_versions            | created_at                | timestamp with time zone    |
+| app_versions            | force_update              | boolean                     |
+| app_versions            | redirect_url              | text                        |
+| app_versions            | description               | text                        |
+| auth_sessions           | session_id                | character varying           |
+| auth_sessions           | user_id                   | uuid                        |
+| auth_sessions           | status                    | character varying           |
+| auth_sessions           | created_at                | timestamp with time zone    |
+| auth_sessions           | expires_at                | timestamp with time zone    |
+| brands                  | brandID                   | integer                     |
+| brands                  | product_count             | bigint                      |
+| brands                  | isVerified                | boolean                     |
+| brands                  | isFeatured                | boolean                     |
+| brands                  | brandname                 | text                        |
+| cart                    | cart_id                   | integer                     |
+| cart                    | quantity                  | text                        |
+| cart                    | customer_id               | integer                     |
+| cart                    | variant_id                | integer                     |
+| categories              | category_id               | integer                     |
+| categories              | isFeatured                | boolean                     |
+| categories              | created_at                | timestamp with time zone    |
+| categories              | category_name             | text                        |
+| categories              | product_count             | integer                     |
+| collection_cart         | collection_cart_id        | integer                     |
+| collection_cart         | collection_id             | integer                     |
+| collection_cart         | customer_id               | integer                     |
+| collection_cart         | created_at                | timestamp with time zone    |
+| collection_cart         | updated_at                | timestamp with time zone    |
+| collection_cart_items   | collection_cart_item_id   | integer                     |
+| collection_cart_items   | variant_id                | integer                     |
+| collection_cart_items   | quantity                  | integer                     |
+| collection_cart_items   | created_at                | timestamp with time zone    |
+| collection_cart_items   | collection_cart_id        | integer                     |
+| collection_items        | collection_item_id        | integer                     |
+| collection_items        | collection_id             | integer                     |
+| collection_items        | variant_id                | integer                     |
+| collection_items        | default_quantity          | integer                     |
+| collection_items        | sort_order                | integer                     |
+| collection_items        | created_at                | timestamp with time zone    |
+| collection_items_detail | sell_price                | numeric                     |
+| collection_items_detail | product_name              | text                        |
+| collection_items_detail | sku                       | character varying           |
+| collection_items_detail | image_url                 | text                        |
+| collection_items_detail | variant_name              | text                        |
+| collection_items_detail | product_description       | text                        |
+| collection_items_detail | collection_item_id        | integer                     |
+| collection_items_detail | collection_id             | integer                     |
+| collection_items_detail | variant_id                | integer                     |
+| collection_items_detail | default_quantity          | integer                     |
+| collection_items_detail | sort_order                | integer                     |
+| collection_items_detail | product_id                | integer                     |
+| collection_items_detail | stock                     | integer                     |
+| collection_items_detail | is_visible                | boolean                     |
+| collection_items_detail | featured_image_id         | integer                     |
+| collections             | collection_id             | integer                     |
+| collections             | name                      | text                        |
+| collections             | description               | text                        |
+| collections             | is_active                 | boolean                     |
+| collections             | is_featured               | boolean                     |
+| collections             | display_order             | integer                     |
+| collections             | created_at                | timestamp with time zone    |
+| collections             | updated_at                | timestamp with time zone    |
+| collections             | is_premium                | boolean                     |
+| collections             | image_url                 | text                        |
+| collections_summary     | collection_id             | integer                     |
+| collections_summary     | description               | text                        |
+| collections_summary     | name                      | text                        |
+| collections_summary     | image_url                 | text                        |
+| collections_summary     | is_active                 | boolean                     |
+| collections_summary     | is_featured               | boolean                     |
+| collections_summary     | is_premium                | boolean                     |
+| collections_summary     | item_count                | bigint                      |
+| collections_summary     | updated_at                | timestamp with time zone    |
+| collections_summary     | created_at                | timestamp with time zone    |
+| collections_summary     | display_order             | integer                     |
+| collections_summary     | total_price               | numeric                     |
+| customer_public_info    | customer_id               | integer                     |
+| customer_public_info    | last_name                 | text                        |
+| customer_public_info    | first_name                | text                        |
+| customers               | customer_id               | integer                     |
+| customers               | auth_uid                  | character varying           |
+| customers               | email                     | text                        |
+| customers               | cnic                      | text                        |
+| customers               | last_name                 | text                        |
+| customers               | phone_number              | text                        |
+| customers               | created_at                | timestamp with time zone    |
+| customers               | first_name                | text                        |
+| customers               | dob                       | timestamp with time zone    |
+| customers               | gender                    | text                        |
+| customers               | fcm_token                 | text                        |
+| customers               | token_version             | integer                     |
+| expenses                | expense_id                | integer                     |
+| expenses                | description               | text                        |
+| expenses                | created_at                | timestamp with time zone    |
+| expenses                | amount                    | numeric                     |
+| extras                  | extraid                   | bigint                      |
+| extras                  | adminkey                  | text                        |
+| guarantors              | guarantor_id              | integer                     |
+| guarantors              | cnic                      | text                        |
+| guarantors              | pfp                       | text                        |
+| guarantors              | first_name                | text                        |
+| guarantors              | email                     | text                        |
+| guarantors              | last_name                 | text                        |
+| guarantors              | phone_number              | text                        |
+| guarantors              | address                   | text                        |
+| image_entity            | image_entity_id           | integer                     |
+| image_entity            | updated_at                | timestamp with time zone    |
+| image_entity            | entity_category           | text                        |
+| image_entity            | image_id                  | integer                     |
+| image_entity            | entity_id                 | integer                     |
+| image_entity            | isfeatured                | boolean                     |
+| image_entity            | created_at                | timestamp with time zone    |
+| images                  | image_id                  | integer                     |
+| images                  | foldertype                | text                        |
+| images                  | filename                  | text                        |
+| images                  | created_at                | timestamp with time zone    |
+| installment_payments    | sequence_no               | integer                     |
+| installment_payments    | installment_plan_id       | integer                     |
+| installment_payments    | is_paid                   | boolean                     |
+| installment_payments    | paid_date                 | timestamp with time zone    |
+| installment_payments    | due_date                  | timestamp with time zone    |
+| installment_payments    | created_at                | timestamp without time zone |
+| installment_payments    | paid_amount               | text                        |
+| installment_payments    | status                    | text                        |
+| installment_payments    | amount_due                | text                        |
+| installment_plans       | installment_plans_id      | integer                     |
+| installment_plans       | note                      | text                        |
+| installment_plans       | total_amount              | text                        |
+| installment_plans       | status                    | text                        |
+| installment_plans       | document_charges          | text                        |
+| installment_plans       | number_of_installments    | text                        |
+| installment_plans       | created_at                | timestamp with time zone    |
+| installment_plans       | order_id                  | integer                     |
+| installment_plans       | guarantor1_id             | integer                     |
+| installment_plans       | down_payment              | text                        |
+| installment_plans       | margin                    | text                        |
+| installment_plans       | first_installment_date    | timestamp with time zone    |
+| installment_plans       | frequency_in_month        | text                        |
+| installment_plans       | other_charges             | text                        |
+| installment_plans       | duration                  | text                        |
+| installment_plans       | guarantor2_id             | integer                     |
+| inventory_reservations  | reservation_id            | character varying           |
+| inventory_reservations  | variant_id                | integer                     |
+| inventory_reservations  | quantity                  | integer                     |
+| inventory_reservations  | expires_at                | timestamp with time zone    |
+| inventory_reservations  | created_at                | timestamp with time zone    |
+| inventory_status        | variant_id                | integer                     |
+| inventory_status        | product_name              | text                        |
+| inventory_status        | reserved_quantity         | bigint                      |
+| inventory_status        | sell_price                | numeric                     |
+| inventory_status        | total_stock               | integer                     |
+| inventory_status        | available_stock           | bigint                      |
+| inventory_status        | variant_name              | text                        |
+| invoice_coupons         | coupon_id                 | integer                     |
+| invoice_coupons         | created_at                | timestamp with time zone    |
+| invoice_coupons         | discount_type             | text                        |
+| invoice_coupons         | coupon_code               | text                        |
+| invoice_coupons         | title                     | text                        |
+| invoice_coupons         | amount                    | numeric                     |
+| invoice_coupons         | usage_limit               | integer                     |
+| invoice_coupons         | used_count                | integer                     |
+| invoice_coupons         | start_date                | timestamp with time zone    |
+| invoice_coupons         | end_date                  | timestamp with time zone    |
+| invoice_coupons         | is_active                 | boolean                     |
+| kiosk_cart              | kiosk_id                  | integer                     |
+| kiosk_cart              | created_at                | timestamp without time zone |
+| kiosk_cart              | quantity                  | integer                     |
+| kiosk_cart              | variant_id                | integer                     |
+| kiosk_cart              | kiosk_session_id          | uuid                        |
+| monthly_account_summary | transaction_count         | bigint                      |
+| monthly_account_summary | transaction_type          | character varying           |
+| monthly_account_summary | entity_type               | character varying           |
+| monthly_account_summary | month                     | timestamp with time zone    |
+| monthly_account_summary | total_amount              | numeric                     |
+| notifications           | notification_id           | integer                     |
+| notifications           | product_id                | integer                     |
+| notifications           | created_at                | timestamp with time zone    |
+| notifications           | isread                    | boolean                     |
+| notifications           | expires_at                | timestamp with time zone    |
+| notifications           | order_id                  | integer                     |
+| notifications           | installment_plan_id       | integer                     |
+| notifications           | description               | text                        |
+| notifications           | sub_description           | text                        |
+| notifications           | notificationtype          | text                        |
+| oauth_users             | id                        | uuid                        |
+| oauth_users             | google_id                 | character varying           |
+| oauth_users             | email                     | character varying           |
+| oauth_users             | name                      | character varying           |
+| oauth_users             | picture                   | character varying           |
+| oauth_users             | created_at                | timestamp with time zone    |
+| oauth_users             | updated_at                | timestamp with time zone    |
+| order_addresses         | order_address_id          | integer                     |
+| order_addresses         | formatted_address         | text                        |
+| order_addresses         | place_id                  | text                        |
+| order_addresses         | user_id                   | integer                     |
+| order_addresses         | salesman_id               | integer                     |
+| order_addresses         | country                   | text                        |
+| order_addresses         | city                      | text                        |
+| order_addresses         | vendor_id                 | integer                     |
+| order_addresses         | customer_id               | integer                     |
+| order_addresses         | longitude                 | numeric                     |
+| order_addresses         | shipping_address          | text                        |
+| order_addresses         | postal_code               | text                        |
+| order_addresses         | full_name                 | text                        |
+| order_addresses         | phone_number              | text                        |
+| order_addresses         | latitude                  | numeric                     |
+| order_addresses         | address_id                | integer                     |
+| order_items             | order_id                  | integer                     |
+| order_items             | product_id                | integer                     |
+| order_items             | variant_id                | integer                     |
+| order_items             | created_at                | timestamp with time zone    |
+| order_items             | unit                      | character varying           |
+| order_items             | total_buy_price           | numeric                     |
+| order_items             | quantity                  | integer                     |
+| order_items             | price                     | numeric                     |
+| orders                  | order_id                  | integer                     |
+| orders                  | user_id                   | integer                     |
+| orders                  | shipping_method           | text                        |
+| orders                  | idempotency_key           | character varying           |
+| orders                  | buying_price              | numeric                     |
+| orders                  | discount                  | numeric                     |
+| orders                  | tax                       | numeric                     |
+| orders                  | shipping_fee              | numeric                     |
+| orders                  | customer_id               | integer                     |
+| orders                  | payment_method            | text                        |
+| orders                  | salesman_id               | integer                     |
+| orders                  | salesman_comission        | integer                     |
+| orders                  | sub_total                 | numeric                     |
+| orders                  | status                    | text                        |
+| orders                  | address_id                | integer                     |
+| orders                  | order_date                | date                        |
+| orders                  | paid_amount               | numeric                     |
+| orders                  | saletype                  | text                        |
+| product_discounts       | discount_id               | integer                     |
+| product_discounts       | product_id                | integer                     |
+| product_discounts       | end_date                  | timestamp with time zone    |
+| product_discounts       | start_date                | timestamp with time zone    |
+| product_discounts       | discount_type             | text                        |
+| product_discounts       | amount                    | numeric                     |
+| product_discounts       | created_at                | timestamp with time zone    |
+| product_discounts       | is_active                 | boolean                     |
+| product_variants        | variant_id                | integer                     |
+| product_variants        | sku                       | character varying           |
+| product_variants        | alert_stock               | bigint                      |
+| product_variants        | stock                     | integer                     |
+| product_variants        | is_visible                | boolean                     |
+| product_variants        | updated_at                | timestamp with time zone    |
+| product_variants        | created_at                | timestamp with time zone    |
+| product_variants        | sell_price                | numeric                     |
+| product_variants        | buy_price                 | numeric                     |
+| product_variants        | product_id                | integer                     |
+| product_variants        | variant_name              | text                        |
+| products                | product_id                | integer                     |
+| products                | tag                       | text                        |
+| products                | description               | text                        |
+| products                | name                      | text                        |
+| products                | base_price                | text                        |
+| products                | sale_price                | text                        |
+| products                | price_range               | text                        |
+| products                | isVisible                 | boolean                     |
+| products                | alert_stock               | integer                     |
+| products                | brandID                   | integer                     |
+| products                | created_at                | timestamp with time zone    |
+| products                | stock_quantity            | integer                     |
+| products                | ispopular                 | boolean                     |
+| products                | category_id               | integer                     |
+| purchase_items          | purchase_item_id          | bigint                      |
+| purchase_items          | created_at                | timestamp with time zone    |
+| purchase_items          | unit                      | character varying           |
+| purchase_items          | purchase_id               | bigint                      |
+| purchase_items          | product_id                | bigint                      |
+| purchase_items          | variant_id                | bigint                      |
+| purchase_items          | price                     | numeric                     |
+| purchase_items          | quantity                  | integer                     |
+| purchases               | purchase_id               | bigint                      |
+| purchases               | shipping_fee              | numeric                     |
+| purchases               | tax                       | numeric                     |
+| purchases               | vendor_id                 | bigint                      |
+| purchases               | sub_total                 | numeric                     |
+| purchases               | discount                  | numeric                     |
+| purchases               | paid_amount               | numeric                     |
+| purchases               | purchase_date             | date                        |
+| purchases               | status                    | character varying           |
+| purchases               | address_id                | bigint                      |
+| purchases               | user_id                   | integer                     |
+| purchases               | updated_at                | timestamp with time zone    |
+| purchases               | created_at                | timestamp with time zone    |
+| reviews                 | review_id                 | bigint                      |
+| reviews                 | product_id                | integer                     |
+| reviews                 | customer_id               | integer                     |
+| reviews                 | rating                    | numeric                     |
+| reviews                 | review                    | text                        |
+| reviews                 | sent_at                   | timestamp with time zone    |
+| salesman                | salesman_id               | integer                     |
+| salesman                | email                     | text                        |
+| salesman                | pfp                       | text                        |
+| salesman                | created_at                | timestamp with time zone    |
+| salesman                | comission                 | integer                     |
+| salesman                | phone_number              | text                        |
+| salesman                | last_name                 | text                        |
+| salesman                | cnic                      | text                        |
+| salesman                | city                      | text                        |
+| salesman                | first_name                | text                        |
+| salesman                | area                      | text                        |
+| security_audit_log      | log_id                    | integer                     |
+| security_audit_log      | timestamp                 | timestamp with time zone    |
+| security_audit_log      | user_agent                | text                        |
+| security_audit_log      | event_type                | character varying           |
+| security_audit_log      | severity                  | character varying           |
+| security_audit_log      | event_data                | jsonb                       |
+| security_audit_log      | customer_id               | integer                     |
+| security_audit_log      | ip_address                | inet                        |
+| security_dashboard      | event_type                | character varying           |
+| security_dashboard      | severity                  | character varying           |
+| security_dashboard      | unique_customers          | bigint                      |
+| security_dashboard      | event_count               | bigint                      |
+| security_dashboard      | date                      | date                        |
+| shop                    | shop_id                   | integer                     |
+| shop                    | max_allowed_item_quantity | bigint                      |
+| shop                    | software_website_link     | text                        |
+| shop                    | software_contact_no       | text                        |
+| shop                    | software_company_name     | text                        |
+| shop                    | shopname                  | text                        |
+| shop                    | taxrate                   | numeric                     |
+| shop                    | shipping_price            | numeric                     |
+| shop                    | threshold_free_shipping   | numeric                     |
+| shop                    | is_shipping_enable        | boolean                     |
+| users                   | user_id                   | integer                     |
+| users                   | first_name                | text                        |
+| users                   | gender                    | text                        |
+| users                   | created_at                | timestamp with time zone    |
+| users                   | dob                       | timestamp with time zone    |
+| users                   | auth_uid                  | character varying           |
+| users                   | email                     | text                        |
+| users                   | phone_number              | text                        |
+| users                   | last_name                 | text                        |
+| vendors                 | vendor_id                 | integer                     |
+| vendors                 | phone_number              | text                        |
+| vendors                 | last_name                 | text                        |
+| vendors                 | created_at                | timestamp with time zone    |
+| vendors                 | email                     | text                        |
+| vendors                 | cnic                      | text                        |
+| vendors                 | first_name                | text                        |
+| wishlist                | wishlist_id               | bigint                      |
+| wishlist                | created_at                | timestamp with time zone    |
+| wishlist                | product_id                | integer                     |
+| wishlist                | customer_id               | integer                     |

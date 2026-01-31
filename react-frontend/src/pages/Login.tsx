@@ -27,7 +27,7 @@ const Login = () => {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/dashboard');
+            navigate('/order');
         }
     }, [isAuthenticated, navigate]);
 
@@ -92,7 +92,7 @@ const Login = () => {
         setIsGuestLoading(true);
         try {
             await loginAsGuest();
-            navigate('/dashboard');
+            navigate('/order');
         } catch (err) {
             setError('Failed to create guest session');
         } finally {

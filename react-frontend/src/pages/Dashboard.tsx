@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useSnackbar } from '../components/Snackbar';
 import { AuthState } from '../types/auth';
 import QRCode from 'qrcode';
 import { colors } from '../constants/colors';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
+    const navigate = useNavigate();
+    const { showSnackbar } = useSnackbar();
     const {
         user,
         logout,
@@ -20,6 +24,9 @@ const Dashboard: React.FC = () => {
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
     const isGuest = user?.userType === 'guest';
+
+
+    
 
     // Generate QR code for upgrade flow
     useEffect(() => {
@@ -67,18 +74,25 @@ const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [qrSession, authState]);
 
-    // Close modal when auth state changes from UPGRADE_PENDING
+    // Close modal when auth state changes from UPGRADE_PENDING and navigate on success
     useEffect(() => {
         if (authState !== AuthState.UPGRADE_PENDING) {
             setShowUpgradeModal(false);
         }
-    }, [authState]);
+        // Navigate to order page on successful upgrade
+        if (authState === AuthState.AUTHENTICATED) {
+            showSnackbar('Successfully upgraded to Google account!', 'success');
+            navigate('/order');
+        }
+    }, [authState, navigate, showSnackbar]);
+
 
     const handleUpgradeClick = async () => {
         try {
             await upgradeToAuth();
         } catch (err) {
             console.error('Failed to start upgrade:', err);
+            showSnackbar('Failed to start upgrade. Please try again.', 'error');
         }
     };
 

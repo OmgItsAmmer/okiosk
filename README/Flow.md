@@ -45,3 +45,9 @@ Hello, I am Ammer I ordered 30 mints ago how much time left.
 I want to report an issue
 
 
+
+after checkout: 
+delete guest related stuff(cart)
+go to login screen
+
+

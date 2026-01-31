@@ -1,8 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SnackbarProvider } from './components/Snackbar';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import OrderAssistant from './pages/OrderAssistant';
+import MenuScreen from './pages/MenuScreen';
+import CheckoutScreen from './pages/CheckoutScreen';
 import './App.css';
 
 // Protected Route Component
@@ -29,23 +33,48 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </AuthProvider>
+      <SnackbarProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/order"
+              element={
+                <ProtectedRoute>
+                  <OrderAssistant />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/menu"
+              element={
+                <ProtectedRoute>
+                  <MenuScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </AuthProvider>
+      </SnackbarProvider>
     </Router>
   );
 }
 
 export default App;
-
