@@ -5,6 +5,7 @@ import { useSnackbar } from '../components/Snackbar';
 import { AuthState } from '../types/auth';
 import QRCode from 'qrcode';
 import { colors } from '../constants/colors';
+import Loader from '../components/Loader';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -26,7 +27,7 @@ const Dashboard: React.FC = () => {
     const isGuest = user?.userType === 'guest';
 
 
-    
+
 
     // Generate QR code for upgrade flow
     useEffect(() => {
@@ -194,8 +195,7 @@ const Dashboard: React.FC = () => {
                             </div>
                         ) : (
                             <div className="qr-loading">
-                                <div className="spinner"></div>
-                                <p>Generating QR Code...</p>
+                                <Loader text="Generating secure upgrade link..." fullScreen={false} />
                             </div>
                         )}
 

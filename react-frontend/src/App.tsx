@@ -11,26 +11,20 @@ import CheckoutScreen from './pages/CheckoutScreen';
 import { applyTheme } from './constants/colors';
 import './App.css';
 
+import Loader from './components/Loader';
+// ... rest of imports
+
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: 'linear-gradient(135deg, #F5E6D3 0%, #E8D5C4 100%)'
-      }}>
-        <div style={{ fontSize: '1.5rem', color: '#E63946' }}>Loading...</div>
-      </div>
-    );
+    return <Loader text="Verifying session..." />;
   }
 
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
+
 
 function App() {
   useEffect(() => {

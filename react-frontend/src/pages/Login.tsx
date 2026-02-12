@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { AuthState } from '../types/auth';
 import { colors, applyTheme } from '../constants/colors';
 import './Login.css';
+import Loader from '../components/Loader';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -163,7 +164,7 @@ const Login = () => {
                         }}
                     >
                         {isGuestLoading ? (
-                            <span className="button-loading">Loading...</span>
+                            <span className="button-loading">Initializing...</span>
                         ) : (
                             <>
                                 <span className="button-icon">👤</span>
@@ -171,6 +172,8 @@ const Login = () => {
                             </>
                         )}
                     </button>
+
+                    {isGuestLoading && <Loader text="Setting up your session..." />}
 
                     {error && (
                         <div className="error-message" style={{ color: theme.primary }}>
@@ -194,14 +197,7 @@ const Login = () => {
 
                     {isGeneratingQR ? (
                         <div className="qr-loading">
-                            <div
-                                className="spinner"
-                                style={{
-                                    borderColor: `${theme.primary}33`,
-                                    borderTopColor: theme.primary,
-                                }}
-                            ></div>
-                            <p style={{ color: theme.text, opacity: 0.7 }}>Generating QR Code...</p>
+                            <Loader text="Generating secure QR..." fullScreen={false} />
                         </div>
                     ) : error ? (
                         <div className="qr-error">

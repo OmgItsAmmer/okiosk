@@ -8,6 +8,7 @@ import CategorySection from '../components/CategorySection';
 import CartPanel from '../components/CartPanel';
 import { type CartItemType } from '../components/CartItem';
 import ActiveProductOverlay from '../components/ActiveProductOverlay';
+import Loader from '../components/Loader';
 
 const MenuScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -94,7 +95,7 @@ const MenuScreen: React.FC = () => {
     };
 
     if (isLoading) {
-        return <div className="loading-screen">Loading Menu...</div>;
+        return <Loader text="Preparing the menu..." />;
     }
 
     if (error) {
