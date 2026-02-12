@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence } from 'framer-motion';
 import CartItem, { type CartItemType } from './CartItem';
 
 interface CartPanelProps {
@@ -29,14 +30,16 @@ const CartPanel: React.FC<CartPanelProps> = ({ cartItems, onUpdateQuantity, onRe
                         Your cart is empty. <br /> Add items from the menu!
                     </div>
                 ) : (
-                    cartItems.map(item => (
-                        <CartItem
-                            key={`${item.product.product_id}-${item.variant?.variant_id || 'base'}`}
-                            item={item}
-                            onUpdateQuantity={onUpdateQuantity}
-                            onRemove={onRemove}
-                        />
-                    ))
+                    <AnimatePresence mode="popLayout">
+                        {cartItems.map(item => (
+                            <CartItem
+                                key={`${item.product.product_id}-${item.variant?.variant_id || 'base'}`}
+                                item={item}
+                                onUpdateQuantity={onUpdateQuantity}
+                                onRemove={onRemove}
+                            />
+                        ))}
+                    </AnimatePresence>
                 )}
             </div>
 

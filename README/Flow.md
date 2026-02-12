@@ -62,3 +62,12 @@ beautification
 dashboard.
 removing unnecessary stuff from dashboard
 deploy
+
+
+
+icons big
+explore menu images
+pop up card
+add button
+cart buttons
+checkout success pop up

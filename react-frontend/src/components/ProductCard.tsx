@@ -23,14 +23,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onExpand }) => {
                 </p>
                 <div className="product-footer">
                     <span className="product-price">Rs. {parseFloat(product.base_price).toLocaleString()}</span>
-                    <button
-                        className="add-to-cart-btn"
-                        onClick={() => onExpand(product)}
-                        aria-label={`Select ${product.name}`}
-                    >
-                        Add
-                    </button>
+                    <div className="product-actions">
+                        <button
+                            className="product-info-btn"
+                            onClick={() => onExpand(product)}
+                            aria-label={`View details for ${product.name}`}
+                        >
+                            <span>i</span>
+                        </button>
+                        <button
+                            className="add-to-cart-btn"
+                            onClick={() => onExpand(product)}
+                            aria-label={`Select ${product.name}`}
+                        >
+                            Add <span>+</span>
+                        </button>
+                    </div>
                 </div>
+
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import './MenuScreen.css';
 import type { Category, Product, ProductVariation } from '../types/menu';
 import { fetchAllCategories, fetchAllProducts } from '../services/menuService';
@@ -22,13 +23,10 @@ const MenuScreen: React.FC = () => {
         const loadData = async () => {
             try {
                 setIsLoading(true);
-                // Fetch in parallel
                 const [categoriesData, productsData] = await Promise.all([
                     fetchAllCategories(),
                     fetchAllProducts()
                 ]);
-
-                // Filter out non-visible products/categories if API doesn't already
                 setCategories(categoriesData.categories);
                 setProducts(productsData.products);
             } catch (err) {
@@ -38,11 +36,9 @@ const MenuScreen: React.FC = () => {
                 setIsLoading(false);
             }
         };
-
         loadData();
     }, []);
 
-    // Helper: Get products for a specific category
     const getProductsByCategory = (categoryId: number) => {
         return products.filter(p => p.category_id === categoryId);
     };
@@ -51,7 +47,6 @@ const MenuScreen: React.FC = () => {
         setActiveProduct(product);
     };
 
-    // Cart Actions
     const handleAddToCart = (product: Product, variant?: ProductVariation) => {
         setCart(prevCart => {
             const existingItem = prevCart.find(item =>
@@ -60,14 +55,12 @@ const MenuScreen: React.FC = () => {
             );
 
             if (existingItem) {
-                // Increment quantity
                 return prevCart.map(item =>
                     (item.product.product_id === product.product_id && item.variant?.variant_id === variant?.variant_id)
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 );
             } else {
-                // Add new item
                 return [...prevCart, { product, variant, quantity: 1 }];
             }
         });
@@ -92,15 +85,12 @@ const MenuScreen: React.FC = () => {
     };
 
     const handleCheckout = () => {
-        if (cart.length === 0) {
-            alert("Your cart is empty!");
-            return;
-        }
+        if (cart.length === 0) return;
         navigate('/checkout', { state: { cart } });
     };
 
     const handleBack = () => {
-        navigate('/order'); // Go back to Order Assistant
+        navigate('/order');
     };
 
     if (isLoading) {
@@ -118,33 +108,37 @@ const MenuScreen: React.FC = () => {
     }
 
     return (
-        <div className="menu-screen-container">
-            {/* Left Panel: Categories & Products */}
+        <motion.div
+            className="menu-screen-container"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
             <div className="left-panel">
-                <header style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button onClick={handleBack} style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #555', color: '#ccc' }}>
-                        ← Back
+                <header className="menu-header">
+                    <button onClick={handleBack} className="back-btn-minimal">
+                        <span>←</span> Back to Assistant
                     </button>
-                    <h1 style={{ margin: 0, fontSize: '2rem' }}>Explore Menu</h1>
+                    <h1>Explore Menu</h1>
                 </header>
 
-                {categories.map(category => {
-                    const catProducts = getProductsByCategory(category.category_id);
-                    // Only render category if it has products
-                    if (catProducts.length === 0) return null;
+                <div className="menu-sections-scrollable">
+                    {categories.map(category => {
+                        const catProducts = getProductsByCategory(category.category_id);
+                        if (catProducts.length === 0) return null;
 
-                    return (
-                        <CategorySection
-                            key={category.category_id}
-                            category={category}
-                            products={catProducts}
-                            onExpandProduct={handleExpandProduct}
-                        />
-                    );
-                })}
+                        return (
+                            <CategorySection
+                                key={category.category_id}
+                                category={category}
+                                products={catProducts}
+                                onExpandProduct={handleExpandProduct}
+                            />
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Right Panel: Cart */}
             <div className="right-panel-cart">
                 <CartPanel
                     cartItems={cart}
@@ -154,15 +148,16 @@ const MenuScreen: React.FC = () => {
                 />
             </div>
 
-            {/* Active Product Overlay */}
-            {activeProduct && (
-                <ActiveProductOverlay
-                    product={activeProduct}
-                    onClose={() => setActiveProduct(null)}
-                    onAddToCart={handleAddToCart}
-                />
-            )}
-        </div>
+            <AnimatePresence>
+                {activeProduct && (
+                    <ActiveProductOverlay
+                        product={activeProduct}
+                        onClose={() => setActiveProduct(null)}
+                        onAddToCart={handleAddToCart}
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 

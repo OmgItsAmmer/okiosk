@@ -1,12 +1,16 @@
 use crate::{
     database::Database,
     models::{
-        Action, ActionResponse, CartActionData, CartSummaryActionData, Command, CommandResult,
-        MenuActionData, ProductSearchActionData, ProductSearchResult, ProductVariant, QueuedAction,
-        VariantSelectionActionData,
+        Action, ActionResponse, CartActionData, CartSummaryActionData, CheckoutCartItem, Command,
+        CommandResult, MenuActionData, OrderTotals, ProductSearchActionData, ProductSearchResult,
+        ProductVariant, QueuedAction, VariantSelectionActionData,
     },
     services::QueueService,
 };
+use rust_decimal::Decimal;
+use serde_json::json;
+use sha2::{Digest, Sha256};
+use sqlx::Row;
 use std::sync::Arc;
 
 /// Command Executor - Executes parsed commands
@@ -718,30 +722,232 @@ impl CommandExecutor {
         })
     }
 
-    /// Validate checkout action
+    /// Validate and EXECUTE checkout action
     async fn validate_checkout(
         &self,
-        _payment_method: &str,
-        _shipping_method: &str,
+        payment_method: &str,
+        shipping_method: &str,
         session_id: Option<&str>,
         customer_id: Option<i32>,
     ) -> Result<ActionResponse, String> {
-        Ok(ActionResponse {
-            action_type: Some("checkout".to_string()),
-            success: true,
-            message: "Ready to initiate checkout".to_string(),
-            data: Some(
-                serde_json::to_value(CartSummaryActionData {
-                    session_id: session_id.map(|s| s.to_string()),
-                    customer_id,
-                    total_items: 0, // Will be calculated by frontend
-                    subtotal: 0.0,  // Will be calculated by frontend
-                    items: vec![],  // Frontend will fetch current cart items
+        // Default to ID 1 if guest
+        let customer_id_val = customer_id.unwrap_or(1);
+        println!(
+            "[COMMAND_EXECUTOR] Starting checkout for customer: {}",
+            customer_id_val
+        );
+
+        // 1. Fetch Cart Items
+        let cart_items_db = if customer_id_val == 1 {
+            // Guest checkout from kiosk_cart
+            let session_key = session_id.unwrap_or("guest_session");
+            self.db
+                .cart()
+                .fetch_complete_kiosk_cart_items(session_key)
+                .await
+                .map_err(|e| format!("Failed to fetch guest cart: {}", e))?
+        } else {
+            // Registered user checkout
+            self.db
+                .cart()
+                .fetch_complete_cart_items(customer_id_val)
+                .await
+                .map_err(|e| format!("Failed to fetch cart: {}", e))?
+        };
+
+        if cart_items_db.is_empty() {
+            return Ok(ActionResponse {
+                action_type: Some("checkout".to_string()),
+                success: false,
+                message: "Your cart is empty. Please add items before checking out.".to_string(),
+                data: None,
+                error: Some("EMPTY_CART".to_string()),
+            });
+        }
+
+        // Convert to CheckoutCartItem
+        let cart_items: Vec<CheckoutCartItem> = cart_items_db
+            .into_iter()
+            .map(|item| CheckoutCartItem {
+                variant_id: item.variant_id.unwrap_or(0),
+                quantity: item.quantity,
+                sell_price: item.sell_price,
+                buy_price: item.buy_price,
+            })
+            .collect();
+
+        // 2. Validate Customer (Skip complex validation for now, assume verified via auth middleware/logic)
+        // In handlers we verify phone number etc. forcing simplistic check here for AI flow.
+
+        // 3. Generate Idempotency Key
+        let idempotency_key = self
+            .generate_idempotency_key(customer_id_val, &cart_items)
+            .await;
+
+        // 4. Check Duplicate
+        let is_duplicate = self
+            .db
+            .orders()
+            .check_duplicate_order(&idempotency_key)
+            .await
+            .unwrap_or(false);
+
+        if is_duplicate {
+            return Ok(ActionResponse {
+                action_type: Some("checkout".to_string()),
+                success: false,
+                message: "Order already processed.".to_string(),
+                data: None,
+                error: Some("DUPLICATE_ORDER".to_string()),
+            });
+        }
+
+        // 5. Validate Cart Security & Calculate Totals
+        let (is_valid, message, totals) = self
+            .db
+            .orders()
+            .validate_cart_security(&cart_items)
+            .await
+            .map_err(|e| format!("Cart validation error: {}", e))?;
+
+        if !is_valid {
+            return Ok(ActionResponse {
+                action_type: Some("checkout".to_string()),
+                success: false,
+                message,
+                data: None,
+                error: Some("SECURITY_VIOLATION".to_string()),
+            });
+        }
+
+        // 6. Reserve Inventory
+        let (reserved, res_msg) = self
+            .db
+            .orders()
+            .reserve_inventory(&idempotency_key, &cart_items)
+            .await
+            .map_err(|e| format!("Inventory error: {}", e))?;
+
+        if !reserved {
+            return Ok(ActionResponse {
+                action_type: Some("checkout".to_string()),
+                success: false,
+                message: res_msg,
+                data: None,
+                error: Some("INVENTORY_UNAVAILABLE".to_string()),
+            });
+        }
+
+        // 7. Create Order
+        // Use default defaults for AI if empty
+        let final_payment = if payment_method.is_empty() {
+            "cod"
+        } else {
+            payment_method
+        };
+        let final_shipping = if shipping_method.is_empty() {
+            "pickup"
+        } else {
+            shipping_method
+        };
+        // AI flow assumes pickup/no address needed logic or uses default address (-1 in some contexts, or 0)
+        let address_id = -1;
+
+        let create_result = self
+            .db
+            .orders()
+            .create_order(
+                customer_id_val,
+                &cart_items,
+                address_id, // Fixed: removed Some() wrapper
+                final_shipping,
+                final_payment,
+                &totals,
+                &idempotency_key,
+            )
+            .await;
+
+        match create_result {
+            Ok((success, msg, order_id_opt)) => {
+                if !success {
+                    // Rollback reservation
+                    self.db
+                        .orders()
+                        .rollback_inventory_reservation(&idempotency_key)
+                        .await
+                        .ok();
+
+                    return Ok(ActionResponse {
+                        action_type: Some("checkout".to_string()),
+                        success: false,
+                        message: msg,
+                        data: None,
+                        error: Some("ORDER_CREATION_FAILED".to_string()),
+                    });
+                }
+                let order_id = order_id_opt.unwrap();
+
+                // 8. Confirm Inventory
+                self.db
+                    .orders()
+                    .confirm_inventory_reservation(&idempotency_key)
+                    .await
+                    .ok();
+
+                // 9. Clear Cart
+                if customer_id_val == 1 {
+                    self.db
+                        .cart()
+                        .clear_kiosk_cart(session_id.unwrap_or("guest_session"))
+                        .await
+                        .ok();
+                } else {
+                    self.db.cart().clear_cart(customer_id_val).await.ok();
+                }
+
+                Ok(ActionResponse {
+                    action_type: Some("checkout".to_string()),
+                    success: true,
+                    message: format!("Order #{} placed successfully!", order_id),
+                    data: Some(json!({
+                        "orderId": order_id,
+                        "total": totals.total,
+                        "subtotal": totals.subtotal
+                    })),
+                    error: None,
                 })
-                .map_err(|e| format!("Failed to serialize cart data: {}", e))?,
-            ),
-            error: None,
-        })
+            }
+            Err(e) => {
+                self.db
+                    .orders()
+                    .rollback_inventory_reservation(&idempotency_key)
+                    .await
+                    .ok();
+                Err(format!("Order creation exception: {}", e))
+            }
+        }
+    }
+
+    /// Generate idempotency key (Helper duplicated from handlers due to isolation)
+    async fn generate_idempotency_key(
+        &self,
+        customer_id: i32,
+        cart_items: &[CheckoutCartItem],
+    ) -> String {
+        let cart_data: String = cart_items
+            .iter()
+            .map(|item| format!("{}:{}:{}", item.variant_id, item.quantity, item.sell_price))
+            .collect::<Vec<_>>()
+            .join("|");
+
+        let timestamp = chrono::Utc::now().timestamp() / 60;
+        let input = format!("{}:{}:{}", customer_id, cart_data, timestamp);
+
+        let mut hasher = Sha256::new();
+        hasher.update(input.as_bytes());
+        let result = hasher.finalize();
+
+        format!("ai_checkout_{:x}", result)[..24].to_string()
     }
 
     /// Helper: Search for variant_id by product name

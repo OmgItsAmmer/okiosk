@@ -1,9 +1,11 @@
 :root {
   /* Default Theme (Light Mode Values) */
   --color-primary: #E63946;
+  --color-primary-rgb: 230, 57, 70;
   --color-text: #212529;
   --color-background: #FFF3E0;
   --color-secondary: #FFFFFF;
+  --color-secondary-rgb: 255, 255, 255;
   --color-accent-orange: #F77F00;
   --color-accent-yellow: #FFBE0B;
 
@@ -11,9 +13,11 @@
   --color-bg-alt: #f1e4d3;
   --color-border: rgba(0, 0, 0, 0.08);
 
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
 
   color: var(--color-text);
   background-color: var(--color-background);
@@ -30,8 +34,10 @@
     --color-text: #EAEAEA;
     --color-background: #121212;
     --color-secondary: #1E1E1E;
+    --color-secondary-rgb: 30, 30, 30;
     --color-bg-alt: #1a1a1a;
     --color-border: rgba(255, 255, 255, 0.1);
+
   }
 }
 
@@ -52,6 +58,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   width: 100%;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #root {
@@ -98,4 +109,5 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+
 }

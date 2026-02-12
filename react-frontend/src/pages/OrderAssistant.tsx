@@ -10,6 +10,7 @@ import type { Product } from '../types/menu';
 
 import { useSnackbar } from '../components/Snackbar';
 import * as cartService from '../services/cartService';
+import SuccessModal from '../components/SuccessModal';
 
 // Avatar Images
 import agentNormal from '../assets/images/AIAgent/agent_normal.png';
@@ -62,7 +63,11 @@ const INTRO_PHASES = [
 const OrderAssistant: React.FC = () => {
     const navigate = useNavigate();
     const { showSnackbar } = useSnackbar();
-    const { user, sessionId } = useAuth();
+    const { user, sessionId, logout } = useAuth(); // Added logout
+
+    // Success Modal State
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastOrderId, setLastOrderId] = useState<string | number>('');
 
     // Layout & Intro State
     const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
@@ -217,6 +222,15 @@ const OrderAssistant: React.FC = () => {
                                 actionData = { ...data, cartItems: cartData.items, subtotal: cartData.subtotal, total_items: cartData.total_items };
                             } else if (actionType === 'checkout') {
                                 msgType = 'checkout';
+
+                                // Check for success and orderId in data
+                                if (response.success && data && data.orderId) {
+                                    setLastOrderId(data.orderId);
+                                    setShowSuccessModal(true);
+                                    setAvatarState('success');
+                                }
+
+                                // Still show bill/checkout summary if needed, or just a success message
                                 const cartData = await cartService.getCart(user?.id ? parseInt(user.id) : undefined, sessionId || undefined);
                                 actionData = { ...data, cartItems: cartData.items, subtotal: cartData.subtotal };
                             }
@@ -316,6 +330,15 @@ const OrderAssistant: React.FC = () => {
             case 'failed': return AVATAR_FAILED;
             default: return AVATAR_NORMAL;
         }
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
+    const handleCloseModal = () => {
+        navigate('/menu');
     };
 
     return (
@@ -452,14 +475,14 @@ const OrderAssistant: React.FC = () => {
                                 <div className="chat-input-area">
                                     <div className="input-actions-left">
                                         <button className={`action-icon-btn ${isRecording ? 'recording' : ''}`} onClick={handleVoiceToggle}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                                 <path d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z" />
                                                 <path d="M19 11C19 14.87 15.87 18 12 18C8.13 18 5 14.87 5 11" />
                                                 <path d="M12 18V22" />
                                             </svg>
                                         </button>
                                         <button className="action-icon-btn" onClick={() => inputRef.current?.focus()}>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                                 <rect x="2" y="4" width="20" height="16" rx="2" />
                                                 <path d="M6 8H8" /><path d="M11 8H13" /><path d="M16 8H18" />
                                                 <path d="M6 12H18" /><path d="M8 16H16" />
@@ -475,7 +498,7 @@ const OrderAssistant: React.FC = () => {
                                         onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
                                     />
                                     <button className="send-btn" onClick={() => handleSendChat()}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>
                                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                                         </svg>
@@ -492,6 +515,15 @@ const OrderAssistant: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showSuccessModal && (
+                <SuccessModal
+                    orderId={lastOrderId}
+                    isLoggedIn={user?.userType === 'authenticated'}
+                    onLogout={handleLogout}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );

@@ -2,12 +2,11 @@ use axum::{extract::State, http::StatusCode, Json};
 use std::sync::Arc;
 
 use crate::{
-    database::Database,
     handlers::AiState,
     models::{
         AiCommandRequest, AiCommandResponse, VariantConfirmationRequest, VariantSelectionActionData,
     },
-    services::{AiService, CommandExecutor, QueueService, TranscribeService},
+    services::CommandExecutor,
 };
 
 /// Process AI Command

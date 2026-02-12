@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import './CheckoutScreen.css';
 import type { CartItemType } from '../components/CartItem';
@@ -9,6 +10,28 @@ interface CheckoutState {
     cart: CartItemType[];
 }
 
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.5
+        }
+    }
+};
+
+
 const CheckoutScreen: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -17,14 +40,17 @@ const CheckoutScreen: React.FC = () => {
 
     // Redirect if empty cart (unless debugging)
     if (!cart || cart.length === 0) {
-        // You might want to useEffect and navigate back, but inline return is safer for rendering
         return (
-            <div className="checkout-screen">
+            <motion.div
+                className="checkout-screen"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+            >
                 <div className="empty-cart-warning">
                     <h2>Your cart is empty</h2>
                     <button onClick={() => navigate('/menu')}>Back to Menu</button>
                 </div>
-            </div>
+            </motion.div>
         );
     }
 
@@ -58,8 +84,8 @@ const CheckoutScreen: React.FC = () => {
 
         try {
             const checkoutPayload = {
-                customerId: parseInt(user.id) || 1, // Use user id from auth context
-                addressId: -1, // Pickup
+                customerId: parseInt(user.id) || 1,
+                addressId: -1,
                 shippingMethod: "pickup",
                 paymentMethod: "cod",
                 cartItems: cart.map(item => ({
@@ -104,91 +130,135 @@ const CheckoutScreen: React.FC = () => {
     };
 
     return (
-        <div className="checkout-screen">
-            <header className="checkout-header">
+        <motion.div
+            className="checkout-screen"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+        >
+            <motion.header className="checkout-header" variants={itemVariants}>
                 <button className="back-btn" onClick={() => navigate(-1)}>
-                    ← Back
+                    <span>←</span> Back
                 </button>
-                <h1>Checkout</h1>
-            </header>
+                <div className="header-title-area">
+                    <h1>Checkout Order</h1>
+                    <p className="header-subtitle">Review your items and confirm your order</p>
+                </div>
+            </motion.header>
 
             <div className="checkout-content">
                 {/* Invoice Section */}
-                <div className="invoice-section">
-                    <h2>Order Summary</h2>
+                <motion.div className="invoice-section" variants={itemVariants}>
+                    <div className="section-header">
+                        <h2>Order Summary</h2>
+                        <span className="item-count-badge">{cart.length} items</span>
+                    </div>
                     <div className="invoice-table-container">
                         <table className="invoice-table">
                             <thead>
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
+                                    <th>Item Details</th>
+                                    <th className="text-center">Qty</th>
+                                    <th className="text-right">Price</th>
+                                    <th className="text-right">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {cart.map((item, index) => {
-                                    const price = item.variant
-                                        ? parseFloat(item.variant.sell_price)
-                                        : parseFloat(item.product.base_price);
-                                    const itemTotal = price * item.quantity;
+                                <AnimatePresence>
+                                    {cart.map((item, index) => {
+                                        const price = item.variant
+                                            ? parseFloat(item.variant.sell_price)
+                                            : parseFloat(item.product.base_price);
+                                        const itemTotal = price * item.quantity;
 
-                                    return (
-                                        <tr key={index}>
-                                            <td>
-                                                <div className="item-name">{item.product.name}</div>
-                                                {item.variant && <div className="item-variant">{item.variant.variant_name}</div>}
-                                            </td>
-                                            <td>{item.quantity}</td>
-                                            <td>Rs. {price.toLocaleString()}</td>
-                                            <td>Rs. {itemTotal.toLocaleString()}</td>
-                                        </tr>
-                                    );
-                                })}
+                                        return (
+                                            <motion.tr
+                                                key={`${item.product.product_id}-${item.variant?.variant_id || 'base'}`}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: 0.2 + (index * 0.05) }}
+                                                viewport={{ once: true }}
+                                            >
+                                                <td>
+                                                    <div className="item-name">{item.product.name}</div>
+                                                    {item.variant && <div className="item-variant">{item.variant.variant_name}</div>}
+                                                </td>
+                                                <td className="text-center quantity-cell">{item.quantity}</td>
+                                                <td className="text-right">Rs. {price.toLocaleString()}</td>
+                                                <td className="text-right font-bold">Rs. {itemTotal.toLocaleString()}</td>
+                                            </motion.tr>
+                                        );
+                                    })}
+                                </AnimatePresence>
                             </tbody>
                         </table>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Details & Confirmation Section */}
-                <div className="details-section">
+                <motion.div className="details-section" variants={itemVariants}>
                     <div className="summary-card">
                         <h2>Payment Details</h2>
 
-                        <div className="detail-row">
-                            <span>Subtotal</span>
-                            <span>Rs. {subtotal.toLocaleString()}</span>
-                        </div>
-                        <div className="detail-row">
-                            <span>Shipping (Pickup)</span>
-                            <span>Rs. {shippingFee.toLocaleString()}</span>
-                        </div>
-                        <div className="detail-row total-row">
-                            <span>Total</span>
-                            <span>Rs. {total.toLocaleString()}</span>
-                        </div>
-
-                        <div className="info-group">
-                            <label>Payment Method</label>
-                            <div className="static-field">Cash on Delivery (COD)</div>
+                        <div className="payment-summary-rows">
+                            <div className="detail-row">
+                                <span>Subtotal</span>
+                                <span>Rs. {subtotal.toLocaleString()}</span>
+                            </div>
+                            <div className="detail-row">
+                                <span>Shipping Fee</span>
+                                <span className="free-badge">FREE</span>
+                            </div>
+                            <div className="detail-row total-row">
+                                <span>Net Amount</span>
+                                <span>Rs. {total.toLocaleString()}</span>
+                            </div>
                         </div>
 
-                        <div className="info-group">
-                            <label>Shipping Method</label>
-                            <div className="static-field">Pickup from Store</div>
+                        <div className="checkout-info-cards">
+                            <div className="info-group">
+                                <label>Payment Method</label>
+                                <div className="static-field-mini">
+                                    <span className="icon">💵</span>
+                                    <span>Cash on Delivery</span>
+                                </div>
+                            </div>
+
+                            <div className="info-group">
+                                <label>Delivery Type</label>
+                                <div className="static-field-mini">
+                                    <span className="icon">🏪</span>
+                                    <span>Store Pickup</span>
+                                </div>
+                            </div>
                         </div>
 
-                        {error && <div className="error-message">{error}</div>}
+                        {error && (
+                            <motion.div
+                                className="error-message"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                            >
+                                {error}
+                            </motion.div>
+                        )}
 
-                        <button
+                        <motion.button
                             className="confirm-order-btn"
                             onClick={handleConfirmOrder}
                             disabled={isProcessing}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                         >
-                            {isProcessing ? 'Processing...' : 'Confirm Order'}
-                        </button>
+                            {isProcessing ? (
+                                <span className="loader-container">
+                                    <span className="dot-loader"></span>
+                                    Processing...
+                                </span>
+                            ) : 'Confirm Order'}
+                        </motion.button>
                     </div>
-                </div>
+                </motion.div>
             </div>
 
             {showSuccessModal && (
@@ -199,8 +269,9 @@ const CheckoutScreen: React.FC = () => {
                     onClose={handleCloseModal}
                 />
             )}
-        </div>
+        </motion.div>
     );
 };
 
 export default CheckoutScreen;
+
