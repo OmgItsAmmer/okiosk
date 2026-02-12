@@ -2,8 +2,8 @@ use crate::models::{AuthResponse, Claims, GoogleUserInfo, User};
 use chrono::Utc;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use oauth2::{
-    basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
-    RedirectUrl, TokenResponse, TokenUrl,
+    basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl,
+    TokenResponse, TokenUrl,
 };
 use reqwest::Client;
 use serde_json::Value;
@@ -27,13 +27,13 @@ impl AuthService {
         let client_id = ClientId::new(google_client_id);
         let client_secret = ClientSecret::new(google_client_secret);
         let auth_url = AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?;
-        let token_url =
-            TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?;
+        let token_url = TokenUrl::new("https://oauth2.googleapis.com/token".to_string())?;
 
         let redirect = RedirectUrl::new(redirect_uri)?;
 
-        let oauth_client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
-            .set_redirect_uri(redirect);
+        let oauth_client =
+            BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+                .set_redirect_uri(redirect);
 
         Ok(Self {
             oauth_client,
@@ -60,10 +60,7 @@ impl AuthService {
     }
 
     /// Exchange authorization code for access token
-    pub async fn exchange_code(
-        &self,
-        code: String,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn exchange_code(&self, code: String) -> Result<String, Box<dyn std::error::Error>> {
         let token_result = self
             .oauth_client
             .exchange_code(AuthorizationCode::new(code))
@@ -144,20 +141,28 @@ impl AuthService {
     }
 
     /// Create auth response with token and user data
-    pub fn create_auth_response(&self, user: User) -> Result<AuthResponse, Box<dyn std::error::Error>> {
+    pub fn create_auth_response(
+        &self,
+        user: User,
+    ) -> Result<AuthResponse, Box<dyn std::error::Error>> {
         let token = self.generate_jwt(&user)?;
         Ok(AuthResponse { token, user })
     }
 
     /// Generate JWT token for guest user (24 hour expiration)
-    pub fn generate_guest_jwt(&self, guest_id: &str, guest_name: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn generate_guest_jwt(
+        &self,
+        guest_id: &str,
+        guest_name: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         use crate::models::GuestClaims;
-        
+
         let now = Utc::now().timestamp() as usize;
         let expiration = now + (24 * 60 * 60); // 24 hours for guest sessions
 
         let claims = GuestClaims {
             sub: guest_id.to_string(),
+            email: "guest@okiosk.local".to_string(),
             name: guest_name.to_string(),
             user_type: "guest".to_string(),
             exp: expiration,

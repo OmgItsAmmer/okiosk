@@ -4,14 +4,14 @@ use std::sync::Arc;
 use crate::handlers::AiState;
 
 /// Creates AI-related routes
-/// 
+///
 /// This module handles AI endpoints including:
-/// - Natural language command processing using Gemini AI
+/// - Natural language command processing using Local LLM
 /// - Variant selection confirmation for sequential queue
-/// 
+///
 /// # Arguments
 /// * `ai_state` - Shared AI service state
-/// 
+///
 /// # Returns
 /// Router configured with AI endpoints
 pub fn create_ai_routes(ai_state: Arc<AiState>) -> Router {

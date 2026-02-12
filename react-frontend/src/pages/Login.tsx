@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import { useAuth } from '../hooks/useAuth';
 import { AuthState } from '../types/auth';
-import { colors } from '../constants/colors';
+import { colors, applyTheme } from '../constants/colors';
 import './Login.css';
 
 const Login = () => {
@@ -109,7 +109,9 @@ const Login = () => {
 
     // Toggle theme
     const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
+        const newMode = !isDarkMode;
+        setIsDarkMode(newMode);
+        applyTheme(newMode ? 'dark' : 'light');
     };
 
     const theme = isDarkMode ? colors.dark : colors.light;

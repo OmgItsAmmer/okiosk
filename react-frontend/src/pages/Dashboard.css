@@ -1,6 +1,6 @@
 .dashboard-container {
     min-height: 100vh;
-    background: #FFF3E0;
+    background: var(--color-background);
     /* Light Beige background */
     padding: 2rem;
 }
@@ -11,7 +11,7 @@
     align-items: center;
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: #FFFFFF;
+    background: var(--color-secondary);
     /* Soft White for cards */
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -19,15 +19,15 @@
 
 .dashboard-header h1 {
     margin: 0;
-    color: #E63946;
+    color: var(--color-primary);
     /* Red primary */
     font-size: 2rem;
 }
 
 .logout-btn {
-    background: #E63946;
+    background: var(--color-primary);
     /* Red primary */
-    color: #FFFFFF;
+    color: var(--color-secondary);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -53,7 +53,7 @@
 
 .user-info-card,
 .welcome-message {
-    background: #FFFFFF;
+    background: var(--color-secondary);
     /* Soft White */
     padding: 2rem;
     border-radius: 16px;
@@ -69,41 +69,41 @@
     height: 120px;
     border-radius: 50%;
     margin-bottom: 1rem;
-    border: 4px solid #E63946;
+    border: 4px solid var(--color-primary);
     /* Red primary */
 }
 
 .user-info-card h2 {
     margin: 0.5rem 0;
-    color: #212529;
+    color: var(--color-text);
     /* Dark Gray text */
 }
 
 .user-info-card p {
-    color: #212529;
+    color: var(--color-text);
     /* Dark Gray text */
     opacity: 0.7;
     margin: 0;
 }
 
 .welcome-message h3 {
-    color: #E63946;
+    color: var(--color-primary);
     /* Red primary */
     margin-top: 0;
 }
 
 .welcome-message p {
-    color: #212529;
+    color: var(--color-text);
     /* Dark Gray text */
     line-height: 1.6;
 }
 
 .info-text {
-    background: #FFF3E0;
+    background: var(--color-background);
     /* Light Beige */
     padding: 1rem;
     border-radius: 8px;
-    border-left: 4px solid #E63946;
+    border-left: 4px solid var(--color-primary);
     /* Red primary */
     margin-top: 1rem;
 }
@@ -120,33 +120,7 @@
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .dashboard-container {
-        background: #121212;
-        /* Dark Gray background */
-    }
 
-    .dashboard-header,
-    .user-info-card,
-    .welcome-message {
-        background: #1E1E1E;
-        /* Darker Gray for cards */
-    }
-
-    .dashboard-header h1,
-    .user-info-card h2,
-    .user-info-card p,
-    .welcome-message p {
-        color: #EAEAEA;
-        /* Light Gray text */
-    }
-
-    .info-text {
-        background: #1E1E1E;
-        color: #EAEAEA;
-    }
-}
 
 /* Header Layout */
 .header-left {
@@ -163,8 +137,8 @@
 
 /* Guest Badge */
 .guest-badge {
-    background: #FF9800;
-    color: #FFFFFF;
+    background: var(--color-accent-orange);
+    color: var(--color-secondary);
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.8rem;
@@ -187,7 +161,7 @@
 /* Upgrade Button */
 .upgrade-btn {
     background: linear-gradient(135deg, #4285F4, #34A853);
-    color: #FFFFFF;
+    color: var(--color-secondary);
     border: none;
     padding: 0.75rem 1.5rem;
     border-radius: 8px;
@@ -216,8 +190,8 @@
     height: 120px;
     border-radius: 50%;
     margin-bottom: 1rem;
-    border: 4px solid #E63946;
-    background: #FFF3E0;
+    border: 4px solid var(--color-primary);
+    background: var(--color-background);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -237,15 +211,15 @@
 }
 
 .user-type-badge[data-type="guest"] {
-    background: #FFF3E0;
-    color: #FF9800;
-    border: 2px solid #FF9800;
+    background: var(--color-background);
+    color: var(--color-accent-orange);
+    border: 2px solid var(--color-accent-orange);
 }
 
 .user-type-badge[data-type="authenticated"] {
-    background: #E8F5E9;
-    color: #4CAF50;
-    border: 2px solid #4CAF50;
+    background: color-mix(in srgb, var(--color-success), transparent 90%);
+    color: var(--color-success);
+    border: 2px solid var(--color-success);
 }
 
 /* Modal Overlay */
@@ -275,7 +249,7 @@
 
 /* Upgrade Modal */
 .upgrade-modal {
-    background: #FFFFFF;
+    background: var(--color-secondary);
     border-radius: 20px;
     padding: 2.5rem;
     max-width: 450px;
@@ -310,12 +284,12 @@
 }
 
 .modal-close:hover {
-    color: #E63946;
+    color: var(--color-primary);
 }
 
 .upgrade-modal h2 {
     margin: 0 0 0.5rem 0;
-    color: #212529;
+    color: var(--color-text);
 }
 
 .modal-subtitle {
@@ -345,7 +319,7 @@
     gap: 0.5rem;
     font-weight: 600;
     padding: 0.5rem 1rem;
-    background: #f5f5f5;
+    background: var(--color-bg-alt);
     border-radius: 8px;
 }
 
@@ -360,8 +334,8 @@
 .spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #f5f5f5;
-    border-top-color: #E63946;
+    border: 4px solid var(--color-bg-alt);
+    border-top-color: var(--color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -375,7 +349,7 @@
 /* Modal Instructions */
 .modal-instructions {
     text-align: left;
-    background: #FFF3E0;
+    background: var(--color-background);
     padding: 1rem 1.5rem;
     border-radius: 12px;
     margin-bottom: 1.5rem;
@@ -400,8 +374,8 @@
 }
 
 .cancel-upgrade-btn:hover {
-    border-color: #E63946;
-    color: #E63946;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 /* Responsive adjustments */

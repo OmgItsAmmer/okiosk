@@ -61,51 +61,36 @@ pub enum Action {
     },
 }
 
-/// Gemini API Request Structure
+/// Chat Completion Request (OpenAI Compatible)
 #[derive(Debug, Serialize)]
-pub struct GeminiRequest {
-    pub contents: Vec<GeminiContent>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub generation_config: Option<GenerationConfig>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct GeminiContent {
-    pub parts: Vec<GeminiPart>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct GeminiPart {
-    pub text: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct GenerationConfig {
+pub struct ChatCompletionRequest {
+    pub model: String,
+    pub messages: Vec<ChatMessage>,
     pub temperature: f32,
     pub top_p: f32,
-    pub top_k: i32,
-    pub max_output_tokens: i32,
+    pub max_tokens: i32,
 }
 
-/// Gemini API Response Structure
-#[derive(Debug, Deserialize)]
-pub struct GeminiResponse {
-    pub candidates: Vec<GeminiCandidate>,
+#[derive(Debug, Serialize)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
 }
 
+/// Chat Completion Response (OpenAI Compatible)
 #[derive(Debug, Deserialize)]
-pub struct GeminiCandidate {
-    pub content: GeminiContentResponse,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GeminiContentResponse {
-    pub parts: Vec<GeminiPartResponse>,
+pub struct ChatCompletionResponse {
+    pub choices: Vec<ChatChoice>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct GeminiPartResponse {
-    pub text: String,
+pub struct ChatChoice {
+    pub message: ChatMessageContent,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChatMessageContent {
+    pub content: String,
 }
 
 /// Command Execution Result

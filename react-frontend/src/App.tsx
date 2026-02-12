@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SnackbarProvider } from './components/Snackbar';
@@ -7,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import OrderAssistant from './pages/OrderAssistant';
 import MenuScreen from './pages/MenuScreen';
 import CheckoutScreen from './pages/CheckoutScreen';
+import { applyTheme } from './constants/colors';
 import './App.css';
 
 // Protected Route Component
@@ -31,6 +33,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
+  useEffect(() => {
+    // Initialize theme variables
+    applyTheme('light');
+  }, []);
+
   return (
     <Router>
       <SnackbarProvider>

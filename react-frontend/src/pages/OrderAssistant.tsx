@@ -7,9 +7,22 @@ import ProductCard from '../components/ProductCard';
 import { useAuth } from '../hooks/useAuth';
 import { sendAiCommand } from '../services/aiService';
 import type { Product } from '../types/menu';
-import { colors } from '../constants/colors';
+
 import { useSnackbar } from '../components/Snackbar';
 import * as cartService from '../services/cartService';
+
+// Avatar Images
+import agentNormal from '../assets/images/AIAgent/agent_normal.png';
+import agentProcessing from '../assets/images/AIAgent/agent_processing.png';
+import agentSmiling from '../assets/images/AIAgent/agent_smiling.png';
+import agentSucceed from '../assets/images/AIAgent/agent_succed.png';
+import agentFailed from '../assets/images/AIAgent/agent_failed.png';
+
+// Fallbacks/Mappings for requested states
+const AVATAR_NORMAL = agentNormal;
+const AVATAR_PROCESSING = agentProcessing;
+const AVATAR_SUCCEED = agentSucceed; // Proxy for succeed.png
+const AVATAR_FAILED = agentFailed;   // Proxy for agent_failed.png
 
 interface AiProductVariant {
     variant_id: number;
@@ -30,19 +43,43 @@ interface ChatMessage {
     actionData?: any;
 }
 
+// Intro Phases Data
+const INTRO_PHASES = [
+    {
+        avatar: AVATAR_NORMAL,
+        text: "Hey there, welcome to KK’s Online. I’m your new cashier."
+    },
+    {
+        avatar: AVATAR_SUCCEED,
+        text: "You can tell me what you want, or say things like checkout or show cart. I’ll do it—no messy menu exploration."
+    },
+    {
+        avatar: AVATAR_NORMAL,
+        text: "I’m a small kid and I can make mistakes, so please don’t get angry at me."
+    }
+];
+
 const OrderAssistant: React.FC = () => {
     const navigate = useNavigate();
-    const [volume, setVolume] = useState(70);
-    const [isMuted, setIsMuted] = useState(false);
-    const [message, setMessage] = useState("I can help you with your order.");
+    const { showSnackbar } = useSnackbar();
+    const { user, sessionId } = useAuth();
+
+    // Layout & Intro State
+    const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
+    const [introStep, setIntroStep] = useState(0);
+    const isIntro = introStep < 3;
+
+    // Avatar State
+    const [avatarState, setAvatarState] = useState<'normal' | 'processing' | 'success' | 'failed'>('normal');
+
+    const [message, setMessage] = useState("I can help you with your order."); // Used in bubbles sometimes
     const [isProcessing, setIsProcessing] = useState(false);
     const [chatInput, setChatInput] = useState("");
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
         { type: 'text', text: "Hello! How can I help you today?", sender: 'assistant' }
     ]);
 
-    const { showSnackbar } = useSnackbar();
-
+    const inputRef = useRef<HTMLInputElement>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -51,9 +88,30 @@ const OrderAssistant: React.FC = () => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [chatMessages]);
+    }, [chatMessages, introStep]); // Scroll when step changes too if needed
 
-    // Audio recorder hook (max 5 seconds)
+    useEffect(() => {
+        const handleResize = () => setIsPortrait(window.innerHeight > window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Sync Avatar with Processing State & Auto-Reset Success/Fail
+    useEffect(() => {
+        if (isProcessing) {
+            setAvatarState('processing');
+        } else if (avatarState === 'processing') {
+            setAvatarState('normal');
+        }
+    }, [isProcessing]);
+
+    useEffect(() => {
+        if (avatarState === 'success' || avatarState === 'failed') {
+            const timer = setTimeout(() => setAvatarState('normal'), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [avatarState]);
+
     const {
         isRecording,
         isSupported,
@@ -63,27 +121,23 @@ const OrderAssistant: React.FC = () => {
     } = useAudioRecorder(5000);
 
     const handleVoiceToggle = async () => {
-        if (isProcessing) return;
+        if (isProcessing || isIntro) return;
 
         if (!isRecording) {
             await startRecording();
-            setMessage("Listening...");
+            // Optional: setMessage("Listening...");
         } else {
             const audioBlob = await stopRecording();
-
             if (audioBlob) {
                 setIsProcessing(true);
-                setMessage("Thinking...");
-
+                // setMessage("Thinking...");
                 try {
                     const response = await transcribeAudio(audioBlob);
-                    setMessage(`"${response.text}"`);
-                    console.log("Transcribed text:", response.text);
-                    // Automatically send transcribed text to AI chat
+                    // setMessage(`"${response.text}"`); 
                     handleSendChat(response.text);
                 } catch (err) {
                     console.error("Transcription failed:", err);
-                    setMessage("Sorry, I didn't catch that.");
+                    setAvatarState('failed');
                 } finally {
                     setIsProcessing(false);
                 }
@@ -91,25 +145,10 @@ const OrderAssistant: React.FC = () => {
         }
     };
 
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVolume = parseInt(e.target.value);
-        setVolume(newVolume);
-        if (newVolume > 0 && isMuted) {
-            setIsMuted(false);
-        }
-    };
-
-    const toggleMute = () => {
-        setIsMuted(!isMuted);
-    };
-
-    const { user, sessionId } = useAuth();
-
     const handleSendChat = async (overrideMsg?: string) => {
         const textToSend = overrideMsg || chatInput;
         if (!textToSend.trim()) return;
 
-        // 1. Add user message to UI
         if (!overrideMsg) {
             setChatMessages(prev => [...prev, { type: 'text', text: textToSend, sender: 'user' }]);
             setChatInput("");
@@ -118,7 +157,6 @@ const OrderAssistant: React.FC = () => {
         setIsProcessing(true);
 
         try {
-            // 2. Call backend
             const response = await sendAiCommand({
                 prompt: textToSend,
                 session_id: sessionId || undefined,
@@ -126,7 +164,7 @@ const OrderAssistant: React.FC = () => {
             });
 
             if (response.success) {
-                // We'll collect multiple messages if multiple actions are executed
+                setAvatarState('success');
                 const newMessages: ChatMessage[] = [];
 
                 if (response.actions_executed && response.actions_executed.length > 0) {
@@ -171,7 +209,6 @@ const OrderAssistant: React.FC = () => {
                                 msgType = 'cart_action';
                             } else if (actionType === 'generate_bill') {
                                 msgType = 'bill';
-                                // For bill we might need to fetch latest cart data
                                 const cartData = await cartService.getCart(user?.id ? parseInt(user.id) : undefined, sessionId || undefined);
                                 actionData = { ...data, cartItems: cartData.items, subtotal: cartData.subtotal, total_items: cartData.total_items };
                             } else if (actionType === 'view_cart') {
@@ -186,7 +223,7 @@ const OrderAssistant: React.FC = () => {
 
                             newMessages.push({
                                 type: msgType,
-                                text: response.message, // Use common response message for now
+                                text: response.message,
                                 products: products.length > 0 ? products : undefined,
                                 variantProduct,
                                 variants: availableVariants.length > 0 ? availableVariants : undefined,
@@ -200,52 +237,31 @@ const OrderAssistant: React.FC = () => {
                     }
                 }
 
-                // If no special action bubbles were created, add a simple text response
                 if (newMessages.length === 0) {
-                    newMessages.push({
-                        type: 'text',
-                        text: response.message,
-                        sender: 'assistant'
-                    });
+                    newMessages.push({ type: 'text', text: response.message, sender: 'assistant' });
                 }
-
                 setChatMessages(prev => [...prev, ...newMessages]);
                 setMessage(response.message);
             } else {
-                setChatMessages(prev => [...prev, {
-                    type: 'text',
-                    text: response.message,
-                    sender: 'assistant'
-                }]);
+                setAvatarState('failed');
+                setChatMessages(prev => [...prev, { type: 'text', text: response.message, sender: 'assistant' }]);
                 setMessage(response.message);
             }
         } catch (error) {
             console.error("AI Command failed", error);
-            setChatMessages(prev => [...prev, {
-                type: 'text',
-                text: "I'm sorry, I'm having trouble connecting to my brain right now.",
-                sender: 'assistant'
-            }]);
+            setAvatarState('failed');
+            setChatMessages(prev => [...prev, { type: 'text', text: "I'm sorry, I'm having trouble connecting to my brain right now.", sender: 'assistant' }]);
         } finally {
             setIsProcessing(false);
         }
     };
 
-
     const handleAddToCart = async (v: AiProductVariant, product_name: string, quantity: number) => {
         setIsProcessing(true);
         try {
-            // 1. Add to cart
-            await cartService.addToCart(
-                v.variant_id,
-                quantity,
-                user?.id ? parseInt(user.id) : undefined,
-                sessionId || undefined
-            );
-
+            await cartService.addToCart(v.variant_id, quantity, user?.id ? parseInt(user.id) : undefined, sessionId || undefined);
             showSnackbar(`${v.variant_name} added to cart!`, 'success');
 
-            // 2. Confirm to AI to handle next item in queue
             const confirmResult = await cartService.confirmVariant({
                 action: 'variant_selection',
                 status: 'success',
@@ -257,183 +273,149 @@ const OrderAssistant: React.FC = () => {
             });
 
             if (confirmResult.success) {
-                if (confirmResult.has_more && confirmResult.next_action) {
-                    // Start next variant selection
+                setAvatarState('success');
+                if (confirmResult.has_more && confirmResult.next_action?.action_type === 'variant_selection') {
                     const nextAction = confirmResult.next_action;
-                    if (nextAction.action_type === 'variant_selection') {
-                        const nextVariantProduct: Product = {
+                    setChatMessages(prev => [...prev, {
+                        type: 'variant',
+                        text: confirmResult.message,
+                        variantProduct: {
                             product_id: nextAction.data.product_id,
                             name: nextAction.data.product_name,
-                            description: '',
-                            base_price: '0',
-                            sale_price: '0',
-                            category_id: 0,
-                            ispopular: false,
-                            stock_quantity: 0,
-                            isVisible: true,
-                            image_url: null,
-                            created_at: null,
-                            brandID: 0,
-                            price_range: '',
-                            tag: '',
-                            alert_stock: 0
-                        };
-
-                        setChatMessages(prev => [...prev, {
-                            type: 'variant',
-                            text: confirmResult.message,
-                            variantProduct: nextVariantProduct,
-                            variants: nextAction.data.available_variants,
-                            quantity: nextAction.data.quantity || 1,
-                            sender: 'assistant'
-                        }]);
-                        setMessage(confirmResult.message);
-                    }
-                } else {
-                    // All done
-                    setChatMessages(prev => [...prev, {
-                        type: 'text',
-                        text: confirmResult.message,
+                            description: '', base_price: '0', sale_price: '0', category_id: 0, ispopular: false, stock_quantity: 0, isVisible: true, image_url: null, created_at: null, brandID: 0, price_range: '', tag: '', alert_stock: 0
+                        },
+                        variants: nextAction.data.available_variants,
+                        quantity: nextAction.data.quantity || 1,
                         sender: 'assistant'
                     }]);
-                    setMessage(confirmResult.message);
+                } else {
+                    setChatMessages(prev => [...prev, { type: 'text', text: confirmResult.message, sender: 'assistant' }]);
                 }
+                setMessage(confirmResult.message);
             }
         } catch (error) {
-            console.error("Failed to add to cart", error);
+            setAvatarState('failed');
             showSnackbar("Failed to add to cart.", 'error');
         } finally {
             setIsProcessing(false);
         }
     };
 
-    useEffect(() => {
-        if (recorderError) {
-            setMessage(`Error: ${recorderError}`);
+    const handleIntroClick = () => {
+        if (isIntro) {
+            setIntroStep(prev => prev + 1);
         }
-    }, [recorderError]);
+    };
+
+    // Helper to get current avatar source
+    const getCurrentAvatar = () => {
+        if (isIntro) return INTRO_PHASES[introStep].avatar;
+        switch (avatarState) {
+            case 'processing': return AVATAR_PROCESSING;
+            case 'success': return AVATAR_SUCCEED;
+            case 'failed': return AVATAR_FAILED;
+            default: return AVATAR_NORMAL;
+        }
+    };
 
     return (
-        <div className="order-assistant-container" style={{ backgroundColor: colors.light.background }}>
-            {/* Background blur effect */}
+        <div className={`order-assistant-container ${isPortrait ? 'portrait-mode' : 'landscape-mode'}`}>
             <div className="background-blur"></div>
 
-            <div className="main-layout">
-                {/* Left Side: Assistant & Smart Container */}
-                <div className="content-side">
-                    {/* Top Section: Assistant Content */}
-                    <div className="assistant-content-top">
-                        {/* Speech Bubble */}
-                        <div className="speech-bubble">
-                            <p>{message}</p>
-                        </div>
+            {/* Top Right Explore Menu (Only in Main Mode or always? Prompt implies always available or at least in main) */}
+            {!isIntro && (
+                <button className="explore-menu-btn" onClick={() => navigate('/menu')}>
+                    <span>Explore Menu</span>
+                    <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
+                        <path d="M4 6H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                        <path d="M4 12H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                        <path d="M4 18H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                </button>
+            )}
 
-                        {/* Avatar */}
-                        <div className="avatar-container">
-                            <div className={`avatar ${isRecording ? 'pulse-red' : ''} ${isProcessing ? 'pulse-blue' : ''}`}>
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    className="avatar-icon"
-                                >
-                                    <path
-                                        d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z"
-                                        fill="white"
-                                    />
-                                    <path
-                                        d="M12 14C8.13 14 5 16.12 5 18.5V19C5 19.55 5.45 20 6 20H18C18.55 20 19 19.55 19 19V18.5C19 16.12 15.87 14 12 14Z"
-                                        fill="white"
-                                    />
-                                </svg>
-                            </div>
+            {isIntro ? (
+                // INTRO OVERLAY
+                <div className="intro-overlay" onClick={handleIntroClick}>
+                    <div className="intro-content-centered">
+                        <div className="speech-bubble intro-bubble">
+                            <p>{INTRO_PHASES[introStep].text}</p>
+                            <div className="bubble-arrow-down"></div>
                         </div>
+                        <div className="avatar-container-intro">
+                            <img src={getCurrentAvatar()} className="avatar-img-large" alt="AI Agent" />
+                        </div>
+                        <div className="tap-hint">Tap to continue</div>
                     </div>
-
-                    {/* Middle Section: Smart Container */}
-                    <div className="smart-container" style={{ backgroundColor: colors.light.secondary }}>
+                </div>
+            ) : (
+                // MAIN LAYOUT
+                <div className="main-layout-wrapper">
+                    {/* Chat Container (Left in Landscape, Bottom in Portrait) */}
+                    <div className="chat-interface-container smart-container">
                         <div className="smart-header">
                             <span className="smart-title">Assistant Chat</span>
                         </div>
-
                         <div className="smart-content">
                             <div className="chat-mode">
                                 <div className="chat-history">
                                     {chatMessages.map((msg, i) => (
                                         <div key={i} className={`chat-message-wrapper ${msg.sender}`}>
                                             {msg.type === 'text' && (
-                                                <div className={`chat-bubble ${msg.sender}`}>
-                                                    {msg.text}
-                                                </div>
+                                                <div className={`chat-bubble ${msg.sender}`}>{msg.text}</div>
                                             )}
-
                                             {msg.type === 'products' && (
                                                 <div className="products-bubble-container">
                                                     {msg.text && <div className="bubble-instruction">{msg.text}</div>}
                                                     <div className="products-slider">
                                                         {msg.products?.map(product => (
                                                             <div key={product.product_id} className="slider-item">
-                                                                <ProductCard
-                                                                    product={product}
-                                                                    onExpand={(p) => console.log('Expand product', p)}
-                                                                />
+                                                                <ProductCard product={product} onExpand={() => { }} />
                                                             </div>
                                                         ))}
                                                     </div>
                                                 </div>
                                             )}
-
                                             {msg.type === 'variant' && msg.variantProduct && (
                                                 <div className="variant-bubble">
-                                                    <div className="variant-card-mini" style={{ borderLeft: `4px solid ${colors.light.accentYellow}` }}>
-                                                        <div className="variant-card-header">
-                                                            <h4>{msg.variantProduct.name}</h4>
-                                                            <span>Select Option</span>
-                                                        </div>
-                                                        <div className="variant-list-mini">
-                                                            {msg.variants?.map(v => (
-                                                                <div key={v.variant_id} className="variant-item-mini">
-                                                                    <div className="v-info">
-                                                                        <span className="v-name">{v.variant_name}</span>
-                                                                        <span className="v-stock">Stock: {v.stock}</span>
-                                                                    </div>
-                                                                    <div className="v-price">Rs. {v.sell_price}</div>
-                                                                    <button
-                                                                        className="v-add-btn"
-                                                                        onClick={() => handleAddToCart(v, msg.variantProduct!.name, msg.quantity || 1)}
-                                                                        disabled={isProcessing}
-                                                                        style={{ backgroundColor: colors.light.primary }}
-                                                                    >
-                                                                        Add
-                                                                    </button>
+                                                    <div className="variant-card-header">
+                                                        <h4>{msg.variantProduct.name}</h4>
+                                                        <span>Select Option</span>
+                                                    </div>
+                                                    <div className="variant-list-mini">
+                                                        {msg.variants?.map(v => (
+                                                            <div key={v.variant_id} className="variant-item-mini">
+                                                                <div className="v-info">
+                                                                    <span className="v-name">{v.variant_name}</span>
+                                                                    <span className="v-stock">Stock: {v.stock} ({v.variant_id})</span>
                                                                 </div>
-                                                            ))}
-                                                        </div>
+                                                                <div className="v-price">Rs. {v.sell_price}</div>
+                                                                <button
+                                                                    className="v-add-btn"
+                                                                    onClick={() => handleAddToCart(v, msg.variantProduct!.name, msg.quantity || 1)}
+                                                                    disabled={isProcessing}
+                                                                >
+                                                                    Add
+                                                                </button>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
-
                                             {msg.type === 'cart_action' && msg.actionData && (
                                                 <div className="cart-action-bubble">
-                                                    <div className="cart-action-icon" style={{ backgroundColor: msg.actionData.variant_id ? '#4CAF50' : '#FF5252' }}>
+                                                    <div className="cart-action-icon" style={{ backgroundColor: msg.actionData.variant_id ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                                         {msg.actionData.quantity > 0 ? '+' : '-'}
                                                     </div>
                                                     <div className="cart-action-details">
-                                                        <span className="action-title">
-                                                            {msg.actionData.quantity > 0 ? 'Added to Cart' : 'Removed from Cart'}
-                                                        </span>
-                                                        <span className="action-item">
-                                                            {msg.actionData.quantity > 0 ? msg.actionData.quantity : ''} {msg.actionData.product_name} ({msg.actionData.variant_name})
-                                                        </span>
+                                                        <span className="action-title">{msg.actionData.quantity > 0 ? 'Added' : 'Removed'}</span>
+                                                        <span className="action-item">{msg.actionData.quantity > 0 ? msg.actionData.quantity : ''} {msg.actionData.product_name}</span>
                                                     </div>
                                                 </div>
                                             )}
-
                                             {msg.type === 'bill' && msg.actionData && (
                                                 <div className="bill-bubble">
-                                                    <div className="bill-header">
-                                                        <svg viewBox="0 0 24 24" className="bill-icon"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10V7H7v3zm0 4h10v-2H7v2zm0 3h10v-2H7v2z" fill="currentColor" /></svg>
-                                                        <h3>Order Summary</h3>
-                                                    </div>
+                                                    <div className="bill-header"><h3>Order Summary</h3></div>
                                                     <div className="bill-items">
                                                         {msg.actionData.cartItems?.map((item: any, idx: number) => (
                                                             <div key={idx} className="bill-item">
@@ -442,65 +424,25 @@ const OrderAssistant: React.FC = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <div className="bill-divider"></div>
                                                     <div className="bill-total">
-                                                        <span>Total Amount</span>
+                                                        <span>Total</span>
                                                         <span className="total-price">Rs. {msg.actionData.subtotal?.toFixed(2)}</span>
                                                     </div>
-                                                    <button className="bill-checkout-btn" onClick={() => navigate('/checkout')} style={{ backgroundColor: colors.light.primary }}>
-                                                        Proceed to Checkout
-                                                    </button>
+                                                    <button className="bill-checkout-btn" onClick={() => navigate('/checkout')}>Checkout</button>
                                                 </div>
                                             )}
-
                                             {msg.type === 'cart_view' && msg.actionData && (
                                                 <div className="cart-view-bubble">
-                                                    <div className="cart-view-header">
-                                                        <span>Your Shopping Cart ({msg.actionData.total_items} items)</span>
-                                                    </div>
+                                                    <div className="cart-view-header"><span>Your Cart ({msg.actionData.total_items})</span></div>
                                                     <div className="cart-view-list">
                                                         {msg.actionData.cartItems?.map((item: any, idx: number) => (
                                                             <div key={idx} className="cart-view-item">
-                                                                <div className="cart-item-info">
-                                                                    <span className="item-name">{item.product_name}</span>
-                                                                    <span className="item-variant">{item.variant_name}</span>
-                                                                </div>
-                                                                <div className="cart-item-qty">
-                                                                    <span>x{item.quantity}</span>
-                                                                    <span className="item-price">Rs. {item.sell_price}</span>
-                                                                </div>
+                                                                <span>{item.quantity}x {item.product_name}</span>
+                                                                <span className="item-price">{item.sell_price}</span>
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    <div className="cart-view-footer">
-                                                        <span>Subtotal: Rs. {msg.actionData.subtotal?.toFixed(2)}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {msg.type === 'checkout' && msg.actionData && (
-                                                <div className="checkout-bubble">
-                                                    <div className="checkout-status">
-                                                        <div className="status-dot animate-pulse"></div>
-                                                        <span>Initiating Checkout...</span>
-                                                    </div>
-                                                    <div className="checkout-info">
-                                                        <div className="info-row">
-                                                            <span>Payment:</span>
-                                                            <strong>{msg.actionData.payment_method || 'Standard'}</strong>
-                                                        </div>
-                                                        <div className="info-row">
-                                                            <span>Shipping:</span>
-                                                            <strong>{msg.actionData.shipping_method || 'Pick up'}</strong>
-                                                        </div>
-                                                        <div className="info-row total">
-                                                            <span>Grand Total:</span>
-                                                            <strong>Rs. {msg.actionData.subtotal?.toFixed(2)}</strong>
-                                                        </div>
-                                                    </div>
-                                                    <button className="confirm-checkout-btn" style={{ backgroundColor: '#4CAF50' }}>
-                                                        Confirm & Pay
-                                                    </button>
+                                                    <div className="cart-view-footer">Subtotal: Rs. {msg.actionData.subtotal?.toFixed(2)}</div>
                                                 </div>
                                             )}
                                         </div>
@@ -508,133 +450,49 @@ const OrderAssistant: React.FC = () => {
                                     <div ref={chatEndRef} />
                                 </div>
                                 <div className="chat-input-area">
+                                    <div className="input-actions-left">
+                                        <button className={`action-icon-btn ${isRecording ? 'recording' : ''}`} onClick={handleVoiceToggle}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z" />
+                                                <path d="M19 11C19 14.87 15.87 18 12 18C8.13 18 5 14.87 5 11" />
+                                                <path d="M12 18V22" />
+                                            </svg>
+                                        </button>
+                                        <button className="action-icon-btn" onClick={() => inputRef.current?.focus()}>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <rect x="2" y="4" width="20" height="16" rx="2" />
+                                                <path d="M6 8H8" /><path d="M11 8H13" /><path d="M16 8H18" />
+                                                <path d="M6 12H18" /><path d="M8 16H16" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                     <input
+                                        ref={inputRef}
                                         type="text"
-                                        placeholder="Type a message..."
+                                        placeholder="Type your order..."
                                         value={chatInput}
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
                                     />
-                                    <button onClick={() => handleSendChat()} style={{ backgroundColor: colors.light.primary }}>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
+                                    <button className="send-btn" onClick={() => handleSendChat()}>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                                         </svg>
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Right Side: Controls */}
-                <div className="right-controls">
-                    <div className="stacked-action-buttons">
-                        <button
-                            className={`action-btn-mini voice-btn ${isRecording ? 'active' : ''}`}
-                            aria-label="Voice"
-                            onClick={handleVoiceToggle}
-                            disabled={!isSupported || isProcessing}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
-                                <path
-                                    d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                                <path
-                                    d="M19 11C19 14.87 15.87 18 12 18C8.13 18 5 14.87 5 11"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                                <path
-                                    d="M12 18V22"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </button>
-
-                        <button className="action-btn-mini keyboard-btn" aria-label="Keyboard">
-                            <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
-                                <rect
-                                    x="2" y="4" width="20" height="16" rx="3"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                />
-                                <path d="M6 8H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M11 8H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M16 8H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M6 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M11 12H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M16 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                <path d="M8 16H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                        </button>
-
-                        <button
-                            className="action-btn-mini menu-btn"
-                            aria-label="Explore Menu"
-                            onClick={() => navigate('/menu')}
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
-                                <path d="M4 6H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                <path d="M4 12H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                                <path d="M4 18H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Volume Control */}
-                    <div className="volume-control-new">
-                        <button
-                            className="volume-icon-btn"
-                            onClick={toggleMute}
-                            aria-label={isMuted ? "Unmute" : "Mute"}
-                        >
-                            {isMuted ? (
-                                <svg viewBox="0 0 24 24" fill="none" className="volume-icon">
-                                    <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M23 9L17 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                    <path d="M17 9L23 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                            ) : (
-                                <svg viewBox="0 0 24 24" fill="none" className="volume-icon" style={{ color: colors.light.primary }}>
-                                    <path d="M11 5L6 9H2V15H6L11 19V5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M15.54 8.46C16.48 9.4 17.01 10.67 17.01 12C17.01 13.33 16.48 14.6 15.54 15.54" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                    <path d="M18.07 5.93C19.95 7.81 21.01 10.35 21.01 13C21.01 15.65 19.95 18.19 18.07 20.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                            )}
-                        </button>
-                        <div className="volume-slider-container-new">
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                value={isMuted ? 0 : volume}
-                                onChange={handleVolumeChange}
-                                className="volume-slider-new"
-                                aria-label="Volume"
-                            />
-                            <div
-                                className="volume-slider-fill-new"
-                                style={{ height: `${isMuted ? 0 : volume}%`, backgroundColor: colors.light.accentYellow }}
-                            ></div>
+                    {/* Avatar Container (Right in Landscape, Top in Portrait) */}
+                    <div className="avatar-side-container">
+                        <div className={`avatar-wrapper ${avatarState}`}>
+                            <img src={getCurrentAvatar()} className="avatar-img-main" alt="Agent" />
                         </div>
-                        <span className="volume-percentage-new">{isMuted ? 0 : volume}%</span>
                     </div>
                 </div>
-            </div>
-
-            {/* Help button */}
-            <button className="help-btn" aria-label="Help">
-                ?
-            </button>
+            )}
         </div>
     );
 };

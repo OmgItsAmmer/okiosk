@@ -3,8 +3,8 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: #1a1a1a;
-    color: #ffffff;
+    background-color: var(--color-background);
+    color: var(--color-text);
     padding: 20px;
     box-sizing: border-box;
 }
@@ -14,28 +14,31 @@
     align-items: center;
     gap: 20px;
     margin-bottom: 30px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--color-border);
     padding-bottom: 20px;
 }
 
 .back-btn {
-    background: transparent;
-    border: 1px solid #555;
-    color: #ccc;
+    background: var(--color-secondary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     padding: 8px 16px;
     border-radius: 6px;
     font-size: 1rem;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
 .back-btn:hover {
-    border-color: #fff;
-    color: #fff;
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
 }
 
 .checkout-header h1 {
     margin: 0;
     font-size: 2rem;
+    color: var(--color-text);
 }
 
 .checkout-content {
@@ -47,19 +50,20 @@
 
 .invoice-section {
     flex: 2;
-    background-color: #242424;
+    background-color: var(--color-secondary);
     border-radius: 12px;
     padding: 20px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--color-border);
 }
 
 .invoice-section h2 {
     margin-top: 0;
     margin-bottom: 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--color-border);
     padding-bottom: 10px;
 }
 
@@ -77,22 +81,25 @@
 .invoice-table td {
     text-align: left;
     padding: 12px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .invoice-table th {
-    color: #aaa;
+    color: var(--color-text);
+    opacity: 0.6;
     font-weight: 500;
 }
 
 .item-name {
     font-weight: bold;
     font-size: 1rem;
+    color: var(--color-text);
 }
 
 .item-variant {
     font-size: 0.85rem;
-    color: #888;
+    color: var(--color-text);
+    opacity: 0.6;
     margin-top: 4px;
 }
 
@@ -103,10 +110,11 @@
 }
 
 .summary-card {
-    background-color: #2a2a2a;
+    background-color: var(--color-secondary);
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--color-border);
 }
 
 .summary-card h2 {
@@ -120,16 +128,16 @@
     justify-content: space-between;
     margin-bottom: 12px;
     font-size: 1.1rem;
-    color: #ddd;
+    color: var(--color-text);
 }
 
 .total-row {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid #444;
+    border-top: 1px solid var(--color-border);
     font-weight: bold;
     font-size: 1.4rem;
-    color: #4ade80;
+    color: var(--color-primary);
 }
 
 .info-group {
@@ -138,25 +146,26 @@
 
 .info-group label {
     display: block;
-    color: #aaa;
+    color: var(--color-text);
+    opacity: 0.6;
     margin-bottom: 8px;
     font-size: 0.9rem;
 }
 
 .static-field {
-    background-color: #333;
+    background-color: var(--color-bg-alt);
     padding: 12px;
     border-radius: 6px;
-    border: 1px solid #444;
-    color: #fff;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     font-weight: 500;
 }
 
 .error-message {
     margin-top: 20px;
-    color: #ef4444;
+    color: var(--color-primary);
     text-align: center;
-    background: rgba(239, 68, 68, 0.1);
+    background: color-mix(in srgb, var(--color-primary), transparent 90%);
     padding: 10px;
     border-radius: 6px;
 }
@@ -165,22 +174,23 @@
     width: 100%;
     margin-top: 30px;
     padding: 16px;
-    background-color: #10b981;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: 8px;
     font-size: 1.2rem;
     font-weight: bold;
     text-transform: uppercase;
-    transition: background-color 0.2s;
+    cursor: pointer;
+    transition: filter 0.2s;
 }
 
 .confirm-order-btn:hover {
-    background-color: #059669;
+    filter: brightness(0.9);
 }
 
 .confirm-order-btn:disabled {
-    background-color: #444;
+    background-color: #ccc;
     cursor: not-allowed;
     opacity: 0.7;
 }
@@ -192,8 +202,10 @@
 
 .empty-cart-warning button {
     margin-top: 20px;
-    background-color: #3b82f6;
+    background-color: var(--color-primary);
     color: white;
     padding: 10px 20px;
     border-radius: 6px;
+    border: none;
+    cursor: pointer;
 }

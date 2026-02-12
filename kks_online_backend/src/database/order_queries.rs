@@ -572,6 +572,12 @@ impl<'a> OrderQueries<'a> {
     pub async fn verify_customer(&self, customer_id: i32) -> Result<(bool, String), sqlx::Error> {
         println!("[DB] Verifying customer_id: {}", customer_id);
 
+        // Guest user (ID 1) does not require a phone number for checkout
+        if customer_id == 1 {
+            println!("[DB] Guest user (ID 1) detected. Skipping phone number verification.");
+            return Ok((true, "Guest user verified".to_string()));
+        }
+
         let result = sqlx::query("SELECT phone_number FROM customers WHERE customer_id = $1")
             .bind(customer_id)
             .fetch_optional(self.pool)

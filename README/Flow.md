@@ -6,13 +6,9 @@ make UI super quick and responsive 15 to 32
 
 cached media logic
 
-
-
 cart qr logic 
 
 checkout 
-
-
 
 Front End 
 animations
@@ -51,3 +47,18 @@ delete guest related stuff(cart)
 go to login screen
 
 
+
+.\llama.cpp\build\bin\Release\llama-server.exe `
+  -m .\llama.cpp\custom_models\mistral-7b-instruct-v0.2.Q2_K.gguf `
+  -t 8 `
+  --port 8080
+
+
+
+
+supabase setup
+checkout
+beautification
+dashboard.
+removing unnecessary stuff from dashboard
+deploy

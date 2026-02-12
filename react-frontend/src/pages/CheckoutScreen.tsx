@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import './CheckoutScreen.css';
 import type { CartItemType } from '../components/CartItem';
+import SuccessModal from '../components/SuccessModal';
 
 interface CheckoutState {
     cart: CartItemType[];
@@ -29,6 +30,10 @@ const CheckoutScreen: React.FC = () => {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastOrderId, setLastOrderId] = useState<string | number>('');
+
+    const { logout } = useAuth();
 
     // Calculations
     const subtotal = cart.reduce((sum, item) => {
@@ -58,14 +63,7 @@ const CheckoutScreen: React.FC = () => {
                 shippingMethod: "pickup",
                 paymentMethod: "cod",
                 cartItems: cart.map(item => ({
-                    variantId: item.variant?.variant_id || 0, // 0 or separate handling if no variant? Backend implies variant_id is needed. 
-                    // If product has no variants, maybe we need a default variant or backend handles product_id separately?
-                    // For this task, assuming products have variants or we map product to a "variant" structure if needed.
-                    // If variant is undefined, this might fail if backend enforces foreign key.
-                    // Let's assume for now user only adds variants or products act as main variant. 
-                    // Check CartItem: existing logic allows base products. 
-                    // If item.variant is undefined, we assume product_id maps to something or strict variant usage.
-                    // Given "Fetch Variants" task, likely most flow uses variants.
+                    variantId: item.variant?.variant_id || 0,
                     quantity: item.quantity,
                     sellPrice: item.variant ? parseFloat(item.variant.sell_price) : parseFloat(item.product.base_price),
                     buyPrice: item.variant ? parseFloat(item.variant.buy_price) : 0
@@ -83,8 +81,8 @@ const CheckoutScreen: React.FC = () => {
             const data = await response.json();
 
             if (data.success) {
-                alert(`Order Placed Successfully! Order ID: ${data.orderId}`);
-                navigate('/menu'); // Or dashboard
+                setLastOrderId(data.orderId);
+                setShowSuccessModal(true);
             } else {
                 setError(data.message || 'Checkout failed');
             }
@@ -94,6 +92,15 @@ const CheckoutScreen: React.FC = () => {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
+    const handleCloseModal = () => {
+        navigate('/menu');
     };
 
     return (
@@ -183,6 +190,15 @@ const CheckoutScreen: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {showSuccessModal && (
+                <SuccessModal
+                    orderId={lastOrderId}
+                    isLoggedIn={user?.userType === 'authenticated'}
+                    onLogout={handleLogout}
+                    onClose={handleCloseModal}
+                />
+            )}
         </div>
     );
 };

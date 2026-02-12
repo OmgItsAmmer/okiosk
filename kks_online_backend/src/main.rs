@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Setup AI service
     let ai_state = Arc::new(AiState::new(
         database.clone(),
-        config.gemini_api_key.clone(),
+        config.llm_api_url.clone(),
         config.whisper_cpp_path.clone(),
         config.whisper_model_path.clone(),
     ));
@@ -289,7 +289,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   POST   /api/checkout                          - Process checkout with race condition handling");
 
     println!("\n🤖 AI Endpoint:");
-    println!("   POST   /api/ai/command                        - Process natural language commands using Gemini AI");
+    println!("   POST   /api/ai/command                        - Process natural language commands using Local LLM");
     println!("   POST   /api/ai/variant-confirm                - Confirm variant selection for sequential queue");
 
     println!("\n🎤 Speech-to-Text Endpoint:");

@@ -59,7 +59,8 @@ pub struct GoogleCallbackQuery {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GuestClaims {
-    pub sub: String, // guest_user_id
+    pub sub: String,   // guest_user_id
+    pub email: String, // Added to match Claims structure for verification
     pub name: String,
     pub user_type: String, // "guest"
     pub exp: usize,

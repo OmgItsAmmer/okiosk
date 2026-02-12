@@ -1,0 +1,193 @@
+warning: unused imports: `AiService`, `QueueService`, `TranscribeService`, and `database::Database`
+  --> src\handlers\ai_handlers.rs:5:5
+   |
+ 5 |     database::Database,
+   |     ^^^^^^^^^^^^^^^^^^
+...
+10 |     services::{AiService, CommandExecutor, QueueService, TranscribeService},
+   |                ^^^^^^^^^                   ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `database::Database` and `services::QueueService`
+  --> src\handlers\cart_handlers.rs:9:5
+   |
+ 9 |     database::Database,
+   |     ^^^^^^^^^^^^^^^^^^
+...
+15 |     services::QueueService,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ChatChoice`
+ --> src\services\ai_service.rs:2:13
+  |
+2 |     Action, ChatChoice, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, Command,
+  |             ^^^^^^^^^^
+
+warning: methods `get_all_orders` and `test_connection` are never used
+  --> src\database\mod.rs:53:18
+   |
+20 | impl Database {
+   | ------------- methods in this implementation
+...
+53 |     pub async fn get_all_orders(&self) -> Result<Vec<Order>, sqlx::Error> {
+   |                  ^^^^^^^^^^^^^^
+...
+62 |     pub async fn test_connection(&self) -> Result<String, sqlx::Error> {
+   |                  ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: associated functions `expire_session`, `get_user_by_google_id`, and `cleanup_expired_sessions` are never used
+   --> src\database\auth_queries.rs:97:18
+    |
+  8 | impl AuthQueries {
+    | ---------------- associated functions in this implementation
+...
+ 97 |     pub async fn expire_session(pool: &PgPool, session_id: &str) -> Result<()> {
+    |                  ^^^^^^^^^^^^^^
+...
+128 |     pub async fn get_user_by_google_id(pool: &PgPool, google_id: &str) -> Result<Option<User>> {
+    |                  ^^^^^^^^^^^^^^^^^^^^^
+...
+143 |     pub async fn cleanup_expired_sessions(pool: &PgPool) -> Result<u64> {
+    |                  ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `test_button_press` is never used
+  --> src\handlers\mod.rs:52:14
+   |
+52 | pub async fn test_button_press() -> Result<Json<Value>, StatusCode> {
+   |              ^^^^^^^^^^^^^^^^^
+
+warning: function `fetch_orders` is never used
+  --> src\handlers\mod.rs:65:14
+   |
+65 | pub async fn fetch_orders(State(db): State<Arc<Database>>) -> Result<Json<Value>, StatusCode> {
+   |              ^^^^^^^^^^^^
+
+warning: function `test_database` is never used
+  --> src\handlers\mod.rs:90:14
+   |
+90 | pub async fn test_database(State(db): State<Arc<Database>>) -> Result<Json<Value>, StatusCode> {
+   |              ^^^^^^^^^^^^^
+
+warning: struct `MultiVariantSelectionData` is never constructed
+   --> src\models\ai.rs:196:12
+    |
+196 | pub struct MultiVariantSelectionData {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `QueueStatusResponse` is never constructed
+   --> src\models\ai.rs:237:12
+    |
+237 | pub struct QueueStatusResponse {
+    |            ^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Cart` is never constructed
+ --> src\models\cart.rs:8:12
+  |
+8 | pub struct Cart {
+  |            ^^^^
+
+warning: struct `KioskCart` is never constructed
+  --> src\models\cart.rs:26:12
+   |
+26 | pub struct KioskCart {
+   |            ^^^^^^^^^
+
+warning: struct `InventoryReservationItem` is never constructed
+   --> src\models\cart.rs:183:12
+    |
+183 | pub struct InventoryReservationItem {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `Order` is never constructed
+ --> src\models\order.rs:5:12
+  |
+5 | pub struct Order {
+  |            ^^^^^
+
+warning: struct `ProductWithVariations` is never constructed
+  --> src\models\product.rs:30:12
+   |
+30 | pub struct ProductWithVariations {
+   |            ^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `PopularProductsCountResponse` is never constructed
+  --> src\models\product.rs:81:12
+   |
+81 | pub struct PopularProductsCountResponse {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `TranscribeError` is never constructed
+  --> src\models\transcribe.rs:11:12
+   |
+11 | pub struct TranscribeError {
+   |            ^^^^^^^^^^^^^^^
+
+warning: type alias `SharedAuthService` is never used
+   --> src\services\auth_service.rs:182:10
+    |
+182 | pub type SharedAuthService = Arc<AuthService>;
+    |          ^^^^^^^^^^^^^^^^^
+
+warning: field `timeout_seconds` is never read
+  --> src\services\queue_service.rs:11:5
+   |
+ 8 | pub struct QueueService {
+   |            ------------ field in this struct
+...
+11 |     timeout_seconds: i64,
+   |     ^^^^^^^^^^^^^^^
+
+warning: methods `get_queue`, `set_current_action`, `lock_queue`, `unlock_queue`, and `cleanup_expired_queues` are never used
+   --> src\services\queue_service.rs:61:12
+    |
+ 14 | impl QueueService {
+    | ----------------- methods in this implementation
+...
+ 61 |     pub fn get_queue(&self, queue_id: &str) -> Result<Option<CartActionQueue>, String> {
+    |            ^^^^^^^^^
+...
+ 89 |     pub fn set_current_action(
+    |            ^^^^^^^^^^^^^^^^^^
+...
+161 |     pub fn lock_queue(&self, queue_id: &str) -> Result<bool, String> {
+    |            ^^^^^^^^^^
+...
+179 |     pub fn unlock_queue(&self, queue_id: &str) -> Result<(), String> {
+    |            ^^^^^^^^^^^^
+...
+193 |     pub fn cleanup_expired_queues(&self) -> Result<usize, String> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated function `from_env` is never used
+  --> src\services\transcribe_service.rs:47:12
+   |
+13 | impl TranscribeService {
+   | ---------------------- associated function in this implementation
+...
+47 |     pub fn from_env() -> Result<Self, String> {
+   |            ^^^^^^^^
+
+warning: function `which_exists` is never used
+   --> src\services\transcribe_service.rs:193:4
+    |
+193 | fn which_exists(cmd: &str) -> bool {
+    |    ^^^^^^^^^^^^
+
+warning: `kks_online_backend` (bin "kks_online_backend") generated 22 warnings (run `cargo fix --bin "kks_online_backend" -p kks_online_backend` to apply 3 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.63s
+warning: the following packages contain code that will be rejected by a future version of Rust: sqlx-postgres v0.7.4
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+     Running `target\debug\kks_online_backend.exe`
+≡ƒöì Current working directory: C:\Programming\Projects\02_GROWING\okiosk\kks_online_backend
+≡ƒöì Looking for .env file in the following locations:
+   - C:\Programming\Projects\02_GROWING\okiosk\kks_online_backend\.env (exists: true)
+Γ£à Successfully loaded .env from: C:\Programming\Projects\02_GROWING\okiosk\kks_online_backend\.env
+≡ƒöì DATABASE_URL in environment: true
+≡ƒöì Connecting to database...
+[2m2026-02-08T18:16:57.541421Z[0m [32m INFO[0m [2mkks_online_backend[0m[2m:[0m Γ£à Configuration loaded successfully
+Γ£à Configuration loaded successfully
+Error: Io(Os { code: 11001, kind: Uncategorized, message: "No such host is known." })
+error: process didn't exit successfully: `target\debug\kks_online_backend.exe` (exit code: 1)
