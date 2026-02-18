@@ -15,7 +15,6 @@ import SuccessModal from '../components/SuccessModal';
 // Avatar Images
 import agentNormal from '../assets/images/AIAgent/agent_normal.png';
 import agentProcessing from '../assets/images/AIAgent/agent_processing.png';
-import agentSmiling from '../assets/images/AIAgent/agent_smiling.png';
 import agentSucceed from '../assets/images/AIAgent/agent_succed.png';
 import agentFailed from '../assets/images/AIAgent/agent_failed.png';
 
@@ -77,7 +76,6 @@ const OrderAssistant: React.FC = () => {
     // Avatar State
     const [avatarState, setAvatarState] = useState<'normal' | 'processing' | 'success' | 'failed'>('normal');
 
-    const [message, setMessage] = useState("I can help you with your order."); // Used in bubbles sometimes
     const [isProcessing, setIsProcessing] = useState(false);
     const [chatInput, setChatInput] = useState("");
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -119,10 +117,8 @@ const OrderAssistant: React.FC = () => {
 
     const {
         isRecording,
-        isSupported,
         startRecording,
-        stopRecording,
-        error: recorderError
+        stopRecording
     } = useAudioRecorder(5000);
 
     const handleVoiceToggle = async () => {
@@ -255,11 +251,9 @@ const OrderAssistant: React.FC = () => {
                     newMessages.push({ type: 'text', text: response.message, sender: 'assistant' });
                 }
                 setChatMessages(prev => [...prev, ...newMessages]);
-                setMessage(response.message);
             } else {
                 setAvatarState('failed');
                 setChatMessages(prev => [...prev, { type: 'text', text: response.message, sender: 'assistant' }]);
-                setMessage(response.message);
             }
         } catch (error) {
             console.error("AI Command failed", error);
@@ -305,7 +299,6 @@ const OrderAssistant: React.FC = () => {
                 } else {
                     setChatMessages(prev => [...prev, { type: 'text', text: confirmResult.message, sender: 'assistant' }]);
                 }
-                setMessage(confirmResult.message);
             }
         } catch (error) {
             setAvatarState('failed');
