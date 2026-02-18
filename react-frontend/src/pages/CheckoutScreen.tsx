@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { API_BASE_URL } from '../config';
 import './CheckoutScreen.css';
 import type { CartItemType } from '../components/CartItem';
 import SuccessModal from '../components/SuccessModal';
@@ -96,7 +97,7 @@ const CheckoutScreen: React.FC = () => {
                 }))
             };
 
-            const response = await fetch('http://localhost:3000/api/checkout', {
+            const response = await fetch(`${API_BASE_URL}/api/checkout`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

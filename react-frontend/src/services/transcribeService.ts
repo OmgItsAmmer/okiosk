@@ -2,7 +2,7 @@ export interface TranscribeResponse {
     text: string;
 }
 
-const API_BASE_URL = 'http://localhost:3000'; // Make sure this matches your backend port
+import { API_BASE_URL } from '../config';
 
 /**
  * Transcribe audio blob to text using the backend API

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+import { API_BASE_URL as ROOT_URL } from '../config';
+const API_BASE_URL = `${ROOT_URL}/api`;
 
 export interface CartItemAddRequest {
     variant_id: number;

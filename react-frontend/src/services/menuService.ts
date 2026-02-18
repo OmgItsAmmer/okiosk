@@ -1,6 +1,5 @@
 import type { CategoryListResponse, ProductListResponse, ProductVariation } from '../types/menu';
-
-const API_BASE_URL = 'http://localhost:3000'; // Ensure this matches backend
+import { API_BASE_URL } from '../config';
 
 export const fetchAllCategories = async (): Promise<CategoryListResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/categories/all`);

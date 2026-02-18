@@ -4,10 +4,12 @@ import { io, Socket } from 'socket.io-client';
 import { AuthState } from '../types/auth';
 import type { User, AuthContextType, QRSession } from '../types/auth';
 
+import { API_BASE_URL as CONFIG_BACKEND_URL } from '../config';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // BACKEND_URL is used for API calls and WebSocket (can be localhost)
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = CONFIG_BACKEND_URL;
 // PUBLIC_URL is used for QR codes - must be accessible from mobile devices (use ngrok URL)
 const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || BACKEND_URL;
 const QR_SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes

@@ -208,6 +208,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/auth/guest-session",
             post(handlers::create_guest_session),
         )
+        .route("/api/auth/logout", post(handlers::logout))
         .with_state(auth_state);
 
     // Create AI router separately with its own state
