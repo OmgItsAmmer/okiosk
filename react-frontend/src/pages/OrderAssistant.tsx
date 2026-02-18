@@ -338,16 +338,25 @@ const OrderAssistant: React.FC = () => {
         <div className={`order-assistant-container ${isPortrait ? 'portrait-mode' : 'landscape-mode'}`}>
             <div className="background-blur"></div>
 
-            {/* Top Right Explore Menu (Only in Main Mode or always? Prompt implies always available or at least in main) */}
+            {/* Top Right Actions */}
             {!isIntro && (
-                <button className="explore-menu-btn" onClick={() => navigate('/menu')}>
-                    <span>Explore Menu</span>
-                    <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
-                        <path d="M4 6H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M4 12H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M4 18H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                </button>
+                <div className="top-right-actions">
+                    <button className="explore-menu-btn" onClick={() => navigate('/menu')}>
+                        <span>Explore Menu</span>
+                        <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
+                            <path d="M4 6H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                            <path d="M4 12H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                            <path d="M4 18H20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                        </svg>
+                    </button>
+                    <button className="logout-action-btn" onClick={handleLogout} title="Logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
             )}
 
             {isIntro ? (

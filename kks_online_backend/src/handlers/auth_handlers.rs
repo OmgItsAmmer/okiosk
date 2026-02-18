@@ -95,12 +95,21 @@ pub async fn google_callback(
         Ok(token) => token,
         Err(e) => {
             error!("Failed to exchange code: {}", e);
-            
+
             // Emit error to WebSocket
-            state.io.of("/").unwrap().to(session_id.clone()).emit("auth-error", json!({
-                "message": "Failed to exchange authorization code"
-            })).ok();
-            
+            state
+                .io
+                .of("/")
+                .unwrap()
+                .to(session_id.clone())
+                .emit(
+                    "auth-error",
+                    json!({
+                        "message": "Failed to exchange authorization code"
+                    }),
+                )
+                .ok();
+
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Failed to exchange code" })),
@@ -114,12 +123,21 @@ pub async fn google_callback(
         Ok(user) => user,
         Err(e) => {
             error!("Failed to get user info: {}", e);
-            
+
             // Emit error to WebSocket
-            state.io.of("/").unwrap().to(session_id.clone()).emit("auth-error", json!({
-                "message": "Failed to get user information"
-            })).ok();
-            
+            state
+                .io
+                .of("/")
+                .unwrap()
+                .to(session_id.clone())
+                .emit(
+                    "auth-error",
+                    json!({
+                        "message": "Failed to get user information"
+                    }),
+                )
+                .ok();
+
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Failed to get user info" })),
@@ -141,12 +159,21 @@ pub async fn google_callback(
         Ok(u) => u,
         Err(e) => {
             error!("Failed to upsert user: {}", e);
-            
+
             // Emit error to WebSocket
-            state.io.of("/").unwrap().to(session_id.clone()).emit("auth-error", json!({
-                "message": "Failed to create user account"
-            })).ok();
-            
+            state
+                .io
+                .of("/")
+                .unwrap()
+                .to(session_id.clone())
+                .emit(
+                    "auth-error",
+                    json!({
+                        "message": "Failed to create user account"
+                    }),
+                )
+                .ok();
+
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Failed to create user" })),
@@ -178,10 +205,19 @@ pub async fn google_callback(
 
     // Emit success event to WebSocket (to the kiosk waiting for auth)
     info!("Emitting auth-success to session: {}", session_id);
-    state.io.of("/").unwrap().to(session_id.clone()).emit("auth-success", json!({
-        "token": auth_response.token,
-        "user": auth_response.user
-    })).ok();
+    state
+        .io
+        .of("/")
+        .unwrap()
+        .to(session_id.clone())
+        .emit(
+            "auth-success",
+            json!({
+                "token": auth_response.token,
+                "user": auth_response.user
+            }),
+        )
+        .ok();
 
     // Return success page to mobile browser
     let html = format!(
@@ -246,7 +282,7 @@ pub async fn google_callback(
 pub async fn verify_token(
     State(state): State<Arc<AuthState>>,
     headers: axum::http::HeaderMap,
-) -> Result<Json<AuthResponse>, Response> {
+) -> Result<Response, Response> {
     let auth_header = headers
         .get("Authorization")
         .and_then(|h| h.to_str().ok())
@@ -258,15 +294,13 @@ pub async fn verify_token(
                 .into_response()
         })?;
 
-    let token = auth_header
-        .strip_prefix("Bearer ")
-        .ok_or_else(|| {
-            (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({ "error": "Invalid authorization header" })),
-            )
-                .into_response()
-        })?;
+    let token = auth_header.strip_prefix("Bearer ").ok_or_else(|| {
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({ "error": "Invalid authorization header" })),
+        )
+            .into_response()
+    })?;
 
     let claims = state.auth_service.verify_jwt(token).map_err(|e| {
         error!("Failed to verify token: {}", e);
@@ -277,11 +311,27 @@ pub async fn verify_token(
             .into_response()
     })?;
 
+    // Handle guest session
+    if claims.user_type.as_deref() == Some("guest") {
+        info!("Verifying guest token for: {}", claims.name);
+        return Ok(Json(json!({
+            "token": token,
+            "user": {
+                "id": claims.sub,
+                "name": claims.name,
+                "email": claims.email,
+                "userType": "guest"
+            }
+        }))
+        .into_response());
+    }
+
+    // Handle authenticated user
     let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|e| {
-        error!("Invalid user ID in token: {}", e);
+        error!("Invalid user ID in token: {}. Claims: {:?}", e, claims);
         (
             StatusCode::UNAUTHORIZED,
-            Json(json!({ "error": "Invalid token" })),
+            Json(json!({ "error": "Invalid token format" })),
         )
             .into_response()
     })?;
@@ -289,7 +339,7 @@ pub async fn verify_token(
     let user = AuthQueries::get_user_by_id(&state.pool, user_id)
         .await
         .map_err(|e| {
-            error!("Database error: {}", e);
+            error!("Database error during token verification: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({ "error": "Database error" })),
@@ -297,6 +347,7 @@ pub async fn verify_token(
                 .into_response()
         })?
         .ok_or_else(|| {
+            error!("User {} not found in database", user_id);
             (
                 StatusCode::NOT_FOUND,
                 Json(json!({ "error": "User not found" })),
@@ -304,16 +355,18 @@ pub async fn verify_token(
                 .into_response()
         })?;
 
-    let auth_response = state.auth_service.create_auth_response(user).map_err(|e| {
-        error!("Failed to create auth response: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": "Failed to generate response" })),
-        )
-            .into_response()
-    })?;
-
-    Ok(Json(auth_response))
+    Ok(Json(json!({
+        "token": token,
+        "user": {
+            "id": user.id.to_string(),
+            "googleId": user.google_id,
+            "email": user.email,
+            "name": user.name,
+            "picture": user.picture,
+            "userType": "authenticated"
+        }
+    }))
+    .into_response())
 }
 
 /// Create a guest session
@@ -325,11 +378,13 @@ pub async fn create_guest_session(
 
     // Use fixed guest ID 1 as requested
     let guest_id = "1".to_string();
-    
+
     // Attempt to fetch customer 1's name from database
-    let customer_name = match sqlx::query("SELECT first_name, last_name FROM customers WHERE customer_id = 1")
-        .fetch_optional(&*state.pool)
-        .await {
+    let customer_name =
+        match sqlx::query("SELECT first_name, last_name FROM customers WHERE customer_id = 1")
+            .fetch_optional(&*state.pool)
+            .await
+        {
             Ok(Some(row)) => {
                 let first: Option<String> = row.get("first_name");
                 let last: Option<String> = row.get("last_name");
@@ -339,21 +394,31 @@ pub async fn create_guest_session(
                     (None, Some(l)) => l,
                     _ => "Guest User".to_string(),
                 }
-            },
-            _ => "Guest User".to_string(),
+            }
+            Ok(None) => {
+                info!("Customer ID 1 not found in database, using default name");
+                "Guest User".to_string()
+            }
+            Err(e) => {
+                error!("Database error fetching customer 1: {}", e);
+                "Guest User".to_string()
+            }
         };
 
     info!("Guest session using customer 1: {}", customer_name);
 
     // Generate guest JWT
-    let jwt = state.auth_service.generate_guest_jwt(&guest_id, &customer_name).map_err(|e| {
-        error!("Failed to generate guest JWT: {}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": "Failed to create guest session" })),
-        )
-            .into_response()
-    })?;
+    let jwt = state
+        .auth_service
+        .generate_guest_jwt(&guest_id, &customer_name)
+        .map_err(|e| {
+            error!("Failed to generate guest JWT: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Failed to create guest session" })),
+            )
+                .into_response()
+        })?;
 
     info!("Guest session created for: {}", customer_name);
 
@@ -364,4 +429,33 @@ pub async fn create_guest_session(
         name: customer_name,
         user_type: "guest".to_string(),
     }))
+}
+
+/// Logout user
+/// POST /api/auth/logout
+pub async fn logout(
+    State(state): State<Arc<AuthState>>,
+    headers: axum::http::HeaderMap,
+) -> Result<Response, Response> {
+    info!("Logout requested");
+
+    // In a stateless JWT setup, logout is primarily handled on the client side
+    // by removing the token. However, we can perform server-side cleanup here
+    // if we had a token blacklist or active session tracking.
+
+    // Extract token if present (mostly for logging)
+    let auth_header = headers.get("Authorization").and_then(|h| h.to_str().ok());
+    if let Some(header) = auth_header {
+        if let Some(token) = header.strip_prefix("Bearer ") {
+            if let Ok(claims) = state.auth_service.verify_jwt(token) {
+                info!("Logging out user: {} ({})", claims.name, claims.sub);
+            }
+        }
+    }
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Logged out successfully"
+    }))
+    .into_response())
 }

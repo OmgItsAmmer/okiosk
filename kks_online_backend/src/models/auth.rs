@@ -33,11 +33,12 @@ pub struct GoogleUserInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String, // user_id
+    pub sub: String, // user_id or guest_id
     pub email: String,
     pub name: String,
-    pub exp: usize, // expiration time
-    pub iat: usize, // issued at
+    pub user_type: Option<String>, // "guest" or None (authenticated)
+    pub exp: usize,                // expiration time
+    pub iat: usize,                // issued at
 }
 
 #[derive(Debug, Serialize, Deserialize)]

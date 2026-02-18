@@ -278,7 +278,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, [user]);
 
     // Logout
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        if (token) {
+            try {
+                await fetch(`${BACKEND_URL}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error during backend logout:', error);
+            }
+        }
+
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user');
         localStorage.removeItem('session_expiry');
@@ -293,7 +306,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
         }
-    }, []);
+    }, [token]);
 
     // Legacy login function (just initiates QR login)
     const login = useCallback(() => {

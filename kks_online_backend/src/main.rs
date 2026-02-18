@@ -203,6 +203,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/auth/google", get(handlers::initiate_google_auth))
         .route("/api/auth/google/callback", get(handlers::google_callback))
         .route("/api/auth/verify", post(handlers::verify_token))
+        .route("/api/auth/logout", post(handlers::logout))
         .route(
             "/api/auth/guest-session",
             post(handlers::create_guest_session),

@@ -23,12 +23,18 @@
     border-radius: 50%;
 }
 
-/* EXPLORE MENU BUTTON */
-.explore-menu-btn {
+/* TOP RIGHT ACTIONS */
+.top-right-actions {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
     z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.explore-menu-btn {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -43,6 +49,28 @@
     color: var(--color-text);
 }
 
+.logout-action-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--color-danger);
+}
+
+.logout-action-btn:hover {
+    background: var(--color-danger);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(230, 57, 70, 0.2);
+}
+
 .explore-menu-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
@@ -52,7 +80,8 @@
     font-size: 0.95rem;
 }
 
-.explore-menu-btn .btn-icon {
+.explore-menu-btn .btn-icon,
+.logout-action-btn .btn-icon {
     width: 24px;
     height: 24px;
 }

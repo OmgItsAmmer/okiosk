@@ -116,6 +116,7 @@ impl AuthService {
             sub: user.id.to_string(),
             email: user.email.clone(),
             name: user.name.clone(),
+            user_type: None,
             exp: expiration,
             iat: now,
         };

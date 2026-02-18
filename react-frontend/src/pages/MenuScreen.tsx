@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../hooks/useAuth';
 import './MenuScreen.css';
 import type { Category, Product, ProductVariation } from '../types/menu';
 import { fetchAllCategories, fetchAllProducts } from '../services/menuService';
@@ -12,12 +13,18 @@ import Loader from '../components/Loader';
 
 const MenuScreen: React.FC = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [categories, setCategories] = useState<Category[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItemType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeProduct, setActiveProduct] = useState<Product | null>(null);
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     // Initial Data Fetch
     useEffect(() => {
@@ -117,10 +124,19 @@ const MenuScreen: React.FC = () => {
         >
             <div className="left-panel">
                 <header className="menu-header">
-                    <button onClick={handleBack} className="back-btn-minimal">
-                        <span>←</span> Back to Assistant
+                    <div className="header-left-group">
+                        <button onClick={handleBack} className="back-btn-minimal">
+                            <span>←</span> Back to Assistant
+                        </button>
+                        <h1>Explore Menu</h1>
+                    </div>
+                    <button className="menu-logout-btn" onClick={handleLogout} title="Logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
                     </button>
-                    <h1>Explore Menu</h1>
                 </header>
 
                 <div className="menu-sections-scrollable">
