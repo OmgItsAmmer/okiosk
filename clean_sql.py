@@ -1,4 +1,4 @@
-
+cc
 import re
 
 input_file = r'c:\Programming\Projects\02_GROWING\okiosk\supabase_functions.md'

@@ -71,6 +71,23 @@ export const getCart = async (
     }
 };
 
+export const updateCartQuantity = async (
+    cartId: number,
+    quantity: number,
+    isKiosk: boolean = false
+): Promise<any> => {
+    try {
+        const url = isKiosk
+            ? `${API_BASE_URL}/cart/kiosk/item/${cartId}`
+            : `${API_BASE_URL}/cart/item/${cartId}`;
+        const response = await axios.put(url, { quantity });
+        return response.data;
+    } catch (error) {
+        console.error('Update Cart Quantity Error:', error);
+        throw error;
+    }
+};
+
 export const removeFromCart = async (
     cartId: number,
     isKiosk: boolean = false

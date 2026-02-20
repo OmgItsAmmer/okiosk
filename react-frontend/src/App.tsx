@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import { SnackbarProvider } from './components/Snackbar';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
@@ -12,6 +13,7 @@ import { applyTheme } from './constants/colors';
 import './App.css';
 
 import Loader from './components/Loader';
+import InactivityHandler from './components/InactivityHandler';
 // ... rest of imports
 
 // Protected Route Component
@@ -29,14 +31,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   useEffect(() => {
     // Initialize theme variables
-    applyTheme('light');
+    applyTheme('dark');
   }, []);
 
   return (
     <Router>
       <SnackbarProvider>
         <AuthProvider>
-          <Routes>
+          <CartProvider>
+            <InactivityHandler>
+              <Routes>
             <Route path="/login" element={<Login />} />
             <Route
               path="/order"
@@ -71,7 +75,9 @@ function App() {
               }
             />
             <Route path="/" element={<Navigate to="/login" replace />} />
-          </Routes>
+              </Routes>
+            </InactivityHandler>
+          </CartProvider>
         </AuthProvider>
       </SnackbarProvider>
     </Router>

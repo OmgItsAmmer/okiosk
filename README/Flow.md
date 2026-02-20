@@ -38,6 +38,8 @@ No products are not adding at a same time, i.e. Bhai ek zinger meal aur fries ad
 
 Hello, I am Ammer I ordered 30 mints ago how much time left.
 
+
+
 I want to report an issue
 
 
@@ -71,3 +73,22 @@ pop up card
 add button
 cart buttons
 checkout success pop up
+
+
+improvements
+  cart bubble in ai assistant
+  remove mic
+  checkout button not visible in light mode
+  logout icon is very very small
+  loading state of pop up variant
+  add to cart in pop is not visible
+  invoice box 
+
+
+  info guideline boxes
+  product vatriant pop up card is not centered
+
+
+it shows the intro part only once for each login
+
+change the position of log out button and logout button should display on all screens

@@ -54,6 +54,7 @@ pub async fn fetch_cart(
                                 quantity: guest_item.quantity,
                                 customer_id: Some(1),
                                 kiosk_session_id: None,
+                                product_id: product.product_id,
                                 product_name: product.name,
                                 product_description: product.description,
                                 base_price: product.base_price,

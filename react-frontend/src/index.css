@@ -1,17 +1,19 @@
 :root {
-  /* Default Theme (Light Mode Values) */
+  /* Default Theme (Dark Mode Values) */
   --color-primary: #E63946;
   --color-primary-rgb: 230, 57, 70;
-  --color-text: #212529;
-  --color-background: #FFF3E0;
-  --color-secondary: #FFFFFF;
-  --color-secondary-rgb: 255, 255, 255;
+  --color-text: #EAEAEA;
+  --color-background: #121212;
+  --color-secondary: #1E1E1E;
+  --color-secondary-rgb: 30, 30, 30;
   --color-accent-orange: #F77F00;
   --color-accent-yellow: #FFBE0B;
 
   /* Utility Shades */
-  --color-bg-alt: #f1e4d3;
-  --color-border: rgba(0, 0, 0, 0.08);
+  --color-bg-alt: #1a1a1a;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-button-bg: #E63946;
+  --color-button-text: #FFFFFF;
 
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -28,18 +30,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark mode override if supported */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text: #EAEAEA;
-    --color-background: #121212;
-    --color-secondary: #1E1E1E;
-    --color-secondary-rgb: 30, 30, 30;
-    --color-bg-alt: #1a1a1a;
-    --color-border: rgba(255, 255, 255, 0.1);
-
-  }
-}
+/* The app always uses dark mode — applyTheme('dark') is called on load */
 
 
 a {
@@ -82,13 +73,15 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-button-bg, #E63946);
+  color: var(--color-button-text, #FFFFFF);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-primary);
+  filter: brightness(1.05);
 }
 
 button:focus,
@@ -97,17 +90,7 @@ button:focus-visible {
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-
   a:hover {
     color: #747bff;
   }
-
-  button {
-    background-color: #f9f9f9;
-  }
-
 }

@@ -2,12 +2,14 @@
 
 export const colors = {
     light: {
-        text: '#212529',           // Dark Gray - Main text
+        text: '#212529',           // Dark Gray - Main text (readable on light bg)
         primary: '#E63946',        // Red - Buttons, CTAs
         background: '#FFF3E0',     // Light Beige - Overall background
         secondary: '#FFFFFF',      // Soft White - Cards, panels
         accentOrange: '#F77F00',   // Orange - Highlights
         accentYellow: '#FFBE0B',   // Yellow - Badges, promotions
+        buttonBg: '#E63946',       // Red - Primary buttons (matches theme)
+        buttonText: '#FFFFFF',     // White - Text on red buttons
         // Semantic colors
         success: '#4CAF50',
         danger: '#FF5252',
@@ -22,6 +24,8 @@ export const colors = {
         secondary: '#1E1E1E',      // Darker Gray - Cards, panels
         accentOrange: '#F77F00',   // Orange - Highlights
         accentYellow: '#FFBE0B',   // Yellow - Active states
+        buttonBg: '#E63946',       // Red - Primary buttons
+        buttonText: '#FFFFFF',     // White - Text on red buttons
         // Semantic colors
         success: '#66BB6A',
         danger: '#FF5252',
@@ -52,6 +56,8 @@ export const applyTheme = (mode: 'light' | 'dark' = 'light') => {
     root.style.setProperty('--color-secondary', theme.secondary);
     root.style.setProperty('--color-accent-orange', theme.accentOrange);
     root.style.setProperty('--color-accent-yellow', theme.accentYellow);
+    root.style.setProperty('--color-button-bg', theme.buttonBg);
+    root.style.setProperty('--color-button-text', theme.buttonText);
 
     root.style.setProperty('--color-success', theme.success);
     root.style.setProperty('--color-danger', theme.danger);

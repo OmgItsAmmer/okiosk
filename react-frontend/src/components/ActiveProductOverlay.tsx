@@ -82,12 +82,6 @@ const ActiveProductOverlay: React.FC<ActiveProductOverlayProps> = ({ product, on
                 <div className={`card-flipper ${isFlipped ? 'flipped' : ''}`}>
                     {/* Front Side */}
                     <div className="card-front">
-                        {isLoading && (
-                            <div className="card-front-loading" aria-live="polite">
-                                <div className="card-front-loading-spinner" />
-                                <span className="card-front-loading-text">Loading options...</span>
-                            </div>
-                        )}
                         <div className="product-image-container" style={{ height: '250px' }}>
                             <img src={imageSrc} alt={product.name} className="product-image" />
                         </div>

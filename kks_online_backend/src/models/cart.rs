@@ -42,6 +42,7 @@ pub struct CartItem {
     pub kiosk_session_id: Option<String>,
 
     // Product data
+    pub product_id: i32,
     pub product_name: String,
     pub product_description: Option<String>,
     pub base_price: String,

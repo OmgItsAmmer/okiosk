@@ -2,26 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../context/CartContext';
 import './MenuScreen.css';
 import type { Category, Product, ProductVariation } from '../types/menu';
-import { fetchAllCategories, fetchAllProducts } from '../services/menuService';
+import { fetchAllCategories, fetchAllProducts, fetchProductVariants } from '../services/menuService';
 import CategorySection from '../components/CategorySection';
 import CartPanel from '../components/CartPanel';
-import { type CartItemType } from '../components/CartItem';
 import ActiveProductOverlay from '../components/ActiveProductOverlay';
 import Loader from '../components/Loader';
 
 const MenuScreen: React.FC = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
+    const { cart, addToCart, removeFromCart, updateQuantity, onLogout } = useCart();
     const [categories, setCategories] = useState<Category[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
-    const [cart, setCart] = useState<CartItemType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeProduct, setActiveProduct] = useState<Product | null>(null);
 
     const handleLogout = async () => {
+        await onLogout();
         await logout();
         navigate('/login');
     };
@@ -55,46 +56,28 @@ const MenuScreen: React.FC = () => {
         setActiveProduct(product);
     };
 
-    const handleAddToCart = (product: Product, variant?: ProductVariation) => {
-        setCart(prevCart => {
-            const existingItem = prevCart.find(item =>
-                item.product.product_id === product.product_id &&
-                item.variant?.variant_id === variant?.variant_id
-            );
-
-            if (existingItem) {
-                return prevCart.map(item =>
-                    (item.product.product_id === product.product_id && item.variant?.variant_id === variant?.variant_id)
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item
-                );
-            } else {
-                return [...prevCart, { product, variant, quantity: 1 }];
+    const handleAddToCart = async (product: Product, variant?: ProductVariation) => {
+        if (variant) {
+            await addToCart(variant.variant_id, 1);
+        } else {
+            const variants = await fetchProductVariants(product.product_id);
+            if (variants.length > 0) {
+                await addToCart(variants[0].variant_id, 1);
             }
-        });
+        }
     };
 
     const handleUpdateQuantity = (productId: number, variantId: number | undefined, delta: number) => {
-        setCart(prevCart => {
-            return prevCart.map(item => {
-                if (item.product.product_id === productId && item.variant?.variant_id === variantId) {
-                    const newQuantity = Math.max(1, item.quantity + delta);
-                    return { ...item, quantity: newQuantity };
-                }
-                return item;
-            });
-        });
+        updateQuantity(productId, variantId, delta);
     };
 
     const handleRemoveFromCart = (productId: number, variantId: number | undefined) => {
-        setCart(prevCart => prevCart.filter(item =>
-            !(item.product.product_id === productId && item.variant?.variant_id === variantId)
-        ));
+        removeFromCart(productId, variantId);
     };
 
     const handleCheckout = () => {
         if (cart.length === 0) return;
-        navigate('/checkout', { state: { cart } });
+        navigate('/checkout');
     };
 
     const handleBack = () => {
@@ -107,10 +90,15 @@ const MenuScreen: React.FC = () => {
 
     if (error) {
         return (
-            <div className="error-screen" style={{ padding: 20, textAlign: 'center', color: 'white' }}>
-                <h2>Error</h2>
-                <p>{error}</p>
-                <button onClick={() => window.location.reload()} style={{ marginTop: 20 }}>Retry</button>
+            <div className="error-screen">
+                <div className="error-screen-card">
+                    <span className="error-icon" aria-hidden>!</span>
+                    <h2 className="error-title">Something went wrong</h2>
+                    <p className="error-message">{error}</p>
+                    <button className="error-retry-btn" onClick={() => window.location.reload()}>
+                        Retry
+                    </button>
+                </div>
             </div>
         );
     }
@@ -128,10 +116,38 @@ const MenuScreen: React.FC = () => {
                         <button onClick={handleBack} className="back-btn-minimal">
                             <span>←</span> Back to Assistant
                         </button>
-                        <h1>Explore Menu</h1>
+                        <h2>Explore Menu</h2>
                     </div>
-                    <button className="menu-logout-btn" onClick={handleLogout} title="Logout">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
+                    <button
+                        className="menu-logout-btn"
+                        onClick={handleLogout}
+                        title="Logout"
+                        style={{
+                            background: "var(--color-primary)",
+                            color: "var(--color-on-primary, #fff)",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "8px 14px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "background 0.2s, box-shadow 0.2s",
+                            cursor: "pointer",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                        }}
+                        onMouseOver={e => (e.currentTarget.style.background = "var(--color-primary-dark, #e43949)")}
+                        onMouseOut={e => (e.currentTarget.style.background = "var(--color-primary)")}
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="btn-icon"
+                            style={{ marginRight: 6, width: 20, height: 20, color: "var(--color-on-primary, #fff)" }}
+                        >
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -159,7 +175,7 @@ const MenuScreen: React.FC = () => {
             <div className="right-panel-cart">
                 <CartPanel
                     cartItems={cart}
-                    onUpdateQuantity={handleUpdateQuantity}
+                    onUpdateQuantity={(productId, variantId, delta) => handleUpdateQuantity(productId, variantId, delta)}
                     onRemove={handleRemoveFromCart}
                     onCheckout={handleCheckout}
                 />

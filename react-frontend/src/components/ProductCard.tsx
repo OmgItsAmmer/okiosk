@@ -8,13 +8,32 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onExpand }) => {
-    // Always show the default fallback image as per user request
-    const imageSrc = defaultImage;
+    const imageSrc = product.image_url || defaultImage;
+
+    const handleCardClick = () => onExpand(product);
+
+    const handleButtonClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onExpand(product);
+    };
 
     return (
-        <div className="product-card">
+        <div
+            className="product-card"
+            onClick={handleCardClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && handleCardClick()}
+            aria-label={`View ${product.name}`}
+        >
             <div className="product-image-container">
-                <img src={imageSrc} alt={product.name} className="product-image" loading="lazy" />
+                <img
+                    src={imageSrc}
+                    alt={product.name}
+                    className="product-image"
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = defaultImage; }}
+                />
             </div>
             <div className="product-info">
                 <h3 className="product-name" title={product.name}>{product.name}</h3>
@@ -23,17 +42,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onExpand }) => {
                 </p>
                 <div className="product-footer">
                     <span className="product-price">Rs. {parseFloat(product.base_price).toLocaleString()}</span>
-                    <div className="product-actions">
+                    <div className="product-actions" onClick={(e) => e.stopPropagation()}>
                         <button
                             className="product-info-btn"
-                            onClick={() => onExpand(product)}
+                            onClick={handleButtonClick}
                             aria-label={`View details for ${product.name}`}
                         >
                             <span>i</span>
                         </button>
                         <button
                             className="add-to-cart-btn"
-                            onClick={() => onExpand(product)}
+                            onClick={handleButtonClick}
                             aria-label={`Select ${product.name}`}
                         >
                             Add <span>+</span>

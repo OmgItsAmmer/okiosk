@@ -54,11 +54,11 @@ impl<'a> ProductQueries<'a> {
                 tag::text as tag,
                 CASE 
                     WHEN i.filename IS NOT NULL THEN 
-                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                     ELSE NULL 
                 END as image_url
             FROM products 
-            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE COALESCE(products.ispopular, false) = true AND COALESCE("isVisible", false) = true
             ORDER BY products.created_at DESC
@@ -105,11 +105,11 @@ impl<'a> ProductQueries<'a> {
                 tag::text as tag,
                 CASE 
                     WHEN i.filename IS NOT NULL THEN 
-                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                     ELSE NULL 
                 END as image_url
             FROM products 
-            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE COALESCE("isVisible", false) = true
             ORDER BY name ASC
@@ -155,11 +155,11 @@ impl<'a> ProductQueries<'a> {
                 tag::text as tag,
                 CASE 
                     WHEN i.filename IS NOT NULL THEN 
-                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                     ELSE NULL 
                 END as image_url
             FROM products 
-            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE category_id = $1 AND COALESCE("isVisible", false) = true
             ORDER BY name ASC
@@ -211,11 +211,11 @@ impl<'a> ProductQueries<'a> {
                 tag::text as tag,
                 CASE 
                     WHEN i.filename IS NOT NULL THEN 
-                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                     ELSE NULL 
                 END as image_url
             FROM products 
-            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE "brandID" = $1 AND COALESCE("isVisible", false) = true
             ORDER BY name ASC
@@ -257,11 +257,11 @@ impl<'a> ProductQueries<'a> {
             tag::text as tag,
             CASE 
                 WHEN i.filename IS NOT NULL THEN 
-                    format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                    format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                 ELSE NULL 
             END as image_url
         FROM products 
-        LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+        LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
         LEFT JOIN images i ON ie.image_id = i.image_id
         WHERE COALESCE("isVisible", false) = true
           AND (LOWER(name) LIKE LOWER($1) OR LOWER(COALESCE(description, '')) LIKE LOWER($1))
@@ -303,11 +303,11 @@ impl<'a> ProductQueries<'a> {
                 tag::text as tag,
                 CASE 
                     WHEN i.filename IS NOT NULL THEN 
-                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i.foldertype, i.filename)
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
                     ELSE NULL 
                 END as image_url
             FROM products 
-            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'Products' AND ie.isfeatured = true
+            LEFT JOIN image_entity ie ON products.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE products.product_id = $1
             "#,

@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import './CheckoutScreen.css';
-import type { CartItemType } from '../components/CartItem';
+import { useCart } from '../context/CartContext';
 import SuccessModal from '../components/SuccessModal';
-
-interface CheckoutState {
-    cart: CartItemType[];
-}
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -34,13 +30,16 @@ const itemVariants = {
 
 
 const CheckoutScreen: React.FC = () => {
-    const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
-    const { cart } = (location.state as CheckoutState) || { cart: [] };
+    const { user, logout } = useAuth();
+    const { cart, onCheckoutSuccess, onLogout } = useCart();
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [lastOrderId, setLastOrderId] = useState<string | number>('');
 
-    // Redirect if empty cart (unless debugging)
-    if (!cart || cart.length === 0) {
+    // Show empty-cart message only when not in success state (avoid hiding SuccessModal after checkout)
+    if ((!cart || cart.length === 0) && !showSuccessModal) {
         return (
             <motion.div
                 className="checkout-screen"
@@ -54,13 +53,6 @@ const CheckoutScreen: React.FC = () => {
             </motion.div>
         );
     }
-
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [lastOrderId, setLastOrderId] = useState<string | number>('');
-
-    const { logout } = useAuth();
 
     // Calculations
     const subtotal = cart.reduce((sum, item) => {
@@ -109,6 +101,7 @@ const CheckoutScreen: React.FC = () => {
 
             if (data.success) {
                 setLastOrderId(data.orderId);
+                onCheckoutSuccess();
                 setShowSuccessModal(true);
             } else {
                 setError(data.message || 'Checkout failed');
@@ -121,7 +114,8 @@ const CheckoutScreen: React.FC = () => {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await onLogout();
         logout();
         navigate('/login');
     };

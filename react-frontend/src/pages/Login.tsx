@@ -21,7 +21,7 @@ const Login = () => {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
     const [isGeneratingQR, setIsGeneratingQR] = useState(false);
     const [error, setError] = useState<string>('');
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(true);
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
     const [isGuestLoading, setIsGuestLoading] = useState(false);
 
@@ -176,7 +176,7 @@ const Login = () => {
                     {isGuestLoading && <Loader text="Setting up your session..." />}
 
                     {error && (
-                        <div className="error-message" style={{ color: theme.primary }}>
+                        <div className="error-message" style={{ color: theme.warning }}>
                             {error}
                         </div>
                     )}
