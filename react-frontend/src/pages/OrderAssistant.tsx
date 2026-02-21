@@ -138,7 +138,7 @@ const OrderAssistant: React.FC = () => {
         { type: 'text', text: "Hello! How can I help you today?", sender: 'assistant' }
     ]);
 
-    const { cartCount, refreshCart, onLogout: clearCartOnLogout } = useCart();
+    // const { cartCount, refreshCart, onLogout: clearCartOnLogout } = useCart();
 
     const inputRef = useRef<HTMLInputElement>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);

@@ -79,7 +79,7 @@ function mapApiItemToCartItem(item: {
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, sessionId } = useAuth();
     const [sessionItems, setSessionItems] = useState<SessionCartItem[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false);
 
     const customerId = user?.id ? parseInt(user.id, 10) : undefined;
     const kioskSessionId = sessionId || undefined;
@@ -180,7 +180,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const value: CartContextType = {
         cart,
         cartCount,
-        isLoading,
+        isLoading: false,
+        // isLoading,
         addToCart,
         removeFromCart,
         updateQuantity,
