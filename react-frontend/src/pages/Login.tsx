@@ -176,7 +176,7 @@ const Login = () => {
                     {isGuestLoading && <Loader text="Setting up your session..." />}
 
                     {error && (
-                        <div className="error-message" style={{ color: theme.warning }}>
+                        <div className="error-message" style={{ color: theme.danger }}>
                             {error}
                         </div>
                     )}
