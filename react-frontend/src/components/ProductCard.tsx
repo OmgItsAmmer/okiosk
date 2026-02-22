@@ -43,13 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onExpand }) => {
                 <div className="product-footer">
                     <span className="product-price">Rs. {parseFloat(product.base_price).toLocaleString()}</span>
                     <div className="product-actions" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            className="product-info-btn"
-                            onClick={handleButtonClick}
-                            aria-label={`View details for ${product.name}`}
-                        >
-                            <span>i</span>
-                        </button>
+                     
                         <button
                             className="add-to-cart-btn"
                             onClick={handleButtonClick}

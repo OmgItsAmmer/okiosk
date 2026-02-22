@@ -57,7 +57,7 @@ const GUIDE_STEPS = [
         avatar: AVATAR_NORMAL,
         title: "Place an Order",
         description: "Tell me what you'd like in plain language. I understand natural conversation, so just say what you want!",
-        tip: '"I want 2 large coffees" or "Add a chicken burger"',
+        tip: '"I want rice" or "Add a biscuit!"',
         accent: '#4CAF50',
     },
     {
@@ -71,7 +71,7 @@ const GUIDE_STEPS = [
         avatar: AVATAR_NORMAL,
         title: "Update or Remove Items",
         description: "Changed your mind? No problem. Tell me to remove something or change the quantity — I'll update your cart instantly.",
-        tip: '"Remove the coffee" or "Change burger to 3"',
+        tip: '"Remove the biscuit" or "Change rice to 3"',
         accent: '#FFBE0B',
     },
     {
@@ -116,6 +116,7 @@ const OrderAssistant: React.FC = () => {
     const [lastOrderId, setLastOrderId] = useState<string | number>('');
 
     // Help Guide State
+    const [helpButtonShake, setHelpButtonShake] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
     const [guideStep, setGuideStep] = useState(0);
     const [guideAnimating, setGuideAnimating] = useState(false);
@@ -164,6 +165,19 @@ const OrderAssistant: React.FC = () => {
         }
     }, [isIntro]);
 
+    // Help button shake on first visit (3 seconds), then save to cache
+    useEffect(() => {
+        if (isIntro) return;
+        const seen = localStorage.getItem('asst_help_shake_seen');
+        if (seen === 'true') return;
+        setHelpButtonShake(true);
+        const timer = setTimeout(() => {
+            setHelpButtonShake(false);
+            localStorage.setItem('asst_help_shake_seen', 'true');
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, [isIntro]);
+
     // Sync Avatar with Processing State & Auto-Reset Success/Fail
     useEffect(() => {
         if (isProcessing) {
@@ -199,7 +213,10 @@ const OrderAssistant: React.FC = () => {
             });
 
             if (response.success) {
-                setAvatarState('success');
+                const emotion = response.emotion ?? 'normal';
+                if (emotion === 'happy') setAvatarState('success');
+                else if (emotion === 'upset') setAvatarState('failed');
+                else setAvatarState('normal');
                 const newMessages: ChatMessage[] = [];
 
                 if (response.actions_executed && response.actions_executed.length > 0) {
@@ -286,9 +303,18 @@ const OrderAssistant: React.FC = () => {
                 if (newMessages.length === 0) {
                     newMessages.push({ type: 'text', text: response.message, sender: 'assistant' });
                 }
-                setChatMessages((prev: ChatMessage[]) => [...prev, ...newMessages]);
+                // When user demands a new product (new variant selection), replace old variant
+                // bubbles so the new product's variants are shown (user moved on from previous)
+                const hasNewVariant = newMessages.some((m) => m.type === 'variant');
+                setChatMessages((prev: ChatMessage[]) => {
+                    const base = hasNewVariant ? prev.filter((m) => m.type !== 'variant') : prev;
+                    return [...base, ...newMessages];
+                });
             } else {
-                setAvatarState('failed');
+                const emotion = response.emotion ?? 'upset';
+                if (emotion === 'happy') setAvatarState('success');
+                else if (emotion === 'normal') setAvatarState('normal');
+                else setAvatarState('failed');
                 setChatMessages((prev: ChatMessage[]) => [...prev, { type: 'text', text: response.message, sender: 'assistant' }]);
             }
         } catch (error) {
@@ -408,7 +434,7 @@ const OrderAssistant: React.FC = () => {
             {/* Top Right Actions */}
             {!isIntro && (
                 <div className="top-right-actions">
-                    <button className="help-guide-btn" onClick={openGuide} title="How to use">
+                    <button className={`help-guide-btn ${helpButtonShake ? 'help-guide-btn-shake' : ''}`} onClick={openGuide} title="How to use">
                         <svg viewBox="0 0 24 24" fill="none" className="btn-icon">
                             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" />
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -541,6 +567,20 @@ const OrderAssistant: React.FC = () => {
                             <span className="smart-title">Assistant Chat</span>
                         </div>
                         <div className="smart-content">
+                            <div className="instructions-mini-container">
+                                <span className="instructions-label">Try:</span>
+                                {['add rice', 'select rice', 'show cart', 'checkout'].map((cmd) => (
+                                    <button
+                                        key={cmd}
+                                        type="button"
+                                        className="instruction-chip"
+                                        onClick={() => handleSendChat(cmd)}
+                                        disabled={isProcessing}
+                                    >
+                                        {cmd}
+                                    </button>
+                                ))}
+                            </div>
                             <div className="chat-mode">
                                 <div className="chat-history">
                                     {chatMessages.map((msg: ChatMessage, i: number) => (
@@ -650,13 +690,13 @@ const OrderAssistant: React.FC = () => {
                                             </svg>
                                             {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
                                         </button> */}
-                                        <button className="action-icon-btn" onClick={() => inputRef.current?.focus()}>
+                                        {/* <button className="action-icon-btn" onClick={() => inputRef.current?.focus()}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                                 <rect x="2" y="4" width="20" height="16" rx="2" />
                                                 <path d="M6 8H8" /><path d="M11 8H13" /><path d="M16 8H18" />
                                                 <path d="M6 12H18" /><path d="M8 16H16" />
                                             </svg>
-                                        </button>
+                                        </button> */}
                                     </div>
                                     <input
                                         ref={inputRef}

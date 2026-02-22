@@ -35,6 +35,19 @@ impl CommandExecutor {
         let mut completed_actions: Vec<String> = Vec::new();
         let mut variant_selections: Vec<ActionResponse> = Vec::new();
 
+        // When user sends a new add_to_cart, clear any pending variant queue (user moved on)
+        let has_add_to_cart = command.actions.iter().any(|a| {
+            matches!(a, Action::AddToCart { .. })
+        });
+        if has_add_to_cart {
+            let queue_id = format!(
+                "{}_{}",
+                session_id.unwrap_or("anonymous"),
+                customer_id.unwrap_or(0)
+            );
+            let _ = self.queue_service.clear_queue(&queue_id);
+        }
+
         // Process all actions and separate them into completed vs variant selections
         for action in command.actions {
             match self.execute_action(action, session_id, customer_id).await {

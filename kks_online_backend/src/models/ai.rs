@@ -15,6 +15,8 @@ pub struct AiCommandResponse {
     pub message: String,
     pub actions_executed: Vec<String>,
     pub error: Option<String>,
+    /// Avatar emotion hint: "happy" | "upset" | "normal"
+    pub emotion: String,
 }
 
 /// Parsed Command from Gemini AI

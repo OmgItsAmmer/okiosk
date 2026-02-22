@@ -148,45 +148,33 @@ const CheckoutScreen: React.FC = () => {
                         <h2>Order Summary</h2>
                         <span className="item-count-badge">{cart.length} items</span>
                     </div>
-                    <div className="invoice-table-container">
-                        <table className="invoice-table">
-                            <thead>
-                                <tr>
-                                    <th>Item Details</th>
-                                    <th className="text-center">Qty</th>
-                                    <th className="text-right">Price</th>
-                                    <th className="text-right">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <AnimatePresence>
-                                    {cart.map((item, index) => {
-                                        const price = item.variant
-                                            ? parseFloat(item.variant.sell_price)
-                                            : parseFloat(item.product.base_price);
-                                        const itemTotal = price * item.quantity;
-
-                                        return (
-                                            <motion.tr
-                                                key={`${item.product.product_id}-${item.variant?.variant_id || 'base'}`}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.2 + (index * 0.05) }}
-                                                viewport={{ once: true }}
-                                            >
-                                                <td>
-                                                    <div className="item-name">{item.product.name}</div>
-                                                    {item.variant && <div className="item-variant">{item.variant.variant_name}</div>}
-                                                </td>
-                                                <td className="text-center quantity-cell">{item.quantity}</td>
-                                                <td className="text-right">Rs. {price.toLocaleString()}</td>
-                                                <td className="text-right font-bold">Rs. {itemTotal.toLocaleString()}</td>
-                                            </motion.tr>
-                                        );
-                                    })}
-                                </AnimatePresence>
-                            </tbody>
-                        </table>
+                    {/* Order items - card list works on all screen sizes */}
+                    <div className="invoice-items-list">
+                        {cart.map((item, index) => {
+                            const price = item.variant
+                                ? parseFloat(item.variant.sell_price)
+                                : parseFloat(item.product.base_price);
+                            const itemTotal = price * item.quantity;
+                            return (
+                                <motion.div
+                                    key={`${item.product.product_id}-${item.variant?.variant_id || 'base'}`}
+                                    className="invoice-card-item"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 + index * 0.05 }}
+                                >
+                                    <div className="invoice-card-main">
+                                        <div className="item-name">{item.product.name}</div>
+                                        {item.variant && <div className="item-variant">{item.variant.variant_name}</div>}
+                                    </div>
+                                    <div className="invoice-card-row">
+                                        <span>Qty: {item.quantity}</span>
+                                        <span>Rs. {price.toLocaleString()} × {item.quantity}</span>
+                                    </div>
+                                    <div className="invoice-card-total">Rs. {itemTotal.toLocaleString()}</div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </motion.div>
 

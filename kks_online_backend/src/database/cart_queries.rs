@@ -29,6 +29,11 @@ impl<'a> CartQueries<'a> {
                 p.product_id,
                 p.name as product_name,
                 p.description as product_description,
+                CASE 
+                    WHEN i.filename IS NOT NULL THEN 
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
+                    ELSE NULL 
+                END as image_url,
                 COALESCE(p.base_price, '1000')::text as base_price,
                 COALESCE(p.sale_price, '1000')::text as sale_price,
                 p."brandID" as brand_id,
@@ -40,6 +45,8 @@ impl<'a> CartQueries<'a> {
             FROM cart c
             INNER JOIN product_variants pv ON c.variant_id = pv.variant_id
             INNER JOIN products p ON pv.product_id = p.product_id
+            LEFT JOIN image_entity ie ON p.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
+            LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE c.customer_id = $1
             ORDER BY c.cart_id DESC
             "#,
@@ -62,6 +69,7 @@ impl<'a> CartQueries<'a> {
                 product_id: row.get("product_id"),
                 product_name: row.get("product_name"),
                 product_description: row.get("product_description"),
+                image_url: row.get("image_url"),
                 base_price: row.get("base_price"),
                 sale_price: row.get("sale_price"),
                 brand_id: row.get("brand_id"),
@@ -98,6 +106,11 @@ impl<'a> CartQueries<'a> {
                 p.product_id,
                 p.name as product_name,
                 p.description as product_description,
+                CASE 
+                    WHEN i.filename IS NOT NULL THEN 
+                        format('https://jjxqwtltkepeajwtcish.supabase.co/storage/v1/object/public/%s/%s', i."folderType", i.filename)
+                    ELSE NULL 
+                END as image_url,
                 COALESCE(p.base_price, '1000')::text as base_price,
                 COALESCE(p.sale_price, '1000')::text as sale_price,
                 p."brandID" as brand_id,
@@ -109,6 +122,8 @@ impl<'a> CartQueries<'a> {
             FROM kiosk_cart kc
             INNER JOIN product_variants pv ON kc.variant_id = pv.variant_id
             INNER JOIN products p ON pv.product_id = p.product_id
+            LEFT JOIN image_entity ie ON p.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
+            LEFT JOIN images i ON ie.image_id = i.image_id
             WHERE kc.kiosk_session_id = $1
             ORDER BY kc.kiosk_id DESC
             "#,
@@ -131,6 +146,7 @@ impl<'a> CartQueries<'a> {
                 product_id: row.get("product_id"),
                 product_name: row.get("product_name"),
                 product_description: row.get("product_description"),
+                image_url: row.get("image_url"),
                 base_price: row.get("base_price"),
                 sale_price: row.get("sale_price"),
                 brand_id: row.get("brand_id"),

@@ -171,6 +171,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(handlers::validate_cart_stock),
         )
         .route(
+            "/api/cart/guest/item",
+            put(handlers::update_guest_cart_item),
+        )
+        .route(
+            "/api/cart/guest/item/:variant_id",
+            delete(handlers::remove_guest_cart_item),
+        )
+        .route(
             "/api/cart/item/:cart_id",
             put(handlers::update_cart_quantity),
         )

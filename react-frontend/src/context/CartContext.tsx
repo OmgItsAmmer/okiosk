@@ -31,6 +31,7 @@ function mapApiItemToCartItem(item: {
     product_id: number;
     product_name: string;
     product_description?: string | null;
+    image_url?: string | null;
     base_price: string;
     sale_price: string;
     variant_name: string;
@@ -54,7 +55,7 @@ function mapApiItemToCartItem(item: {
         alert_stock: 0,
         isVisible: true,
         tag: null,
-        image_url: null,
+        image_url: item.image_url ?? null,
     };
     const variant: ProductVariation | undefined = item.variant_id
         ? {
@@ -127,7 +128,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     (i.variant?.variant_id ?? null) === (variantId ?? null)
             );
             if (!item) return;
-            await cartService.removeFromCart(item.cartId, item.isKiosk);
+            const vid = item.variant?.variant_id;
+            await cartService.removeFromCart(
+                item.cartId,
+                item.isKiosk,
+                item.cartId === 0 ? vid : undefined
+            );
             await fetchCart();
         },
         [sessionItems, fetchCart]
@@ -143,7 +149,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!item) return;
             const newQty = Math.max(1, item.quantity + delta);
             if (newQty === item.quantity) return;
-            await cartService.updateCartQuantity(item.cartId, newQty, item.isKiosk);
+            const vid = item.variant?.variant_id;
+            await cartService.updateCartQuantity(
+                item.cartId,
+                newQty,
+                item.isKiosk,
+                item.cartId === 0 ? vid : undefined
+            );
             await fetchCart();
         },
         [sessionItems, fetchCart]

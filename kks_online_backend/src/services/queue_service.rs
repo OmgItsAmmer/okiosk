@@ -299,6 +299,68 @@ impl QueueService {
         Ok(carts.get(session_id).cloned().unwrap_or_default())
     }
 
+    /// Update quantity for a variant in guest cart
+    pub fn update_guest_cart_item(
+        &self,
+        session_id: &str,
+        variant_id: i32,
+        quantity: i32,
+    ) -> Result<bool, String> {
+        let mut carts = self
+            .guest_carts
+            .lock()
+            .map_err(|e| format!("Lock error: {}", e))?;
+
+        if let Some(cart) = carts.get_mut(session_id) {
+            if quantity <= 0 {
+                let initial_len = cart.len();
+                cart.retain(|i| i.variant_id != variant_id);
+                if cart.len() < initial_len {
+                    println!(
+                        "[QUEUE_SERVICE] Removed variant {} from guest cart (session: {})",
+                        variant_id, session_id
+                    );
+                    return Ok(true);
+                }
+                return Ok(false);
+            }
+            if let Some(item) = cart.iter_mut().find(|i| i.variant_id == variant_id) {
+                item.quantity = quantity;
+                println!(
+                    "[QUEUE_SERVICE] Updated variant {} in guest cart (session: {}), quantity: {}",
+                    variant_id, session_id, quantity
+                );
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    /// Remove a variant from guest cart
+    pub fn remove_from_guest_cart(
+        &self,
+        session_id: &str,
+        variant_id: i32,
+    ) -> Result<bool, String> {
+        let mut carts = self
+            .guest_carts
+            .lock()
+            .map_err(|e| format!("Lock error: {}", e))?;
+
+        if let Some(cart) = carts.get_mut(session_id) {
+            let initial_len = cart.len();
+            cart.retain(|i| i.variant_id != variant_id);
+            if cart.len() < initial_len {
+                println!(
+                    "[QUEUE_SERVICE] Removed variant {} from guest cart (session: {})",
+                    variant_id, session_id
+                );
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
     /// Clear guest cart
     pub fn clear_guest_cart(&self, session_id: &str) -> Result<(), String> {
         let mut carts = self

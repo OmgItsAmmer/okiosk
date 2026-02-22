@@ -38,6 +38,7 @@ pub async fn process_ai_command(
                     message: "Hello! I'm here to help you with your order. You can ask me to add items to your cart, show the menu, or help with anything else!".to_string(),
                     actions_executed: vec!["greeting_response".to_string()],
                     error: None,
+                    emotion: "happy".to_string(),
                 };
                 return Ok(Json(greeting_response));
             }
@@ -47,6 +48,7 @@ pub async fn process_ai_command(
                 message: "Sorry, I couldn't understand that command. Try saying something like 'show menu' or 'add pizza to cart'.".to_string(),
                 actions_executed: Vec::new(),
                 error: Some(e),
+                emotion: "upset".to_string(),
             };
             return Ok(Json(error_response));
         }
@@ -65,6 +67,7 @@ pub async fn process_ai_command(
             message: result.message.clone(),
             actions_executed: result.actions_executed,
             error: Some("Command execution failed".to_string()),
+            emotion: "upset".to_string(),
         }));
     }
 
@@ -106,6 +109,7 @@ pub async fn process_ai_command(
                 serde_json::to_string(first_variant_response).unwrap_or_default()
             ],
             error: None,
+            emotion: "normal".to_string(),
         };
 
         return Ok(Json(variant_response));
@@ -136,6 +140,7 @@ pub async fn process_ai_command(
         message: confirmation,
         actions_executed: result.actions_executed,
         error: None,
+        emotion: "happy".to_string(),
     };
 
     Ok(Json(success_response))

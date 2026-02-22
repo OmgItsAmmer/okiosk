@@ -74,9 +74,18 @@ export const getCart = async (
 export const updateCartQuantity = async (
     cartId: number,
     quantity: number,
-    isKiosk: boolean = false
+    isKiosk: boolean = false,
+    variantId?: number
 ): Promise<any> => {
     try {
+        // Guest cart (cartId 0) uses variant-based API
+        if (cartId === 0 && variantId !== undefined) {
+            const response = await axios.put(`${API_BASE_URL}/cart/guest/item`, {
+                variant_id: variantId,
+                quantity,
+            });
+            return response.data;
+        }
         const url = isKiosk
             ? `${API_BASE_URL}/cart/kiosk/item/${cartId}`
             : `${API_BASE_URL}/cart/item/${cartId}`;
@@ -90,9 +99,15 @@ export const updateCartQuantity = async (
 
 export const removeFromCart = async (
     cartId: number,
-    isKiosk: boolean = false
+    isKiosk: boolean = false,
+    variantId?: number
 ): Promise<any> => {
     try {
+        // Guest cart (cartId 0) uses variant-based API
+        if (cartId === 0 && variantId !== undefined) {
+            const response = await axios.delete(`${API_BASE_URL}/cart/guest/item/${variantId}`);
+            return response.data;
+        }
         const url = isKiosk
             ? `${API_BASE_URL}/cart/kiosk/item/${cartId}`
             : `${API_BASE_URL}/cart/item/${cartId}`;

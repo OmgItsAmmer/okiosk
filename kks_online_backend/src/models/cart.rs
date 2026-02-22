@@ -45,6 +45,7 @@ pub struct CartItem {
     pub product_id: i32,
     pub product_name: String,
     pub product_description: Option<String>,
+    pub image_url: Option<String>,
     pub base_price: String,
     pub sale_price: String,
     #[serde(rename = "brandID")]
@@ -88,6 +89,12 @@ pub struct UpdateCartQuantityRequest {
 #[derive(Debug, Deserialize)]
 pub struct AddToKioskCartRequest {
     pub kiosk_session_id: String,
+    pub variant_id: i32,
+    pub quantity: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateGuestCartRequest {
     pub variant_id: i32,
     pub quantity: i32,
 }

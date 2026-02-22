@@ -6,13 +6,14 @@ import defaultImage from '../assets/images/kks_new_logo_dark.png';
 interface ActiveProductOverlayProps {
     product: Product;
     onClose: () => void;
-    onAddToCart: (product: Product, variant?: ProductVariation) => void;
+    onAddToCart: (product: Product, variant?: ProductVariation) => Promise<void>;
 }
 
 const ActiveProductOverlay: React.FC<ActiveProductOverlayProps> = ({ product, onClose, onAddToCart }) => {
     const [isFlipped, setIsFlipped] = useState(false);
     const [variants, setVariants] = useState<ProductVariation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<ProductVariation | null>(null);
     const [isClosing, setIsClosing] = useState(false);
 
@@ -64,14 +65,25 @@ const ActiveProductOverlay: React.FC<ActiveProductOverlayProps> = ({ product, on
         // So flip back, then close.
     };
 
-    const handleAddToCartClick = () => {
+    const handleAddToCartClick = async () => {
+        if (isAddingToCart) return;
         if (selectedVariant) {
-            onAddToCart(product, selectedVariant);
+            setIsAddingToCart(true);
+            try {
+                await onAddToCart(product, selectedVariant);
+                handleClose();
+            } finally {
+                setIsAddingToCart(false);
+            }
         } else if (variants.length === 0 && !isLoading) {
-            // Fallback for no variants found
-            onAddToCart(product);
+            setIsAddingToCart(true);
+            try {
+                await onAddToCart(product);
+                handleClose();
+            } finally {
+                setIsAddingToCart(false);
+            }
         }
-        handleClose();
     };
 
     const imageSrc = product.image_url || defaultImage;
@@ -139,13 +151,20 @@ const ActiveProductOverlay: React.FC<ActiveProductOverlayProps> = ({ product, on
                         </div>
 
                         <div className="card-back-footer">
-                            <button className="cancel-btn" onClick={handleClose}>Cancel</button>
+                            <button className="cancel-btn" onClick={handleClose} disabled={isAddingToCart}>Cancel</button>
                             <button
-                                className="confirm-add-btn"
+                                className={`confirm-add-btn ${isAddingToCart ? 'adding' : ''}`}
                                 onClick={handleAddToCartClick}
-                                disabled={variants.length > 0 && !selectedVariant}
+                                disabled={(variants.length > 0 && !selectedVariant) || isAddingToCart}
                             >
-                                Add to Cart
+                                {isAddingToCart ? (
+                                    <>
+                                        <span className="btn-spinner" aria-hidden />
+                                        Adding...
+                                    </>
+                                ) : (
+                                    'Add to Cart'
+                                )}
                             </button>
                         </div>
                     </div>

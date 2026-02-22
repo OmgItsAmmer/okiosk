@@ -14,6 +14,7 @@ export interface AiCommandResponse {
     message: string;
     actions_executed: string[];
     error?: string;
+    emotion?: 'happy' | 'upset' | 'normal';
 }
 
 export const sendAiCommand = async (request: AiCommandRequest): Promise<AiCommandResponse> => {
@@ -27,6 +28,7 @@ export const sendAiCommand = async (request: AiCommandRequest): Promise<AiComman
             message: 'Sorry, I encountered an error. Please try again.',
             actions_executed: [],
             error: error instanceof Error ? error.message : String(error),
+            emotion: 'upset',
         };
     }
 };

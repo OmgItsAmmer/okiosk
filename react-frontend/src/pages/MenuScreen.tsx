@@ -14,18 +14,24 @@ import Loader from '../components/Loader';
 const MenuScreen: React.FC = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
-    const { cart, addToCart, removeFromCart, updateQuantity, onLogout } = useCart();
+    const { cart, addToCart, removeFromCart, updateQuantity, refreshCart, onLogout } = useCart();
     const [categories, setCategories] = useState<Category[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeProduct, setActiveProduct] = useState<Product | null>(null);
+    const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
     const handleLogout = async () => {
         await onLogout();
         await logout();
         navigate('/login');
     };
+
+    // Fetch cart when navigating to menu
+    useEffect(() => {
+        refreshCart();
+    }, [refreshCart]);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -75,8 +81,16 @@ const MenuScreen: React.FC = () => {
         removeFromCart(productId, variantId);
     };
 
+    const netTotal = cart.reduce((sum, item) => {
+        const price = item.variant
+            ? parseFloat(item.variant.sell_price)
+            : parseFloat(item.product.base_price);
+        return sum + price * item.quantity;
+    }, 0);
+
     const handleCheckout = () => {
         if (cart.length === 0) return;
+        setMobileCartOpen(false);
         navigate('/checkout');
     };
 
@@ -180,6 +194,57 @@ const MenuScreen: React.FC = () => {
                     onCheckout={handleCheckout}
                 />
             </div>
+
+            {/* Mobile: Cart as navbar + drawer */}
+            <div className="cart-navbar-mobile">
+                <button
+                    className="cart-navbar-toggle"
+                    onClick={() => setMobileCartOpen(true)}
+                    aria-label="Open cart"
+                >
+                    <span className="cart-navbar-icon">🛒</span>
+                    <span className="cart-navbar-summary">
+                        <strong>{cart.length} items</strong>
+                        <span className="cart-navbar-total">Rs. {netTotal.toLocaleString()}</span>
+                    </span>
+                </button>
+                <button
+                    className="cart-navbar-checkout"
+                    onClick={handleCheckout}
+                    disabled={cart.length === 0}
+                >
+                    Checkout
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {mobileCartOpen && (
+                    <motion.div
+                        className="cart-drawer-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setMobileCartOpen(false)}
+                        aria-hidden="true"
+                    />
+                )}
+            </AnimatePresence>
+            <motion.div
+                className={`cart-drawer ${mobileCartOpen ? 'open' : ''}`}
+                initial={false}
+                animate={{ y: mobileCartOpen ? 0 : '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+                <div className="cart-drawer-handle" onClick={() => setMobileCartOpen(false)} aria-hidden="true" />
+                <div className="cart-drawer-content">
+                    <CartPanel
+                        cartItems={cart}
+                        onUpdateQuantity={(productId, variantId, delta) => handleUpdateQuantity(productId, variantId, delta)}
+                        onRemove={handleRemoveFromCart}
+                        onCheckout={handleCheckout}
+                    />
+                </div>
+            </motion.div>
 
             <AnimatePresence>
                 {activeProduct && (

@@ -6,13 +6,11 @@ use axum::{
 use std::sync::Arc;
 
 use crate::{
-    database::Database,
     handlers::AiState,
     models::{
         AddToCartRequest, AddToKioskCartRequest, CartItem, CartListResponse, CartOperationResponse,
-        CartValidationResponse, UpdateCartQuantityRequest,
+        CartValidationResponse, UpdateCartQuantityRequest, UpdateGuestCartRequest,
     },
-    services::QueueService,
 };
 
 /// Fetch cart items for a customer
@@ -57,6 +55,7 @@ pub async fn fetch_cart(
                                 product_id: product.product_id,
                                 product_name: product.name,
                                 product_description: product.description,
+                                image_url: product.image_url,
                                 base_price: product.base_price,
                                 sale_price: product.sale_price,
                                 brand_id: product.brand_id,
@@ -313,6 +312,76 @@ pub async fn add_to_kiosk_cart(
         Err(e) => {
             tracing::error!("Failed to add to kiosk cart: {}", e);
             println!("[ERR] /api/cart/kiosk/add → {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Update guest cart item quantity (customer_id 1, in-memory cart)
+/// PUT /api/cart/guest/item
+pub async fn update_guest_cart_item(
+    State(state): State<Arc<AiState>>,
+    Json(payload): Json<UpdateGuestCartRequest>,
+) -> Result<Json<CartOperationResponse>, StatusCode> {
+    println!(
+        "[PUT] /api/cart/guest/item → variant: {}, quantity: {}",
+        payload.variant_id, payload.quantity
+    );
+
+    match state.queue_service.update_guest_cart_item(
+        "guest_session",
+        payload.variant_id,
+        payload.quantity,
+    ) {
+        Ok(true) => {
+            println!("[OK ] /api/cart/guest/item → quantity updated");
+            Ok(Json(CartOperationResponse {
+                success: true,
+                message: "Guest cart item quantity updated".to_string(),
+            }))
+        }
+        Ok(false) => {
+            println!("[ERR] /api/cart/guest/item → item not found");
+            Ok(Json(CartOperationResponse {
+                success: false,
+                message: "Guest cart item not found".to_string(),
+            }))
+        }
+        Err(e) => {
+            tracing::error!("Failed to update guest cart: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Remove guest cart item
+/// DELETE /api/cart/guest/item/:variant_id
+pub async fn remove_guest_cart_item(
+    State(state): State<Arc<AiState>>,
+    Path(variant_id): Path<i32>,
+) -> Result<Json<CartOperationResponse>, StatusCode> {
+    println!("[DELETE] /api/cart/guest/item/{} → removing item...", variant_id);
+
+    match state
+        .queue_service
+        .remove_from_guest_cart("guest_session", variant_id)
+    {
+        Ok(true) => {
+            println!("[OK ] /api/cart/guest/item/{} → item removed", variant_id);
+            Ok(Json(CartOperationResponse {
+                success: true,
+                message: "Item removed from guest cart".to_string(),
+            }))
+        }
+        Ok(false) => {
+            println!("[ERR] /api/cart/guest/item/{} → item not found", variant_id);
+            Ok(Json(CartOperationResponse {
+                success: false,
+                message: "Guest cart item not found".to_string(),
+            }))
+        }
+        Err(e) => {
+            tracing::error!("Failed to remove from guest cart: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

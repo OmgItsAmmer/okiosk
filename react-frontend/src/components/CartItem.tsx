@@ -34,7 +34,12 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove })
             layout
         >
             <div className="cart-item-image-container">
-                <img src={imageSrc} alt={item.product.name} className="cart-item-image" />
+                <img
+                src={imageSrc}
+                alt={item.product.name}
+                className="cart-item-image"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = defaultImage; }}
+            />
             </div>
 
             <div className="cart-item-details">
@@ -48,8 +53,12 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove })
                         )}
                     </div>
                     <button
+                        type="button"
                         className="remove-item-btn"
-                        onClick={() => onRemove(item.product.product_id, variantId)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(item.product.product_id, variantId);
+                        }}
                         aria-label="Remove item"
                     >
                         ×
@@ -59,7 +68,11 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove })
                 <div className="cart-item-controls">
                     <div className="quantity-controls">
                         <button
-                            onClick={() => onUpdateQuantity(item.product.product_id, variantId, -1)}
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateQuantity(item.product.product_id, variantId, -1);
+                            }}
                             disabled={item.quantity <= 1}
                             className="qty-btn"
                             aria-label="Decrease quantity"
@@ -78,7 +91,11 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove })
                             </motion.span>
                         </AnimatePresence>
                         <button
-                            onClick={() => onUpdateQuantity(item.product.product_id, variantId, 1)}
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateQuantity(item.product.product_id, variantId, 1);
+                            }}
                             className="qty-btn"
                             aria-label="Increase quantity"
                         >
