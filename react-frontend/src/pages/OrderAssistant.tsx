@@ -49,12 +49,12 @@ const GUIDE_STEPS = [
     {
         avatar: AVATAR_SMILING,
         title: "Meet Your AI Cashier",
-        description: "I'm your smart order assistant! No need to browse a huge menu — just talk to me naturally and I'll handle the rest.",
+        description: "I'm your smart order assistant! No need to browse a huge menu , just talk to me naturally and I'll handle the rest.",
         tip: null,
         accent: '#E63946',
     },
     {
-        avatar: AVATAR_NORMAL,
+        avatar: AVATAR_SMILING,
         title: "Place an Order",
         description: "Tell me what you'd like in plain language. I understand natural conversation, so just say what you want!",
         tip: '"I want rice" or "Add a biscuit!"',
@@ -67,8 +67,8 @@ const GUIDE_STEPS = [
         tip: '"Show my cart" or "What have I ordered?"',
         accent: '#F77F00',
     },
-    {
-        avatar: AVATAR_NORMAL,
+    {   
+        avatar: AVATAR_FAILED,
         title: "Update or Remove Items",
         description: "Changed your mind? No problem. Tell me to remove something or change the quantity — I'll update your cart instantly.",
         tip: '"Remove the biscuit" or "Change rice to 3"',
@@ -94,14 +94,14 @@ const GUIDE_STEPS = [
 const INTRO_PHASES = [
     {
         avatar: AVATAR_NORMAL,
-        text: "Hey there, welcome to KK’s Online. I’m your new cashier."
+        text: "Hey there, welcome to Cod's Kitchen. I’m your new cashier."
     },
     {
         avatar: AVATAR_SUCCEED,
-        text: "You can tell me what you want, or say things like checkout or show cart. I’ll do it—no messy menu exploration."
+        text: "You can tell me what you want, or say things like checkout or show cart. I’ll do it ,no messy menu exploration."
     },
     {
-        avatar: AVATAR_NORMAL,
+        avatar: AVATAR_FAILED,
         text: "I’m a small kid and I can make mistakes, so please don’t get angry at me."
     }
 ];

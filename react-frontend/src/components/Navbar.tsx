@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
     return (
         <nav className="global-navbar">
             <div className="navbar-logo" onClick={() => navigate('/order')}>
-                <span className="logo-text">KK's Online</span>
+                <span className="logo-text">Cod's Kitchen</span>
             </div>
 
             <div className="navbar-actions">

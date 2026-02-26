@@ -131,7 +131,7 @@ const Login = () => {
             return (
                 <div className="login-buttons-container">
                     <h2 className="login-title" style={{ color: theme.text }}>
-                        Welcome to OKiosk
+                        Welcome to Cod's Kitchen
                     </h2>
                     <p className="login-subtitle" style={{ color: theme.text, opacity: 0.7 }}>
                         Sign in to access all features
@@ -340,7 +340,7 @@ const Login = () => {
                 <div className="login-branding">
                     <div className="brand-content">
                         <h1 className="brand-title" style={{ color: theme.primary }}>
-                            OKiosk
+                            Cod's Kitchen
                         </h1>
                         <p className="brand-subtitle" style={{ color: theme.text }}>
                             Your Smart Kiosk Solution

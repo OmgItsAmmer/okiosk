@@ -4,12 +4,14 @@
 .checkout-screen {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto;
     background-color: var(--color-background);
     color: var(--color-text);
     padding: 30px;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow-x: visible;
 }
 
 .checkout-header {
@@ -67,7 +69,8 @@
     display: flex;
     gap: 40px;
     flex: 1;
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
 }
 
 @media (max-width: 768px) {
@@ -77,8 +80,9 @@
 
     .checkout-content {
         flex-direction: column;
-        overflow-y: auto;
-        overflow-x: hidden;
+        gap: 24px;
+        min-height: 0;
+        overflow: visible;
     }
 
     .checkout-header {
@@ -108,12 +112,9 @@
     .invoice-section {
         padding: 20px;
         min-width: 0;
-        overflow: visible;
     }
 
     .invoice-items-list {
-        flex: none;
-        overflow-y: visible;
         gap: 10px;
     }
 
@@ -167,6 +168,7 @@
     padding: 30px;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     border: 1px solid var(--color-border);
@@ -204,6 +206,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .invoice-card-item {
