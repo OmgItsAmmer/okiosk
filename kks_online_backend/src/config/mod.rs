@@ -18,61 +18,67 @@ pub struct Config {
 
 impl Config {
     pub fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
-        // Get current directory
+        // Only load .env files in non-production environments.
+        // On Render, environment variables are already injected, and trying to
+        // parse a bundled .env can fail (e.g. encoding issues) and break startup.
         let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        let render_env = env::var("RENDER_ENV").unwrap_or_default();
 
-        // Try multiple locations for .env file
-        let mut env_paths: Vec<PathBuf> = vec![
-            current_dir.join(".env"),                            // Current directory
-            current_dir.join("kks_online_backend").join(".env"), // If running from project root
-            PathBuf::from(".env"),                               // Simple relative path
-            PathBuf::from("kks_online_backend/.env"),            // Relative path from root
-        ];
+        if render_env != "production" {
+            // Try multiple locations for .env file during local development
+            let mut env_paths: Vec<PathBuf> = vec![
+                current_dir.join(".env"),                            // Current directory
+                current_dir.join("kks_online_backend").join(".env"), // If running from project root
+                PathBuf::from(".env"),                               // Simple relative path
+                PathBuf::from("kks_online_backend/.env"),            // Relative path from root
+            ];
 
-        // Add parent directory if it exists
-        if let Some(parent) = current_dir.parent() {
-            env_paths.push(parent.join(".env"));
-            env_paths.push(parent.join("kks_online_backend").join(".env"));
-        }
+            // Add parent directory if it exists
+            if let Some(parent) = current_dir.parent() {
+                env_paths.push(parent.join(".env"));
+                env_paths.push(parent.join("kks_online_backend").join(".env"));
+            }
 
-        // Debug: Print current directory
-        eprintln!("🔍 Current working directory: {}", current_dir.display());
-        eprintln!("🔍 Looking for .env file in the following locations:");
+            eprintln!("🔍 Current working directory: {}", current_dir.display());
+            eprintln!("🔍 Looking for .env file in the following locations:");
 
-        let mut loaded = false;
-        for path in &env_paths {
-            eprintln!("   - {} (exists: {})", path.display(), path.exists());
-            if path.exists() {
-                match dotenv::from_filename(path) {
-                    Ok(_) => {
-                        loaded = true;
-                        eprintln!("✅ Successfully loaded .env from: {}", path.display());
-                        break;
+            let mut loaded = false;
+            for path in &env_paths {
+                eprintln!("   - {} (exists: {})", path.display(), path.exists());
+                if path.exists() {
+                    match dotenv::from_filename(path) {
+                        Ok(_) => {
+                            loaded = true;
+                            eprintln!("✅ Successfully loaded .env from: {}", path.display());
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("   ⚠️  Failed to load from {}: {}", path.display(), e);
+                        }
+                    }
+                }
+            }
+
+            // Also try the default dotenv behavior
+            if !loaded {
+                eprintln!("🔍 Trying default dotenv::dotenv()...");
+                match dotenv::dotenv() {
+                    Ok(path) => {
+                        eprintln!(
+                            "✅ Successfully loaded .env from default location: {}",
+                            path.display()
+                        );
                     }
                     Err(e) => {
-                        eprintln!("   ⚠️  Failed to load from {}: {}", path.display(), e);
+                        eprintln!("   ⚠️  Default dotenv failed: {}", e);
                     }
                 }
             }
+        } else {
+            eprintln!("🔍 RENDER_ENV=production – skipping .env loading, using environment variables only");
         }
 
-        // Also try the default dotenv behavior
-        if !loaded {
-            eprintln!("🔍 Trying default dotenv::dotenv()...");
-            match dotenv::dotenv() {
-                Ok(path) => {
-                    eprintln!(
-                        "✅ Successfully loaded .env from default location: {}",
-                        path.display()
-                    );
-                }
-                Err(e) => {
-                    eprintln!("   ⚠️  Default dotenv failed: {}", e);
-                }
-            }
-        }
-
-        // Debug: Check if DATABASE_URL is set
+        // Debug: Check if DATABASE_URL is set (works both locally and on Render)
         eprintln!(
             "🔍 DATABASE_URL in environment: {}",
             env::var("DATABASE_URL").is_ok()
