@@ -7,18 +7,21 @@ use std::env;
 pub struct AiService {
     client: Client,
     api_key: String,
+    gemini_model: String,
 }
 
 impl AiService {
     /// Create a new AI Service
     pub fn new(_api_url: String) -> Self {
         // we ignore the passed api_url as we are using Gemini now
-        // Load API Key from environment
         let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
+        let gemini_model = env::var("GEMINI_MODEL")
+            .unwrap_or_else(|_| "gemini-2.5-flash".to_string());
 
         Self {
             client: Client::new(),
             api_key,
+            gemini_model,
         }
     }
 
@@ -153,7 +156,8 @@ impl AiService {
     /// Call Gemini API
     async fn call_gemini_api(&self, request_body: &Value) -> Result<Value, String> {
         let url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}",
+            "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+            self.gemini_model,
             self.api_key
         );
 
