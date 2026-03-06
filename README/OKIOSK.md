@@ -1,9 +1,3 @@
-# OKIOSK Flutter Project Structure
-
-## Overview
-OKIOSK is a Flutter e-commerce application with a well-organized feature-based architecture. The project follows clean architecture principles with clear separation of concerns.
-
-## Project Structure
 
 ### Root Files
 ```
