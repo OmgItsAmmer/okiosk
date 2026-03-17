@@ -100,6 +100,7 @@ change icons
 Checkout success pop up is white color.
 out of stock color is not readable in darkmode
 selected + hovered color is not readable
+qr screen expires in fucking weird color
 
 
 Functional BUGs

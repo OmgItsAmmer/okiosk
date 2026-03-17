@@ -189,7 +189,7 @@ const Login = () => {
             return (
                 <div className="qr-content">
                     <h2 className="qr-title" style={{ color: theme.text }}>
-                        Scan to Login
+                        Google QR Login
                     </h2>
                     <p className="qr-subtitle" style={{ color: theme.text, opacity: 0.7 }}>
                         Use your mobile device to scan the QR code
@@ -346,7 +346,7 @@ const Login = () => {
                         Just type it. We handle the rest                        </p>
                         <div className="brand-features">
 
-                        <div className="feature-item">
+                            <div className="feature-item">
                                 <span className="feature-icon" style={{ color: theme.accentOrange }}>⚡</span>
                                 <span style={{ color: theme.text }}>Type commands. AI executes.</span>
                             </div>
