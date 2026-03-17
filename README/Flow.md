@@ -92,3 +92,16 @@ improvements
 it shows the intro part only once for each login
 
 change the position of log out button and logout button should display on all screens
+
+
+
+Usuability Bugs
+change icons
+Checkout success pop up is white color.
+out of stock color is not readable in darkmode
+selected + hovered color is not readable
+
+
+Functional BUGs
+login is not working on render
+poolTimieOut

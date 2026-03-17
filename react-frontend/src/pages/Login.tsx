@@ -343,20 +343,22 @@ const Login = () => {
                             Cod's Kitchen
                         </h1>
                         <p className="brand-subtitle" style={{ color: theme.text }}>
-                            Your Smart Kiosk Solution
-                        </p>
+                        Just type it. We handle the rest                        </p>
                         <div className="brand-features">
-                            <div className="feature-item">
+
+                        <div className="feature-item">
                                 <span className="feature-icon" style={{ color: theme.accentOrange }}>⚡</span>
-                                <span style={{ color: theme.text }}>Fast & Secure</span>
+                                <span style={{ color: theme.text }}>Type commands. AI executes.</span>
                             </div>
-                            <div className="feature-item">
+                        <div className="feature-item">
                                 <span className="feature-icon" style={{ color: theme.accentYellow }}>🔒</span>
                                 <span style={{ color: theme.text }}>QR Code Login</span>
                             </div>
+                            
+                          
                             <div className="feature-item">
                                 <span className="feature-icon" style={{ color: theme.primary }}>🚀</span>
-                                <span style={{ color: theme.text }}>Easy to Use</span>
+                                <span style={{ color: theme.text }}>Full-store control in one message</span>
                             </div>
                         </div>
                     </div>

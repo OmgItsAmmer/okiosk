@@ -36,9 +36,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("✅ Configuration loaded successfully");
 
     // Setup database connection
-    let database = Arc::new(Database::new(&config.database_url).await?);
-    tracing::info!("✅ Database connected successfully");
-    println!("✅ Database connected successfully");
+    let database = Arc::new(Database::new(&config.database_url)?);
+    tracing::info!("✅ Database pool configured successfully");
+    println!("✅ Database pool configured successfully");
 
     // Setup AI service
     let ai_state = Arc::new(AiState::new(

@@ -5,7 +5,8 @@ mod order_queries;
 mod product_queries;
 
 use crate::models::Order;
-use sqlx::PgPool;
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::time::Duration;
 
 pub use auth_queries::AuthQueries;
 pub use cart_queries::CartQueries;
@@ -18,9 +19,16 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
-        eprintln!("🔍 Connecting to database...");
-        let pool = PgPool::connect(database_url).await?;
+    pub fn new(database_url: &str) -> Result<Self, sqlx::Error> {
+        eprintln!("🔍 Configuring database pool...");
+        let pool = PgPoolOptions::new()
+            .max_connections(5)
+            .min_connections(1)
+            .acquire_timeout(Duration::from_secs(30))
+            .idle_timeout(Duration::from_secs(600))
+            .max_lifetime(Duration::from_secs(1800))
+            .connect_lazy(database_url)?;
+        eprintln!("✅ Database pool configured (connections established on first use)");
         Ok(Self { pool })
     }
 
