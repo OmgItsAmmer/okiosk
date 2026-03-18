@@ -242,6 +242,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(cors)
         .layer(TraceLayer::new_for_http());
 
+    // Validate DB connectivity before accepting any traffic.
+    // (The test_connection call after axum::serve was unreachable dead code —
+    //  axum::serve blocks forever, so we must check here instead.)
+    match database.test_connection().await {
+        Ok(msg) => {
+            tracing::info!("✅ DB health check passed: {}", msg);
+            println!("✅ DB health check passed: {}", msg);
+        }
+        Err(e) => {
+            tracing::error!("❌ DB health check FAILED: {}", e);
+            eprintln!("❌ DB health check FAILED: {}", e);
+            return Err(e.into());
+        }
+    }
+
     // Start server
     let addr = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
@@ -305,14 +320,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   POST   /api/transcribe                        - Transcribe audio to text using Whisper.cpp");
 
     axum::serve(listener, app).await?;
-
-    let db_check = database.clone();
-tokio::spawn(async move {
-    match db_check.test_connection().await {
-        Ok(msg) => tracing::info!("✅ DB check passed: {}", msg),
-        Err(e) => tracing::error!("❌ DB check failed: {}", e),
-    }
-});
 
     Ok(())
 }

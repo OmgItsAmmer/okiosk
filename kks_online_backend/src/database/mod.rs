@@ -35,15 +35,30 @@ impl Database {
 
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
         eprintln!("🔍 Connecting to database...");
+
+        // Inject a short TCP-level connect_timeout so a silently-dropped SYN
+        // (e.g. Render → Supabase pooler firewall DROP) fails in 10 s instead
+        // of waiting the full acquire_timeout (30 s).
+        let url_with_timeout = if database_url.contains('?') {
+            if database_url.contains("connect_timeout") {
+                database_url.to_string()
+            } else {
+                format!("{}&connect_timeout=10", database_url)
+            }
+        } else {
+            format!("{}?connect_timeout=10", database_url)
+        };
+
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .min_connections(0)                          // ← don't pre-connect
-            .acquire_timeout(Duration::from_secs(30))
-            .idle_timeout(Duration::from_secs(600))
-            .max_lifetime(Duration::from_secs(1800))
-            .connect_lazy(database_url)?;                // ← sync, no await, never fails here
-    
-        eprintln!("✅ Database pool created (lazy)");
+            .min_connections(1)                           // keep one warm connection alive
+            .acquire_timeout(Duration::from_secs(15))
+            .idle_timeout(Duration::from_secs(300))
+            .max_lifetime(Duration::from_secs(900))
+            .connect(&url_with_timeout)                   // eager connect — fails at startup if DB unreachable
+            .await?;
+
+        eprintln!("✅ Database connected successfully");
         Ok(Self { pool })
     }
 
