@@ -10,8 +10,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // BACKEND_URL is used for API calls and WebSocket (can be localhost)
 const BACKEND_URL = CONFIG_BACKEND_URL;
-// PUBLIC_URL is used for QR codes - must be accessible from mobile devices (use ngrok URL)
-const PUBLIC_URL = import.meta.env.VITE_PUBLIC_URL || BACKEND_URL;
+// PUBLIC_URL is used for QR codes - must be accessible from mobile devices (use ngrok/custom domain URL)
+// We trim whitespace (common .env gotcha) and normalize trailing slashes.
+const PUBLIC_URL = (import.meta.env.VITE_PUBLIC_URL?.trim() || BACKEND_URL)
+    .trim()
+    .replace(/\/+$/, '');
 const QR_SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 const GUEST_SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -175,10 +178,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Initiate QR login flow
     const initiateLogin = useCallback(async () => {
-        const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const newSessionId =
+            globalThis.crypto?.randomUUID?.() ??
+            `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         setSessionId(newSessionId);
 
-        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${newSessionId}`;
+        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${encodeURIComponent(newSessionId)}`;
         const expiresAt = new Date(Date.now() + QR_SESSION_TIMEOUT_MS);
 
         setQrSession({
@@ -240,10 +245,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         setAuthState(AuthState.UPGRADE_PENDING);
 
-        const newSessionId = `upgrade_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const newSessionId =
+            globalThis.crypto?.randomUUID?.() ??
+            `upgrade_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         setSessionId(newSessionId);
 
-        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${newSessionId}&upgrade_from=${user?.id}`;
+        const qrUrl = `${PUBLIC_URL}/api/auth/google?session_id=${encodeURIComponent(newSessionId)}&upgrade_from=${encodeURIComponent(
+            user?.id || '',
+        )}`;
         const expiresAt = new Date(Date.now() + QR_SESSION_TIMEOUT_MS);
 
         setQrSession({

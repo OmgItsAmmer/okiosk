@@ -96,11 +96,11 @@ change the position of log out button and logout button should display on all sc
 
 
 Usuability Bugs
-change icons
+<!-- change icons -->
 Checkout success pop up is white color.
-out of stock color is not readable in darkmode
-selected + hovered color is not readable
-qr screen expires in fucking weird color
+<!-- out of stock color is not readable in darkmode -->
+<!-- selected + hovered color is not readable -->
+<!-- qr screen expires in fucking weird color -->
 
 
 Functional BUGs

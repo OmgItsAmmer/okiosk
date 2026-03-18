@@ -776,7 +776,7 @@
     transition: all 0.2s;
 }
 
-.variant-item:hover:not(.disabled) {
+.variant-item:hover:not(.disabled):not(.selected) {
     background-color: var(--color-border);
 }
 
@@ -786,10 +786,21 @@
     color: white;
 }
 
+.variant-item.selected:hover {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
 .variant-item.disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background-color: #eee;
+    background-color: var(--color-bg-alt);
+    color: var(--color-text);
+}
+
+.variant-item.disabled .variant-stock {
+    opacity: 0.75;
 }
 
 .variant-info {

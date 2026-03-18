@@ -158,7 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         // Checkout endpoint
         .route("/api/checkout", post(handlers::checkout))
-        .with_state(database);
+        .with_state(database.clone());
 
     // Create Cart router with AiState
     let cart_router = Router::new()
@@ -305,6 +305,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   POST   /api/transcribe                        - Transcribe audio to text using Whisper.cpp");
 
     axum::serve(listener, app).await?;
+
+    let db_check = database.clone();
+tokio::spawn(async move {
+    match db_check.test_connection().await {
+        Ok(msg) => tracing::info!("✅ DB check passed: {}", msg),
+        Err(e) => tracing::error!("❌ DB check failed: {}", e),
+    }
+});
 
     Ok(())
 }

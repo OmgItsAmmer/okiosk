@@ -4,7 +4,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
@@ -14,7 +14,8 @@
 }
 
 .success-modal-content {
-    background: #ffffff;
+    background: var(--color-secondary);
+    color: var(--color-text);
     padding: 3rem;
     border-radius: 24px;
     width: 90%;
@@ -24,6 +25,7 @@
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
+    border: 1px solid var(--color-border);
 }
 
 @keyframes fadeIn {
@@ -39,7 +41,8 @@
 .success-icon-container {
     width: 100px;
     height: 100px;
-    background: #f0fdf4;
+    background: rgba(var(--color-secondary-rgb, 30, 30, 30), 0.6);
+    border: 1px solid var(--color-border);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -50,11 +53,11 @@
 
 .success-icon {
     font-size: 3rem;
-    color: #22c55e;
+    color: var(--color-success, #22c55e);
 }
 
 .success-modal-content h2 {
-    color: #1a1a1a;
+    color: var(--color-text);
     font-size: 2rem;
     margin-bottom: 0.5rem;
     font-weight: 700;
@@ -62,20 +65,22 @@
 
 .order-id-badge {
     display: inline-block;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--color-bg-alt);
+    color: var(--color-text);
     padding: 0.5rem 1rem;
     border-radius: 999px;
     font-weight: 600;
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
+    border: 1px solid var(--color-border);
 }
 
 .success-message {
-    color: #4b5563;
+    color: var(--color-text);
     font-size: 1.1rem;
     line-height: 1.6;
     margin-bottom: 2rem;
+    opacity: 0.85;
 }
 
 .countdown-container {
@@ -83,22 +88,24 @@
 }
 
 .countdown-text {
-    color: #6b7280;
+    color: var(--color-text);
     font-size: 0.9rem;
     margin-bottom: 0.5rem;
+    opacity: 0.75;
 }
 
 .countdown-bar-bg {
     height: 6px;
-    background: #f3f4f6;
+    background: var(--color-bg-alt);
     border-radius: 3px;
     width: 100%;
     overflow: hidden;
+    border: 1px solid var(--color-border);
 }
 
 .countdown-bar-fill {
     height: 100%;
-    background: #E63946;
+    background: var(--color-primary);
     border-radius: 3px;
     transition: width 1s linear;
 }
@@ -121,23 +128,25 @@
 }
 
 .btn-logout {
-    background: #E63946;
+    background: var(--color-primary);
     color: white;
 }
 
 .btn-logout:hover {
-    background: #d62839;
+    background: var(--color-primary);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3);
+    filter: brightness(0.95);
 }
 
 .btn-menu {
-    background: #f3f4f6;
-    color: #374151;
+    background: var(--color-bg-alt);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
 }
 
 .btn-menu:hover {
-    background: #e5e7eb;
+    background: var(--color-border);
     transform: translateY(-2px);
 }
 

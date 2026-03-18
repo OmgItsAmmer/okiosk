@@ -19,17 +19,31 @@ pub struct Database {
 }
 
 impl Database {
+    // pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
+    //     eprintln!("🔍 Connecting to database...");
+    //     let pool = PgPoolOptions::new()
+    //         .max_connections(5)
+    //         .min_connections(1)
+    //         .acquire_timeout(Duration::from_secs(30))
+    //         .idle_timeout(Duration::from_secs(600))
+    //         .max_lifetime(Duration::from_secs(1800))
+    //         .connect(database_url)
+    //         .await?;
+    //     eprintln!("✅ Database connected successfully");
+    //     Ok(Self { pool })
+    // }
+
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
         eprintln!("🔍 Connecting to database...");
         let pool = PgPoolOptions::new()
             .max_connections(5)
-            .min_connections(1)
+            .min_connections(0)                          // ← don't pre-connect
             .acquire_timeout(Duration::from_secs(30))
             .idle_timeout(Duration::from_secs(600))
             .max_lifetime(Duration::from_secs(1800))
-            .connect(database_url)
-            .await?;
-        eprintln!("✅ Database connected successfully");
+            .connect_lazy(database_url)?;                // ← sync, no await, never fails here
+    
+        eprintln!("✅ Database pool created (lazy)");
         Ok(Self { pool })
     }
 

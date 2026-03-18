@@ -4,6 +4,10 @@ import QRCode from 'qrcode';
 import { useAuth } from '../hooks/useAuth';
 import { AuthState } from '../types/auth';
 import { colors, applyTheme } from '../constants/colors';
+import googleIcon from '../assets/icons/google.png';
+import guestIcon from '../assets/icons/guest.png';
+import aiIcon from '../assets/icons/ai.png';
+import scannerIcon from '../assets/icons/scanner.png';
 import './Login.css';
 import Loader from '../components/Loader';
 
@@ -40,12 +44,14 @@ const Login = () => {
         }
 
         setIsGeneratingQR(true);
+        // Use high-contrast QR settings for reliable scanning (especially on mobile cameras).
         QRCode.toDataURL(qrSession.qrUrl, {
-            width: 250,
+            width: 320,
             margin: 2,
+            errorCorrectionLevel: 'H',
             color: {
-                dark: isDarkMode ? colors.dark.text : colors.light.text,
-                light: isDarkMode ? colors.dark.secondary : colors.light.secondary,
+                dark: '#000000',
+                light: '#FFFFFF',
             },
         })
             .then((url) => {
@@ -167,7 +173,12 @@ const Login = () => {
                             <span className="button-loading">Initializing...</span>
                         ) : (
                             <>
-                                <span className="button-icon">👤</span>
+                                <img
+                                    className="button-icon"
+                                    src={guestIcon}
+                                    alt=""
+                                    aria-hidden="true"
+                                />
                                 Continue as Guest
                             </>
                         )}
@@ -189,6 +200,12 @@ const Login = () => {
             return (
                 <div className="qr-content">
                     <h2 className="qr-title" style={{ color: theme.text }}>
+                        <img
+                            className="qr-title-icon"
+                            src={googleIcon}
+                            alt=""
+                            aria-hidden="true"
+                        />
                         Google QR Login
                     </h2>
                     <p className="qr-subtitle" style={{ color: theme.text, opacity: 0.7 }}>
@@ -347,17 +364,32 @@ const Login = () => {
                         <div className="brand-features">
 
                             <div className="feature-item">
-                                <span className="feature-icon" style={{ color: theme.accentOrange }}>⚡</span>
+                                <img
+                                    className="feature-icon"
+                                    src={aiIcon}
+                                    alt=""
+                                    aria-hidden="true"
+                                />
                                 <span style={{ color: theme.text }}>Type commands. AI executes.</span>
                             </div>
                         <div className="feature-item">
-                                <span className="feature-icon" style={{ color: theme.accentYellow }}>🔒</span>
+                                <img
+                                    className="feature-icon"
+                                    src={scannerIcon}
+                                    alt=""
+                                    aria-hidden="true"
+                                />
                                 <span style={{ color: theme.text }}>QR Code Login</span>
                             </div>
                             
                           
                             <div className="feature-item">
-                                <span className="feature-icon" style={{ color: theme.primary }}>🚀</span>
+                                <img
+                                    className="feature-icon"
+                                    src={googleIcon}
+                                    alt=""
+                                    aria-hidden="true"
+                                />
                                 <span style={{ color: theme.text }}>Full-store control in one message</span>
                             </div>
                         </div>
