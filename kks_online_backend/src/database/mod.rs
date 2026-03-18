@@ -53,7 +53,7 @@ impl Database {
             .max_connections(5)
             .min_connections(1)                           // keep one warm connection alive
             .acquire_timeout(Duration::from_secs(15))
-            .idle_timeout(Duration::from_secs(300))
+            .idle_timeout(Duration::from_secs(1200))
             .max_lifetime(Duration::from_secs(900))
             .connect(&url_with_timeout)                   // eager connect — fails at startup if DB unreachable
             .await?;
