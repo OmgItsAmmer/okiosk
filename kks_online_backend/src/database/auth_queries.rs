@@ -139,6 +139,84 @@ impl AuthQueries {
         Ok(user)
     }
 
+    /// Upsert customer from OAuth user data.
+    /// Creates or updates a customer record linked via auth_uid (oauth user id).
+    /// Returns customer_id for cart/order operations.
+    pub async fn upsert_customer_from_oauth(
+        pool: &PgPool,
+        auth_uid: &str,
+        email: &str,
+        name: &str,
+    ) -> Result<i32> {
+        // Parse name into first_name and last_name (first word vs rest)
+        let (first_name, last_name) = match name.trim().find(' ') {
+            Some(i) => {
+                let (first, rest) = name.split_at(i);
+                (first.trim().to_string(), rest.trim().to_string())
+            }
+            None => (name.trim().to_string(), String::new()),
+        };
+
+        let first_name = if first_name.is_empty() { "User" } else { first_name.as_str() };
+
+        // Check if customer exists by auth_uid
+        let existing: Option<(i32,)> = sqlx::query_as(
+            "SELECT customer_id FROM customers WHERE auth_uid = $1",
+        )
+        .bind(auth_uid)
+        .fetch_optional(pool)
+        .await?;
+
+        let customer_id = if let Some((cid,)) = existing {
+            sqlx::query(
+                r#"
+                UPDATE customers
+                SET email = $2, first_name = $3, last_name = $4
+                WHERE auth_uid = $1
+                "#,
+            )
+            .bind(auth_uid)
+            .bind(email)
+            .bind(first_name)
+            .bind(last_name)
+            .execute(pool)
+            .await?;
+            cid
+        } else {
+            let row: (i32,) = sqlx::query_as(
+                r#"
+                INSERT INTO customers (auth_uid, email, first_name, last_name)
+                VALUES ($1, $2, $3, $4)
+                RETURNING customer_id
+                "#,
+            )
+            .bind(auth_uid)
+            .bind(email)
+            .bind(first_name)
+            .bind(last_name)
+            .fetch_one(pool)
+            .await?;
+            row.0
+        };
+
+        Ok(customer_id)
+    }
+
+    /// Get customer_id by auth_uid (oauth user id)
+    pub async fn get_customer_id_by_auth_uid(
+        pool: &PgPool,
+        auth_uid: &str,
+    ) -> Result<Option<i32>> {
+        let row: Option<(i32,)> = sqlx::query_as(
+            "SELECT customer_id FROM customers WHERE auth_uid = $1",
+        )
+        .bind(auth_uid)
+        .fetch_optional(pool)
+        .await?;
+
+        Ok(row.map(|(cid,)| cid))
+    }
+
     /// Clean up expired sessions (should be run periodically)
     pub async fn cleanup_expired_sessions(pool: &PgPool) -> Result<u64> {
         let result = sqlx::query(

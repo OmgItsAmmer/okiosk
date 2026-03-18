@@ -1,5 +1,5 @@
 use crate::database::AuthQueries;
-use crate::models::{AuthResponse, GoogleAuthQuery, GoogleCallbackQuery};
+use crate::models::{GoogleAuthQuery, GoogleCallbackQuery};
 use crate::services::AuthService;
 use axum::{
     extract::{Query, State},
@@ -182,6 +182,44 @@ pub async fn google_callback(
         }
     };
 
+    // Upsert customer in customers table (for cart, orders, etc.)
+    let customer_id = match AuthQueries::upsert_customer_from_oauth(
+        &state.pool,
+        &user.id.to_string(),
+        &user.email,
+        &user.name,
+    )
+    .await
+    {
+        Ok(cid) => {
+            info!("Customer {} created/updated for oauth user {}", cid, user.id);
+            cid
+        }
+        Err(e) => {
+            error!("Failed to upsert customer: {}", e);
+
+            // Emit error to WebSocket
+            state
+                .io
+                .of("/")
+                .unwrap()
+                .to(session_id.clone())
+                .emit(
+                    "auth-error",
+                    json!({
+                        "message": "Failed to create customer profile"
+                    }),
+                )
+                .ok();
+
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": "Failed to create customer" })),
+            )
+                .into_response());
+        }
+    };
+
     // Complete session
     match AuthQueries::complete_session(&state.pool, &session_id, user.id).await {
         Ok(_) => info!("Session {} completed", session_id),
@@ -204,6 +242,7 @@ pub async fn google_callback(
     };
 
     // Emit success event to WebSocket (to the kiosk waiting for auth)
+    // Use customer_id as user.id for cart/orders; keep full user data for display
     info!("Emitting auth-success to session: {}", session_id);
     state
         .io
@@ -214,7 +253,13 @@ pub async fn google_callback(
             "auth-success",
             json!({
                 "token": auth_response.token,
-                "user": auth_response.user
+                "user": {
+                    "id": customer_id.to_string(),
+                    "googleId": auth_response.user.google_id,
+                    "email": auth_response.user.email,
+                    "name": auth_response.user.name,
+                    "picture": auth_response.user.picture
+                }
             }),
         )
         .ok();
@@ -355,10 +400,41 @@ pub async fn verify_token(
                 .into_response()
         })?;
 
+    // Resolve customer_id for cart/orders (customers table)
+    // Create customer if missing (e.g. legacy users from before customer upsert was added)
+    let customer_id = match AuthQueries::get_customer_id_by_auth_uid(&state.pool, &user.id.to_string())
+        .await
+    {
+        Ok(Some(cid)) => cid,
+        Ok(None) => {
+            AuthQueries::upsert_customer_from_oauth(
+                &state.pool,
+                &user.id.to_string(),
+                &user.email,
+                &user.name,
+            )
+            .await
+            .unwrap_or_else(|e| {
+                error!("Failed to create customer for verify: {}", e);
+                0
+            })
+        }
+        Err(e) => {
+            error!("Failed to get customer_id: {}", e);
+            0
+        }
+    };
+
+    let user_id_for_client = if customer_id > 0 {
+        customer_id.to_string()
+    } else {
+        user.id.to_string()
+    };
+
     Ok(Json(json!({
         "token": token,
         "user": {
-            "id": user.id.to_string(),
+            "id": user_id_for_client,
             "googleId": user.google_id,
             "email": user.email,
             "name": user.name,
