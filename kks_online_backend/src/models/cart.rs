@@ -1,9 +1,9 @@
-use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-/// Cart model - represents a cart entry in the cart table
+/// Cart model - unified cart for both logged-in customers and kiosk sessions
+/// customer_id is set for logged-in users; kiosk_session_id is set for kiosk guests
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Cart {
     pub cart_id: i32,
@@ -13,22 +13,12 @@ pub struct Cart {
     pub kiosk_session_id: Option<String>,
 }
 
-/// Guest Cart Item - In-memory representation for guests
+/// Guest Cart Item - In-memory representation for unauthenticated guests (customer_id == 1)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuestCartItem {
     pub variant_id: i32,
     pub quantity: i32,
     pub added_at: i64,
-}
-
-/// Kiosk Cart model - represents entries in kiosk_cart table
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct KioskCart {
-    pub kiosk_id: i32,
-    pub kiosk_session_id: String,
-    pub variant_id: i32,
-    pub quantity: i32,
-    pub created_at: Option<DateTime<Utc>>,
 }
 
 /// Complete cart item with product and variant details

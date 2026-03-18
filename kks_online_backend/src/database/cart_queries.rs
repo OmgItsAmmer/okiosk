@@ -11,7 +11,7 @@ impl<'a> CartQueries<'a> {
         Self { pool }
     }
 
-    /// Fetch complete cart items for a customer with product and variant details
+    /// Fetch complete cart items for a logged-in customer
     pub async fn fetch_complete_cart_items(
         &self,
         customer_id: i32,
@@ -85,7 +85,7 @@ impl<'a> CartQueries<'a> {
         Ok(items)
     }
 
-    /// Fetch complete kiosk cart items
+    /// Fetch complete kiosk cart items (uses unified cart table, filtered by kiosk_session_id)
     pub async fn fetch_complete_kiosk_cart_items(
         &self,
         kiosk_session_id: &str,
@@ -98,11 +98,11 @@ impl<'a> CartQueries<'a> {
         let rows = sqlx::query(
             r#"
             SELECT 
-                kc.kiosk_id as cart_id,
-                kc.variant_id,
-                kc.quantity,
-                NULL::integer as customer_id,
-                kc.kiosk_session_id,
+                c.cart_id,
+                c.variant_id,
+                c.quantity,
+                c.customer_id,
+                c.kiosk_session_id,
                 p.product_id,
                 p.name as product_name,
                 p.description as product_description,
@@ -119,13 +119,13 @@ impl<'a> CartQueries<'a> {
                 pv.buy_price,
                 COALESCE(pv.stock, 0) as stock,
                 COALESCE(pv.is_visible, true) as is_visible
-            FROM kiosk_cart kc
-            INNER JOIN product_variants pv ON kc.variant_id = pv.variant_id
+            FROM cart c
+            INNER JOIN product_variants pv ON c.variant_id = pv.variant_id
             INNER JOIN products p ON pv.product_id = p.product_id
             LEFT JOIN image_entity ie ON p.product_id = ie.entity_id AND ie.entity_category = 'products' AND ie."isFeatured" = true
             LEFT JOIN images i ON ie.image_id = i.image_id
-            WHERE kc.kiosk_session_id = $1
-            ORDER BY kc.kiosk_id DESC
+            WHERE c.kiosk_session_id = $1
+            ORDER BY c.cart_id DESC
             "#,
         )
         .bind(kiosk_session_id)
@@ -162,7 +162,7 @@ impl<'a> CartQueries<'a> {
         Ok(items)
     }
 
-    /// Add item to cart
+    /// Add item to cart for a logged-in customer
     pub async fn add_to_cart(
         &self,
         customer_id: i32,
@@ -174,7 +174,6 @@ impl<'a> CartQueries<'a> {
             variant_id, customer_id
         );
 
-        // Check if item already exists
         let existing = sqlx::query(
             "SELECT cart_id, quantity FROM cart WHERE customer_id = $1 AND variant_id = $2",
         )
@@ -184,14 +183,10 @@ impl<'a> CartQueries<'a> {
         .await?;
 
         if let Some(existing_row) = existing {
-            // Update quantity
             let cart_id: i32 = existing_row.get("cart_id");
-
-            // Try to get quantity as i32 first, then as String
             let current_qty = match existing_row.try_get::<i32, &str>("quantity") {
                 Ok(qty) => qty,
                 Err(_) => {
-                    // Fallback to String and parse
                     let qty_str: String = existing_row.get("quantity");
                     qty_str.parse::<i32>().unwrap_or(0)
                 }
@@ -211,17 +206,18 @@ impl<'a> CartQueries<'a> {
 
             println!("[DB] Updated cart item quantity to {}", new_qty);
         } else {
-            // Insert new item
             println!(
                 "[DB] Item not in cart. Inserting new entry for variant {}",
                 variant_id
             );
-            sqlx::query("INSERT INTO cart (customer_id, variant_id, quantity) VALUES ($1, $2, $3)")
-                .bind(customer_id)
-                .bind(variant_id)
-                .bind(quantity)
-                .execute(self.pool)
-                .await?;
+            sqlx::query(
+                "INSERT INTO cart (customer_id, variant_id, quantity) VALUES ($1, $2, $3)",
+            )
+            .bind(customer_id)
+            .bind(variant_id)
+            .bind(quantity)
+            .execute(self.pool)
+            .await?;
 
             println!("[DB] Inserted new cart item");
         }
@@ -229,7 +225,7 @@ impl<'a> CartQueries<'a> {
         Ok(true)
     }
 
-    /// Add item to kiosk cart
+    /// Add item to kiosk cart (uses unified cart table, keyed by kiosk_session_id)
     pub async fn add_to_kiosk_cart(
         &self,
         kiosk_session_id: &str,
@@ -241,34 +237,41 @@ impl<'a> CartQueries<'a> {
             variant_id, kiosk_session_id
         );
 
-        // Check if item already exists
-        let existing = sqlx::query("SELECT kiosk_id, quantity FROM kiosk_cart WHERE kiosk_session_id = $1 AND variant_id = $2")
-            .bind(kiosk_session_id)
-            .bind(variant_id)
-            .fetch_optional(self.pool)
-            .await?;
+        let existing = sqlx::query(
+            "SELECT cart_id, quantity FROM cart WHERE kiosk_session_id = $1 AND variant_id = $2",
+        )
+        .bind(kiosk_session_id)
+        .bind(variant_id)
+        .fetch_optional(self.pool)
+        .await?;
 
         if let Some(existing_row) = existing {
-            // Update quantity
-            let kiosk_id: i32 = existing_row.get("kiosk_id");
-            let current_qty: i32 = existing_row.get("quantity");
+            let cart_id: i32 = existing_row.get("cart_id");
+            let current_qty = match existing_row.try_get::<i32, &str>("quantity") {
+                Ok(qty) => qty,
+                Err(_) => {
+                    let qty_str: String = existing_row.get("quantity");
+                    qty_str.parse::<i32>().unwrap_or(0)
+                }
+            };
             let new_qty = current_qty + quantity;
 
-            sqlx::query("UPDATE kiosk_cart SET quantity = $1 WHERE kiosk_id = $2")
+            sqlx::query("UPDATE cart SET quantity = $1 WHERE cart_id = $2")
                 .bind(new_qty)
-                .bind(kiosk_id)
+                .bind(cart_id)
                 .execute(self.pool)
                 .await?;
 
             println!("[DB] Updated kiosk cart item quantity to {}", new_qty);
         } else {
-            // Insert new item
-            sqlx::query("INSERT INTO kiosk_cart (kiosk_session_id, variant_id, quantity) VALUES ($1, $2, $3)")
-                .bind(kiosk_session_id)
-                .bind(variant_id)
-                .bind(quantity)
-                .execute(self.pool)
-                .await?;
+            sqlx::query(
+                "INSERT INTO cart (kiosk_session_id, variant_id, quantity) VALUES ($1, $2, $3)",
+            )
+            .bind(kiosk_session_id)
+            .bind(variant_id)
+            .bind(quantity)
+            .execute(self.pool)
+            .await?;
 
             println!("[DB] Inserted new kiosk cart item");
         }
@@ -276,7 +279,7 @@ impl<'a> CartQueries<'a> {
         Ok(true)
     }
 
-    /// Update cart item quantity
+    /// Update cart item quantity (works for both customer and kiosk carts — both use cart_id)
     pub async fn update_cart_item_quantity(
         &self,
         cart_id: i32,
@@ -296,27 +299,20 @@ impl<'a> CartQueries<'a> {
         Ok(result.rows_affected() > 0)
     }
 
-    /// Update kiosk cart item quantity
+    /// Update kiosk cart item quantity (delegates to update_cart_item_quantity — same table)
     pub async fn update_kiosk_cart_item_quantity(
         &self,
-        kiosk_id: i32,
+        cart_id: i32,
         new_quantity: i32,
     ) -> Result<bool, sqlx::Error> {
         println!(
             "[DB] Updating kiosk cart item {} to quantity {}",
-            kiosk_id, new_quantity
+            cart_id, new_quantity
         );
-
-        let result = sqlx::query("UPDATE kiosk_cart SET quantity = $1 WHERE kiosk_id = $2")
-            .bind(new_quantity)
-            .bind(kiosk_id)
-            .execute(self.pool)
-            .await?;
-
-        Ok(result.rows_affected() > 0)
+        self.update_cart_item_quantity(cart_id, new_quantity).await
     }
 
-    /// Remove cart item
+    /// Remove a cart item by cart_id
     pub async fn remove_cart_item(&self, cart_id: i32) -> Result<bool, sqlx::Error> {
         println!("[DB] Removing cart item {}", cart_id);
 
@@ -328,19 +324,13 @@ impl<'a> CartQueries<'a> {
         Ok(result.rows_affected() > 0)
     }
 
-    /// Remove kiosk cart item
-    pub async fn remove_kiosk_cart_item(&self, kiosk_id: i32) -> Result<bool, sqlx::Error> {
-        println!("[DB] Removing kiosk cart item {}", kiosk_id);
-
-        let result = sqlx::query("DELETE FROM kiosk_cart WHERE kiosk_id = $1")
-            .bind(kiosk_id)
-            .execute(self.pool)
-            .await?;
-
-        Ok(result.rows_affected() > 0)
+    /// Remove a kiosk cart item (delegates to remove_cart_item — same table)
+    pub async fn remove_kiosk_cart_item(&self, cart_id: i32) -> Result<bool, sqlx::Error> {
+        println!("[DB] Removing kiosk cart item {}", cart_id);
+        self.remove_cart_item(cart_id).await
     }
 
-    /// Clear entire cart for customer
+    /// Clear entire cart for a logged-in customer
     pub async fn clear_cart(&self, customer_id: i32) -> Result<bool, sqlx::Error> {
         println!("[DB] Clearing cart for customer {}", customer_id);
 
@@ -352,11 +342,11 @@ impl<'a> CartQueries<'a> {
         Ok(true)
     }
 
-    /// Clear kiosk cart for session
+    /// Clear kiosk cart for a session (uses unified cart table)
     pub async fn clear_kiosk_cart(&self, kiosk_session_id: &str) -> Result<bool, sqlx::Error> {
         println!("[DB] Clearing kiosk cart for session {}", kiosk_session_id);
 
-        sqlx::query("DELETE FROM kiosk_cart WHERE kiosk_session_id = $1")
+        sqlx::query("DELETE FROM cart WHERE kiosk_session_id = $1")
             .bind(kiosk_session_id)
             .execute(self.pool)
             .await?;
@@ -411,7 +401,7 @@ impl<'a> CartQueries<'a> {
         }
     }
 
-    /// Validate entire cart stock
+    /// Validate entire cart stock for a customer
     pub async fn validate_cart_stock(
         &self,
         customer_id: i32,

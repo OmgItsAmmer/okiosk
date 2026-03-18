@@ -34,6 +34,9 @@
 | categories             | isFeatured                | boolean                  |
 | categories             | created_at                | timestamp with time zone |
 | categories             | product_count             | integer                  |
+| customer_public_info   | customer_id               | integer                  |
+| customer_public_info   | first_name                | text                     |
+| customer_public_info   | last_name                 | text                     |
 | customers              | customer_id               | integer                  |
 | customers              | auth_uid                  | character varying        |
 | customers              | email                     | text                     |
@@ -53,10 +56,10 @@
 | image_entity           | entity_category           | text                     |
 | image_entity           | image_id                  | integer                  |
 | image_entity           | entity_id                 | integer                  |
-| image_entity           | isfeatured                | boolean                  |
+| image_entity           | isFeatured                | boolean                  |
 | image_entity           | created_at                | timestamp with time zone |
 | images                 | image_id                  | integer                  |
-| images                 | foldertype                | text                     |
+| images                 | folderType                | text                     |
 | images                 | filename                  | text                     |
 | images                 | created_at                | timestamp with time zone |
 | inventory_reservations | reservation_id            | character varying        |

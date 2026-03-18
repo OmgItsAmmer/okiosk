@@ -104,5 +104,6 @@ Checkout success pop up is white color.
 
 
 Functional BUGs
-login is not working on render
-poolTimieOut
+<!-- login is not working on render -->
+<!-- poolTimieOut --> Reason: Indian supabase server
+Cart not working after login.
