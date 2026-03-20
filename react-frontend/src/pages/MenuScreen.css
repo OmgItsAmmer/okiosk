@@ -210,6 +210,31 @@
         align-items: center;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
         padding-bottom: max(12px, env(safe-area-inset-bottom));
+        flex-direction: column;
+    }
+
+    /* Up arrow: clickable, opens cart upward */
+    .cart-navbar-arrow-up {
+        background: none;
+        border: none;
+        font-size: 0.7rem;
+        color: var(--color-text);
+        opacity: 0.6;
+        line-height: 1;
+        padding: 4px 12px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .cart-navbar-arrow-up:hover {
+        opacity: 1;
+    }
+
+    .cart-navbar-mobile .cart-navbar-inner {
+        display: flex;
+        width: 100%;
+        gap: 12px;
+        align-items: center;
     }
 
     .cart-navbar-toggle {

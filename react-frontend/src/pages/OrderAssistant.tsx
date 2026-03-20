@@ -198,8 +198,8 @@ const OrderAssistant: React.FC = () => {
         const textToSend = overrideMsg || chatInput;
         if (!textToSend.trim()) return;
 
+        setChatMessages((prev: ChatMessage[]) => [...prev, { type: 'text', text: textToSend, sender: 'user' }]);
         if (!overrideMsg) {
-            setChatMessages((prev: ChatMessage[]) => [...prev, { type: 'text', text: textToSend, sender: 'user' }]);
             setChatInput("");
         }
 
@@ -568,16 +568,34 @@ const OrderAssistant: React.FC = () => {
                         </div>
                         <div className="smart-content">
                             <div className="instructions-mini-container">
-                                <span className="instructions-label">Try:</span>
-                                {['add rice', 'select rice', 'show cart', 'checkout'].map((cmd) => (
+                                <span className="instructions-label">Try saying:</span>
+                                {[
+                                    { cmd: 'add rice', icon: 'plus', accent: '#4CAF50' },
+                                    { cmd: 'select rice', icon: 'check', accent: '#2196F3' },
+                                    { cmd: 'show cart', icon: 'cart', accent: '#F77F00' },
+                                    { cmd: 'checkout', icon: 'card', accent: '#9C27B0' },
+                                ].map(({ cmd, icon, accent }) => (
                                     <button
                                         key={cmd}
                                         type="button"
                                         className="instruction-chip"
+                                        style={{ '--chip-accent': accent } as React.CSSProperties}
                                         onClick={() => handleSendChat(cmd)}
                                         disabled={isProcessing}
                                     >
-                                        {cmd}
+                                        {icon === 'plus' && (
+                                            <svg className="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                                        )}
+                                        {icon === 'check' && (
+                                            <svg className="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                        )}
+                                        {icon === 'cart' && (
+                                            <svg className="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
+                                        )}
+                                        {icon === 'card' && (
+                                            <svg className="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
+                                        )}
+                                        <span>{cmd}</span>
                                     </button>
                                 ))}
                             </div>
@@ -706,7 +724,7 @@ const OrderAssistant: React.FC = () => {
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
                                     />
-                                    <button className="send-btn" onClick={() => handleSendChat()}>
+                                    <button className="send-btn" onClick={() => handleSendChat()} disabled={isProcessing}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="22" y1="2" x2="11" y2="13"></line>
                                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>

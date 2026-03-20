@@ -136,9 +136,9 @@ const Login = () => {
         if (authState === AuthState.INITIAL) {
             return (
                 <div className="login-buttons-container">
-                    <h2 className="login-title" style={{ color: theme.text }}>
-                        Welcome to Cod's Kitchen
-                    </h2>
+                    {/* <h2 className="login-title" style={{ color: theme.text }}>
+                        
+                    </h2> */}
                     <p className="login-subtitle" style={{ color: theme.text, opacity: 0.7 }}>
                         Sign in to access all features
                     </p>

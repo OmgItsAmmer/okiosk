@@ -198,23 +198,32 @@ const MenuScreen: React.FC = () => {
             {/* Mobile: Cart as navbar + drawer */}
             <div className="cart-navbar-mobile">
                 <button
-                    className="cart-navbar-toggle"
+                    className="cart-navbar-arrow-up"
                     onClick={() => setMobileCartOpen(true)}
                     aria-label="Open cart"
                 >
-                    <span className="cart-navbar-icon">🛒</span>
-                    <span className="cart-navbar-summary">
-                        <strong>{cart.length} items</strong>
-                        <span className="cart-navbar-total">Rs. {netTotal.toLocaleString()}</span>
-                    </span>
+                    ▲
                 </button>
-                <button
-                    className="cart-navbar-checkout"
-                    onClick={handleCheckout}
-                    disabled={cart.length === 0}
-                >
-                    Checkout
-                </button>
+                <div className="cart-navbar-inner">
+                    <button
+                        className="cart-navbar-toggle"
+                        onClick={() => setMobileCartOpen(true)}
+                        aria-label="Open cart"
+                    >
+                        <span className="cart-navbar-icon">🛒</span>
+                        <span className="cart-navbar-summary">
+                            <strong>{cart.length} items</strong>
+                            <span className="cart-navbar-total">Rs. {netTotal.toLocaleString()}</span>
+                        </span>
+                    </button>
+                    <button
+                        className="cart-navbar-checkout"
+                        onClick={handleCheckout}
+                        disabled={cart.length === 0}
+                    >
+                        Checkout
+                    </button>
+                </div>
             </div>
 
             <AnimatePresence>
