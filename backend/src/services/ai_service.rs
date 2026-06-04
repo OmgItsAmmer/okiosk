@@ -3,53 +3,48 @@ use reqwest::Client;
 use serde_json::{json, Value};
 use std::env;
 
-/// AI Service for communicating with Gemini API
+/// AI Service for communicating with OpenAI API
 pub struct AiService {
     client: Client,
     api_key: String,
-    gemini_model: String,
+    openai_model: String,
 }
 
 impl AiService {
     /// Create a new AI Service
     pub fn new(_api_url: String) -> Self {
-        // we ignore the passed api_url as we are using Gemini now
-        let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
-        let gemini_model = env::var("GEMINI_MODEL")
-            .unwrap_or_else(|_| "gemini-2.5-flash".to_string());
+        let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
+        let openai_model = env::var("OPENAI_MODEL")
+            .unwrap_or_else(|_| "gpt-4o-mini".to_string());
 
         Self {
             client: Client::new(),
             api_key,
-            gemini_model,
+            openai_model,
         }
     }
 
-    /// Parse user command using Gemini API
+    /// Parse user command using OpenAI API
     pub async fn parse_user_command(&self, prompt: &str) -> Result<Command, String> {
         let system_prompt = self.build_system_prompt();
 
         let request_body = json!({
-            "system_instruction": {
-                "parts": [{ "text": system_prompt }]
-            },
-            "contents": [{
-                "role": "user",
-                "parts": [{ "text": prompt }]
-            }],
-            "generationConfig": {
-                "response_mime_type": "application/json"
-            }
+            "model": self.openai_model,
+            "messages": [
+                { "role": "system", "content": system_prompt },
+                { "role": "user", "content": prompt }
+            ],
+            "response_format": { "type": "json_object" }
         });
 
-        // Call Gemini API
-        let response_json = self.call_gemini_api(&request_body).await?;
+        // Call OpenAI API
+        let response_json = self.call_openai_api(&request_body).await?;
 
         // Parse the response
-        self.parse_gemini_json_response(response_json)
+        self.parse_openai_json_response(response_json)
     }
 
-    /// Generate a friendly confirmation message using Gemini API
+    /// Generate a friendly confirmation message using OpenAI API
     pub async fn generate_confirmation_message(
         &self,
         actions: &[String],
@@ -64,35 +59,29 @@ impl AiService {
         );
 
         let request_body = json!({
-            "system_instruction": {
-                "parts": [{ "text": system_message }]
-            },
-            "contents": [{
-                "role": "user",
-                "parts": [{ "text": user_message }]
-            }]
+            "model": self.openai_model,
+            "messages": [
+                { "role": "system", "content": system_message },
+                { "role": "user", "content": user_message }
+            ]
         });
 
-        let response_json = self.call_gemini_api(&request_body).await?;
+        let response_json = self.call_openai_api(&request_body).await?;
 
         // Extract text
-        if let Some(candidates) = response_json.get("candidates").and_then(|v| v.as_array()) {
-            if let Some(first) = candidates.first() {
-                if let Some(parts) = first
-                    .get("content")
-                    .and_then(|c| c.get("parts"))
-                    .and_then(|p| p.as_array())
+        if let Some(choices) = response_json.get("choices").and_then(|v| v.as_array()) {
+            if let Some(first) = choices.first() {
+                if let Some(text) = first
+                    .get("message")
+                    .and_then(|m| m.get("content"))
+                    .and_then(|c| c.as_str())
                 {
-                    if let Some(text_part) = parts.first() {
-                        if let Some(text) = text_part.get("text").and_then(|t| t.as_str()) {
-                            return Ok(text.trim().to_string());
-                        }
-                    }
+                    return Ok(text.trim().to_string());
                 }
             }
         }
 
-        Err("Failed to extract text from Gemini response".to_string())
+        Err("Failed to extract text from OpenAI response".to_string())
     }
 
     /// Build the system prompt for command parsing
@@ -153,61 +142,55 @@ impl AiService {
         "#.to_string()
     }
 
-    /// Call Gemini API
-    async fn call_gemini_api(&self, request_body: &Value) -> Result<Value, String> {
-        let url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-            self.gemini_model,
-            self.api_key
-        );
+    /// Call OpenAI API
+    async fn call_openai_api(&self, request_body: &Value) -> Result<Value, String> {
+        let url = "https://api.openai.com/v1/chat/completions";
 
         let response = self
             .client
-            .post(&url)
+            .post(url)
+            .bearer_auth(&self.api_key)
             .json(request_body)
             .send()
             .await
-            .map_err(|e| format!("Failed to call Gemini API: {}", e))?;
+            .map_err(|e| format!("Failed to call OpenAI API: {}", e))?;
 
         if !response.status().is_success() {
             let error_text = response
                 .text()
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
-            tracing::error!("Gemini API error: {}", error_text);
-            return Err(format!("Gemini API error: {}", error_text));
+            tracing::error!("OpenAI API error: {}", error_text);
+            return Err(format!("OpenAI API error: {}", error_text));
         }
 
         let response_json: Value = response
             .json()
             .await
-            .map_err(|e| format!("Failed to parse Gemini response: {}", e))?;
+            .map_err(|e| format!("Failed to parse OpenAI response: {}", e))?;
         Ok(response_json)
     }
 
-    /// Parse JSON response from Gemini
-    fn parse_gemini_json_response(&self, response: Value) -> Result<Command, String> {
+    /// Parse JSON response from OpenAI
+    fn parse_openai_json_response(&self, response: Value) -> Result<Command, String> {
         // Extract text from the first choice
         let text = response
-            .get("candidates")
+            .get("choices")
             .and_then(|v| v.as_array())
             .and_then(|arr| arr.first())
-            .and_then(|cand| cand.get("content"))
-            .and_then(|cont| cont.get("parts"))
-            .and_then(|parts| parts.as_array())
-            .and_then(|arr| arr.first())
-            .and_then(|part| part.get("text"))
-            .and_then(|t| t.as_str())
+            .and_then(|choice| choice.get("message"))
+            .and_then(|msg| msg.get("content"))
+            .and_then(|c| c.as_str())
             .ok_or_else(|| {
-                tracing::error!("No text in Gemini response");
-                "No valid response text from Gemini".to_string()
+                tracing::error!("No text in OpenAI response");
+                "No valid response text from OpenAI".to_string()
             })?;
 
-        tracing::info!("Gemini Response Text: {}", text);
+        tracing::info!("OpenAI Response Text: {}", text);
 
         let json_value: Value = serde_json::from_str(text).map_err(|e| {
             format!(
-                "Failed to parse JSON from Gemini text: {}. Text: {}",
+                "Failed to parse JSON from OpenAI text: {}. Text: {}",
                 e, text
             )
         })?;
