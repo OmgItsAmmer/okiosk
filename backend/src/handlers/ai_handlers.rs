@@ -17,7 +17,7 @@ pub async fn process_ai_command(
 ) -> Result<Json<AiCommandResponse>, StatusCode> {
     // tracing::info!("AI Command: '{}'", payload.prompt);
 
-    // Step 1: Parse user command using Gemini Cloud LLM
+    // Step 1: Parse user command using OpenAI API
     let command = match ai_state
         .ai_service
         .parse_user_command(&payload.prompt)
@@ -115,7 +115,7 @@ pub async fn process_ai_command(
         return Ok(Json(variant_response));
     }
 
-    // Step 3: Generate confirmation message using Gemini Cloud LLM (only if no variant selections)
+    // Step 3: Generate confirmation message using OpenAI API (only if no variant selections)
     let confirmation = match ai_state
         .ai_service
         .generate_confirmation_message(&result.actions_executed, &payload.prompt)
