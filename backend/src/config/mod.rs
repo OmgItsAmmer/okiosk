@@ -6,7 +6,6 @@ pub struct Config {
     pub database_url: String,
     pub port: u16,
     pub host: String,
-    pub llm_api_url: String,
     pub google_client_id: String,
     pub google_client_secret: String,
     pub google_redirect_uri: String,
@@ -28,15 +27,15 @@ impl Config {
             // Try multiple locations for .env file during local development
             let mut env_paths: Vec<PathBuf> = vec![
                 current_dir.join(".env"),                            // Current directory
-                current_dir.join("kks_online_backend").join(".env"), // If running from project root
+                current_dir.join("backend").join(".env"),            // If running from project root
                 PathBuf::from(".env"),                               // Simple relative path
-                PathBuf::from("kks_online_backend/.env"),            // Relative path from root
+                PathBuf::from("backend/.env"),                       // Relative path from root
             ];
 
             // Add parent directory if it exists
             if let Some(parent) = current_dir.parent() {
                 env_paths.push(parent.join(".env"));
-                env_paths.push(parent.join("kks_online_backend").join(".env"));
+                env_paths.push(parent.join("backend").join(".env"));
             }
 
             eprintln!("🔍 Current working directory: {}", current_dir.display());
@@ -95,8 +94,6 @@ impl Config {
                 .unwrap_or_else(|_| "3000".to_string())
                 .parse()?,
             host: env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-            llm_api_url: env::var("LLM_API_URL")
-                .unwrap_or_else(|_| "http://localhost:8080/v1/chat/completions".to_string()),
             google_client_id: env::var("GOOGLE_CLIENT_ID")
                 .map_err(|_| "GOOGLE_CLIENT_ID must be set")?,
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET")

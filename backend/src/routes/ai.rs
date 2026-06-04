@@ -6,7 +6,7 @@ use crate::handlers::AiState;
 /// Creates AI-related routes
 ///
 /// This module handles AI endpoints including:
-/// - Natural language command processing using Local LLM
+/// - Natural language command processing using Gemini Cloud LLM
 /// - Variant selection confirmation for sequential queue
 ///
 /// # Arguments

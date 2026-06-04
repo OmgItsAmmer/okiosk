@@ -12,8 +12,7 @@ pub struct AiService {
 
 impl AiService {
     /// Create a new AI Service
-    pub fn new(_api_url: String) -> Self {
-        // we ignore the passed api_url as we are using Gemini now
+    pub fn new() -> Self {
         let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY must be set");
         let gemini_model = env::var("GEMINI_MODEL")
             .unwrap_or_else(|_| "gemini-2.5-flash".to_string());
