@@ -42,8 +42,8 @@ RUN apt-get update && apt-get install -y \
 # Copy binary from builder
 COPY --from=builder /app/target/release/kks_online_backend .
 
-# Copy env file example
-COPY backend/.env.example .env
+# Copy env file example (optional — production uses fly secrets)
+COPY backend/.env.example .env.example
 
 # Set default environment variables
 ENV HOST=0.0.0.0

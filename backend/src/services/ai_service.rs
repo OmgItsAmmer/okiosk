@@ -14,8 +14,7 @@ impl AiService {
     /// Create a new AI Service
     pub fn new() -> Self {
         let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-        let openai_model = env::var("OPENAI_MODEL")
-            .unwrap_or_else(|_| "gpt-4o-mini".to_string());
+        let openai_model = env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4o-mini".to_string());
 
         Self {
             client: Client::new(),
@@ -300,5 +299,93 @@ impl AiService {
             actions,
             response_message: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn test_service() -> AiService {
+        AiService {
+            client: Client::new(),
+            api_key: "test-key".to_string(),
+            openai_model: "gpt-4o-mini".to_string(),
+        }
+    }
+
+    #[test]
+    fn parse_openai_response_extracts_add_to_cart_action() {
+        let service = test_service();
+        let response = json!({
+            "choices": [{
+                "message": {
+                    "content": r#"{"actions":[{"action":"add_to_cart","item":"Chicken Zinger","quantity":2}]}"#
+                }
+            }]
+        });
+
+        let command = service.parse_openai_json_response(response).unwrap();
+        assert_eq!(command.actions.len(), 1);
+        match &command.actions[0] {
+            Action::AddToCart { item, quantity, .. } => {
+                assert_eq!(item, "Chicken Zinger");
+                assert_eq!(*quantity, 2);
+            }
+            other => panic!("expected AddToCart, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_openai_response_handles_checkout_action() {
+        let service = test_service();
+        let response = json!({
+            "choices": [{
+                "message": {
+                    "content": r#"{"actions":[{"action":"checkout","payment_method":"cod","shipping_method":"pickup"}]}"#
+                }
+            }]
+        });
+
+        let command = service.parse_openai_json_response(response).unwrap();
+        match &command.actions[0] {
+            Action::Checkout {
+                payment_method,
+                shipping_method,
+            } => {
+                assert_eq!(payment_method, "cod");
+                assert_eq!(shipping_method, "pickup");
+            }
+            other => panic!("expected Checkout, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn parse_openai_response_rejects_missing_actions() {
+        let service = test_service();
+        let response = json!({
+            "choices": [{
+                "message": { "content": r#"{"message":"hello"}"# }
+            }]
+        });
+
+        assert!(service.parse_openai_json_response(response).is_err());
+    }
+
+    #[test]
+    fn parse_openai_response_skips_unknown_actions() {
+        let service = test_service();
+        let response = json!({
+            "choices": [{
+                "message": {
+                    "content": r#"{"actions":[{"action":"unknown_action"},{"action":"view_cart"}]}"#
+                }
+            }]
+        });
+
+        let command = service.parse_openai_json_response(response).unwrap();
+        assert_eq!(command.actions.len(), 1);
+        assert!(matches!(command.actions[0], Action::ViewCart));
     }
 }

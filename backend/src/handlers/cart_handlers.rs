@@ -360,7 +360,10 @@ pub async fn remove_guest_cart_item(
     State(state): State<Arc<AiState>>,
     Path(variant_id): Path<i32>,
 ) -> Result<Json<CartOperationResponse>, StatusCode> {
-    println!("[DELETE] /api/cart/guest/item/{} → removing item...", variant_id);
+    println!(
+        "[DELETE] /api/cart/guest/item/{} → removing item...",
+        variant_id
+    );
 
     match state
         .queue_service

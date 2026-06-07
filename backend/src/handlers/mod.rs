@@ -30,11 +30,7 @@ pub struct AiState {
 }
 
 impl AiState {
-    pub fn new(
-        db: Arc<Database>,
-        whisper_path: String,
-        model_path: String,
-    ) -> Self {
+    pub fn new(db: Arc<Database>, whisper_path: String, model_path: String) -> Self {
         Self {
             db,
             ai_service: Arc::new(crate::services::AiService::new()),

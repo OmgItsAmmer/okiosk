@@ -1,0 +1,42 @@
+# fly.io app configuration for the Okiosk Rust backend.
+# Create the app first: fly apps create okiosk-api
+# Set secrets: fly secrets set DATABASE_URL=... OPENAI_API_KEY=... etc.
+
+app = "okiosk-api"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  HOST = "0.0.0.0"
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    grace_period = "30s"
+    interval = "15s"
+    method = "GET"
+    path = "/"
+    port = 3000
+    timeout = "5s"
+    type = "http"

@@ -210,14 +210,12 @@ impl<'a> CartQueries<'a> {
                 "[DB] Item not in cart. Inserting new entry for variant {}",
                 variant_id
             );
-            sqlx::query(
-                "INSERT INTO cart (customer_id, variant_id, quantity) VALUES ($1, $2, $3)",
-            )
-            .bind(customer_id)
-            .bind(variant_id)
-            .bind(quantity)
-            .execute(self.pool)
-            .await?;
+            sqlx::query("INSERT INTO cart (customer_id, variant_id, quantity) VALUES ($1, $2, $3)")
+                .bind(customer_id)
+                .bind(variant_id)
+                .bind(quantity)
+                .execute(self.pool)
+                .await?;
 
             println!("[DB] Inserted new cart item");
         }
