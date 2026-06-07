@@ -1,0 +1,117 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - ".github/workflows/backend-ci.yml"
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  OPENAI_API_KEY: sk-test-ci-key-not-used
+  OPENAI_MODEL: gpt-4o-mini
+  JWT_SECRET: test-jwt-secret-for-ci-only-min-32-chars
+  GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
+  GOOGLE_CLIENT_SECRET: test-client-secret
+  GOOGLE_REDIRECT_URI: http://localhost:3000/api/auth/google/callback
+  APP_ENV: test
+  RUN_DB_TESTS: "1"
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/okiosk_test
+
+jobs:
+  lint-and-test:
+    name: Lint, test, and build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: okiosk_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d okiosk_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry and build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Apply test database schema
+        run: psql "$DATABASE_URL" -f backend/tests/fixtures/minimal_schema.sql
+
+      - name: Check formatting
+        working-directory: backend
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        working-directory: backend
+        run: cargo clippy --all-targets --all-features
+
+      - name: Run tests
+        working-directory: backend
+        run: cargo test --verbose
+
+      - name: Release build
+        working-directory: backend
+        run: cargo build --release
+
+  docker-build:
+    name: Verify Docker image builds
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: okiosk-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build root Dockerfile (fly.io)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: okiosk-backend-root:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

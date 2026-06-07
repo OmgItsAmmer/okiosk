@@ -157,15 +157,18 @@ impl AuthQueries {
             None => (name.trim().to_string(), String::new()),
         };
 
-        let first_name = if first_name.is_empty() { "User" } else { first_name.as_str() };
+        let first_name = if first_name.is_empty() {
+            "User"
+        } else {
+            first_name.as_str()
+        };
 
         // Check if customer exists by auth_uid
-        let existing: Option<(i32,)> = sqlx::query_as(
-            "SELECT customer_id FROM customers WHERE auth_uid = $1",
-        )
-        .bind(auth_uid)
-        .fetch_optional(pool)
-        .await?;
+        let existing: Option<(i32,)> =
+            sqlx::query_as("SELECT customer_id FROM customers WHERE auth_uid = $1")
+                .bind(auth_uid)
+                .fetch_optional(pool)
+                .await?;
 
         let customer_id = if let Some((cid,)) = existing {
             sqlx::query(
@@ -203,16 +206,12 @@ impl AuthQueries {
     }
 
     /// Get customer_id by auth_uid (oauth user id)
-    pub async fn get_customer_id_by_auth_uid(
-        pool: &PgPool,
-        auth_uid: &str,
-    ) -> Result<Option<i32>> {
-        let row: Option<(i32,)> = sqlx::query_as(
-            "SELECT customer_id FROM customers WHERE auth_uid = $1",
-        )
-        .bind(auth_uid)
-        .fetch_optional(pool)
-        .await?;
+    pub async fn get_customer_id_by_auth_uid(pool: &PgPool, auth_uid: &str) -> Result<Option<i32>> {
+        let row: Option<(i32,)> =
+            sqlx::query_as("SELECT customer_id FROM customers WHERE auth_uid = $1")
+                .bind(auth_uid)
+                .fetch_optional(pool)
+                .await?;
 
         Ok(row.map(|(cid,)| cid))
     }

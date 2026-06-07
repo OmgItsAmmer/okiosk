@@ -19,12 +19,16 @@ impl TranscribeService {
                 // Canonicalize on Windows often adds \\?\ prefix (UNC path)
                 // We should strip it if it causes issues, but Command::new usually likes it.
                 let whisper_path = whisper_path.trim_start_matches(r"\\?\").to_string();
-                
+
                 let model_path = match std::fs::canonicalize(&model_path) {
-                    Ok(abs_model) => abs_model.to_string_lossy().to_string().trim_start_matches(r"\\?\").to_string(),
+                    Ok(abs_model) => abs_model
+                        .to_string_lossy()
+                        .to_string()
+                        .trim_start_matches(r"\\?\")
+                        .to_string(),
                     Err(_) => model_path,
                 };
-                
+
                 tracing::info!("Transcription service initialized with absolute paths:");
                 tracing::info!("  Binary: {}", whisper_path);
                 tracing::info!("  Model:  {}", model_path);
@@ -34,19 +38,17 @@ impl TranscribeService {
                     model_path,
                 }
             }
-            Err(_) => {
-                Self {
-                    whisper_path,
-                    model_path,
-                }
-            }
+            Err(_) => Self {
+                whisper_path,
+                model_path,
+            },
         }
     }
 
     /// Create service from environment variables with fallback defaults
     pub fn from_env() -> Result<Self, String> {
-        let whisper_path = std::env::var("WHISPER_CPP_PATH")
-            .unwrap_or_else(|_| "whisper".to_string());
+        let whisper_path =
+            std::env::var("WHISPER_CPP_PATH").unwrap_or_else(|_| "whisper".to_string());
         let model_path = std::env::var("WHISPER_MODEL_PATH")
             .unwrap_or_else(|_| "models/ggml-base.en.bin".to_string());
 
@@ -72,11 +74,11 @@ impl TranscribeService {
     }
 
     /// Transcribe audio data to text
-    /// 
+    ///
     /// # Arguments
     /// * `audio_data` - Raw audio bytes
     /// * `format` - Audio format (e.g., "webm", "wav")
-    /// 
+    ///
     /// # Returns
     /// Transcribed text or error message
     pub async fn transcribe(&self, audio_data: &[u8], format: &str) -> Result<String, String> {
@@ -129,12 +131,17 @@ impl TranscribeService {
 
         let output = Command::new("ffmpeg")
             .args([
-                "-y",                           // Overwrite output
-                "-i", input_path.to_str().unwrap(),
-                "-ar", "16000",                 // 16kHz sample rate
-                "-ac", "1",                     // Mono
-                "-c:a", "pcm_s16le",           // 16-bit PCM
-                "-f", "wav",                    // WAV format
+                "-y", // Overwrite output
+                "-i",
+                input_path.to_str().unwrap(),
+                "-ar",
+                "16000", // 16kHz sample rate
+                "-ac",
+                "1", // Mono
+                "-c:a",
+                "pcm_s16le", // 16-bit PCM
+                "-f",
+                "wav", // WAV format
                 output_path.to_str().unwrap(),
             ])
             .output()
@@ -162,15 +169,24 @@ impl TranscribeService {
 
         let output = Command::new(&self.whisper_path)
             .args([
-                "-m", &self.model_path,
-                "-f", wav_path.to_str().unwrap(),
-                "--no-timestamps",              // No timestamps in output
-                "--print-colors", "false",      // No color codes
-                "-l", "en",                     // English language
-                "--output-txt",                 // Output plain text
+                "-m",
+                &self.model_path,
+                "-f",
+                wav_path.to_str().unwrap(),
+                "--no-timestamps", // No timestamps in output
+                "--print-colors",
+                "false", // No color codes
+                "-l",
+                "en",           // English language
+                "--output-txt", // Output plain text
             ])
             .output()
-            .map_err(|e| format!("Failed to run whisper.cpp: {}. Is whisper.cpp installed?", e))?;
+            .map_err(|e| {
+                format!(
+                    "Failed to run whisper.cpp: {}. Is whisper.cpp installed?",
+                    e
+                )
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -178,7 +194,7 @@ impl TranscribeService {
         }
 
         let transcription = String::from_utf8_lossy(&output.stdout).to_string();
-        
+
         tracing::info!(
             "Transcription completed in {:?}: '{}'",
             start.elapsed(),
@@ -204,10 +220,8 @@ mod tests {
 
     #[test]
     fn test_service_creation() {
-        let service = TranscribeService::new(
-            "whisper".to_string(),
-            "models/ggml-base.en.bin".to_string(),
-        );
+        let service =
+            TranscribeService::new("whisper".to_string(), "models/ggml-base.en.bin".to_string());
         assert!(!service.whisper_path.is_empty());
         assert!(!service.model_path.is_empty());
     }

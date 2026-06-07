@@ -3,7 +3,7 @@
 # It defaults to building the Rust backend, which is common for multi-service repos on many platforms.
 
 # Build stage
-FROM rust:1.92-slim-bookworm as builder
+FROM rust:1.92-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -14,19 +14,21 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy backend manifests
-COPY kks_online_backend/Cargo.toml kks_online_backend/Cargo.lock ./
-COPY kks_online_backend/migrations ./migrations
+COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/migrations ./migrations
 
-# Create a dummy src/main.rs to cache dependencies
-RUN mkdir src && echo "fn main() {}" > src/main.rs
+# Dummy sources for dependency layer caching (must match [lib] + [[bin]] in Cargo.toml)
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    echo "// dependency cache stub" > src/lib.rs
 RUN cargo build --release
 RUN rm -rf src
 
 # Copy backend source code
-COPY kks_online_backend/src ./src
+COPY backend/src ./src
 
-# Build the actual application
-RUN touch src/main.rs && cargo build --release
+# Rebuild application (touch sources so Cargo recompiles the crate, not just deps)
+RUN touch src/main.rs src/lib.rs && cargo build --release
 
 # Final stage
 FROM debian:bookworm-slim
@@ -42,8 +44,8 @@ RUN apt-get update && apt-get install -y \
 # Copy binary from builder
 COPY --from=builder /app/target/release/kks_online_backend .
 
-# Copy env file example
-COPY kks_online_backend/.env.example .env
+# Copy env file example (optional — production uses fly secrets)
+COPY backend/.env.example .env.example
 
 # Set default environment variables
 ENV HOST=0.0.0.0

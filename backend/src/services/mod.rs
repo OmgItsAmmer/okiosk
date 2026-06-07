@@ -9,5 +9,3 @@ pub use auth_service::*;
 pub use command_executor::*;
 pub use queue_service::*;
 pub use transcribe_service::*;
-
-

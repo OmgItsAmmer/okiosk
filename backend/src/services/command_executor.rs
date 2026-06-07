@@ -36,9 +36,10 @@ impl CommandExecutor {
         let mut variant_selections: Vec<ActionResponse> = Vec::new();
 
         // When user sends a new add_to_cart, clear any pending variant queue (user moved on)
-        let has_add_to_cart = command.actions.iter().any(|a| {
-            matches!(a, Action::AddToCart { .. })
-        });
+        let has_add_to_cart = command
+            .actions
+            .iter()
+            .any(|a| matches!(a, Action::AddToCart { .. }));
         if has_add_to_cart {
             let queue_id = format!(
                 "{}_{}",

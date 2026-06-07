@@ -1,24 +1,20 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use axum_extra::extract::Multipart;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
-use crate::models::TranscribeResponse;
 use crate::handlers::AiState;
+use crate::models::TranscribeResponse;
 
 /// Maximum audio file size (5 seconds of WebM ≈ 800KB, adding buffer)
 const MAX_AUDIO_SIZE: usize = 2 * 1024 * 1024; // 2MB
 
 /// Transcribe audio endpoint
 /// POST /api/transcribe
-/// 
+///
 /// Accepts multipart form with 'audio' field containing the audio file.
 /// Supports audio/webm, audio/wav, audio/mp3 formats.
-/// 
+///
 /// Returns: { "text": "transcribed text" }
 pub async fn transcribe_audio(
     State(ai_state): State<Arc<AiState>>,
@@ -30,19 +26,15 @@ pub async fn transcribe_audio(
     let mut audio_data: Option<Vec<u8>> = None;
     let mut audio_format: Option<String> = None;
 
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to read multipart field: {}", e);
-            (
-                StatusCode::BAD_REQUEST,
-                Json(json!({ "error": format!("Failed to read form data: {}", e) })),
-            )
-        })?
-    {
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        tracing::error!("Failed to read multipart field: {}", e);
+        (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": format!("Failed to read form data: {}", e) })),
+        )
+    })? {
         let name = field.name().unwrap_or("").to_string();
-        
+
         if name == "audio" {
             // Get content type to determine format
             let content_type = field.content_type().unwrap_or("audio/webm").to_string();
@@ -61,12 +53,12 @@ pub async fn transcribe_audio(
             if data.len() > MAX_AUDIO_SIZE {
                 return Err((
                     StatusCode::PAYLOAD_TOO_LARGE,
-                    Json(json!({ 
+                    Json(json!({
                         "error": format!(
-                            "Audio file too large: {} bytes (max: {} bytes)", 
-                            data.len(), 
+                            "Audio file too large: {} bytes (max: {} bytes)",
+                            data.len(),
                             MAX_AUDIO_SIZE
-                        ) 
+                        )
                     })),
                 ));
             }

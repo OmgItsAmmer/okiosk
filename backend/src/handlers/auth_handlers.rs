@@ -192,7 +192,10 @@ pub async fn google_callback(
     .await
     {
         Ok(cid) => {
-            info!("Customer {} created/updated for oauth user {}", cid, user.id);
+            info!(
+                "Customer {} created/updated for oauth user {}",
+                cid, user.id
+            );
             cid
         }
         Err(e) => {
@@ -402,12 +405,10 @@ pub async fn verify_token(
 
     // Resolve customer_id for cart/orders (customers table)
     // Create customer if missing (e.g. legacy users from before customer upsert was added)
-    let customer_id = match AuthQueries::get_customer_id_by_auth_uid(&state.pool, &user.id.to_string())
-        .await
-    {
-        Ok(Some(cid)) => cid,
-        Ok(None) => {
-            AuthQueries::upsert_customer_from_oauth(
+    let customer_id =
+        match AuthQueries::get_customer_id_by_auth_uid(&state.pool, &user.id.to_string()).await {
+            Ok(Some(cid)) => cid,
+            Ok(None) => AuthQueries::upsert_customer_from_oauth(
                 &state.pool,
                 &user.id.to_string(),
                 &user.email,
@@ -417,13 +418,12 @@ pub async fn verify_token(
             .unwrap_or_else(|e| {
                 error!("Failed to create customer for verify: {}", e);
                 0
-            })
-        }
-        Err(e) => {
-            error!("Failed to get customer_id: {}", e);
-            0
-        }
-    };
+            }),
+            Err(e) => {
+                error!("Failed to get customer_id: {}", e);
+                0
+            }
+        };
 
     let user_id_for_client = if customer_id > 0 {
         customer_id.to_string()
