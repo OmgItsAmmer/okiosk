@@ -164,8 +164,8 @@ backend-docker-fly:
 # ---------------------------------------------------------------------------
 
 fly-deploy:
-	@echo "Deploying backend to fly.io..."
-	cd $(BACKEND_DIR) && flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
+	@echo "Deploying backend to fly.io (sin, single machine, auto-sleep)..."
+	cd $(BACKEND_DIR) && flyctl deploy --remote-only --ha=false --regions sin --config fly.toml --dockerfile Dockerfile
 
 fly-checks:
 	@echo "Listing fly.io health checks..."

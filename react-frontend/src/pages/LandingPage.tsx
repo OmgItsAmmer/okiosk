@@ -7,10 +7,10 @@ import './LandingPage.css';
 const CHECKLIST_ITEMS = [
     { label: 'urdu?', tag: 'YES', variant: 'default' as const },
     { label: 'english?', tag: 'YES', variant: 'default' as const },
-    { label: 'roman urdu?', tag: 'OBVIOUSLY', variant: 'default' as const },
+    { label: 'roman urdu?', tag: 'YES', variant: 'default' as const },
     { label: '"bro you know what i mean"', tag: 'YES', variant: 'default' as const },
-    { label: "grandpa's 4 min long voice note?", tag: 'COMING SOON', variant: 'orange' as const },
-    { label: 'telepathy?', tag: '2027 UPDATE', variant: 'orange' as const },
+    { label: "grandpa's 4 min long voice note?", tag: 'Coming Soon', variant: 'orange' as const },
+    { label: 'telepathy?', tag: '2027 UPDATE.', variant: 'orange' as const },
 ];
 
 const CARDS = [
@@ -158,7 +158,7 @@ export default function LandingPage() {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <span>BUY SOMETHING ZUBR</span>
+                        <span>TEST THE DEMO</span>
                         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.8" /></svg>
                     </motion.button>
                 </div>
@@ -179,7 +179,7 @@ export default function LandingPage() {
                             <div className="landing-quote-accent" aria-hidden="true" />
                             <span className="landing-quote-mark">&ldquo;</span>
                             <p className="landing-quote-text">
-                                &ldquo;your abba said &lsquo;yeh kya hai&rsquo; then ordered 5kg aloo in 30 seconds&rdquo;
+                                &ldquo;your abba said &lsquo;yeh kya hai&rsquo; then ordered 5kg rice in 30 seconds&rdquo;
                             </p>
                             <p className="landing-quote-sub">NO TUTORIAL · NO ONBOARDING · NO PHD REQUIRED</p>
                         </div>

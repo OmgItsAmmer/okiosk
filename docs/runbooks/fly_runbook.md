@@ -55,7 +55,9 @@ fly auth login
 
 ### 1. Choose app name and region
 
-The default app name in `backend/fly.toml` is **`okiosk-api`**, region **`sin`** (Singapore). Change these if you prefer another name or region:
+The default app name in `backend/fly.toml` is **`okiosk-api`**, region **`sin`** (Singapore). Deploy commands pin `--regions sin` so machines are never spread to other regions (avoids extra billing).
+
+Change the app name or region in `backend/fly.toml` if needed, and update `--regions` in `Makefile` / `.github/workflows/backend-deploy.yml` to match.
 
 ```toml
 # backend/fly.toml
@@ -67,6 +69,28 @@ List available regions:
 
 ```bash
 fly platform regions
+```
+
+### 1b. Cost-optimized defaults (auto-sleep, single machine)
+
+Production is configured for the **cheapest viable** fly.io setup:
+
+| Setting | Value | Why |
+| :--- | :--- | :--- |
+| `primary_region` | `sin` | Singapore — closest to Supabase/Vercel users in APAC |
+| `min_machines_running` | `0` | Machines **auto-sleep** when idle (no CPU/RAM charges while stopped) |
+| `auto_stop_machines` | `"stop"` | Fully stop idle machines (cheaper than always-on) |
+| `auto_start_machines` | `true` | Fly Proxy wakes the machine on the next HTTP request |
+| VM | 512 MB, 1 shared CPU | Smallest practical size for the Rust runtime |
+| Deploy | `--ha=false` | One machine only — no HA spare (default fly deploy creates two) |
+| Regions | `--regions sin` | Single region — no duplicate machines elsewhere |
+
+**Trade-off:** After idle sleep, the first request may take a few seconds (cold start) while the machine boots.
+
+If the app already has more than one machine from an earlier deploy, scale down once:
+
+```bash
+fly scale count 1 --region sin -a okiosk-api
 ```
 
 ### 2. Create the fly.io app
@@ -114,7 +138,7 @@ Set secrets (replace values):
 cd backend
 
 fly secrets set \
-  DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" \
+  DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres" \
   OPENAI_API_KEY="sk-..." \
   JWT_SECRET="your-long-random-production-secret" \
   GOOGLE_CLIENT_ID="....apps.googleusercontent.com" \
@@ -130,8 +154,10 @@ make fly-secrets
 
 **Supabase `DATABASE_URL` tips:**
 
-- Use the **connection pooler** URL (port `6543`) for fly.io — it handles many short-lived connections better than direct `5432`.
-- Append `?connect_timeout=10` if connections hang at startup.
+- Use the **session pooler** URL (port `5432`, host `*.pooler.supabase.com`) — required for SQLx, which uses named prepared statements incompatible with the transaction pooler (port `6543`).
+- Example: `postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres`
+- If your secret still uses port `6543`, the backend auto-rewrites it to `5432` at startup.
+- Append `?connect_timeout=10` if connections hang at startup (also added automatically by the backend).
 - Ensure Supabase allows connections from fly.io (default pooler is open; restrict by IP only if you use direct connections).
 
 Verify secrets (names only, values are hidden):
@@ -188,7 +214,7 @@ Equivalent commands:
 
 ```bash
 cd backend
-flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
+flyctl deploy --remote-only --ha=false --regions sin --config fly.toml --dockerfile Dockerfile
 flyctl checks list --config fly.toml
 ```
 
@@ -268,11 +294,21 @@ Expected root response:
 # Show current scale
 fly scale show -a okiosk-api
 
-# Add memory (if OOM during Rust compile or runtime)
+# Ensure only one machine in Singapore (cheapest)
+fly scale count 1 --region sin -a okiosk-api
+
+# Add memory (if OOM at runtime after cold start)
 fly scale memory 1024 -a okiosk-api
 ```
 
-Default in `fly.toml`: **512 MB**, **1 shared CPU**, **min 1 machine running**.
+Default in `fly.toml`: **512 MB**, **1 shared CPU**, **`min_machines_running = 0`** (auto-sleep when idle). Deploy uses **`--ha=false`** so fly.io does not provision a second HA machine.
+
+To keep one machine always running (faster response, higher cost):
+
+```bash
+# fly.toml: set min_machines_running = 1, then redeploy
+make fly-deploy
+```
 
 ### Update secrets
 
@@ -317,6 +353,8 @@ fly ssh console -a okiosk-api
 | Frontend can't reach API | CORS or wrong `VITE_BACKEND_URL` | Set Vercel env to `https://<app>.fly.dev`; redeploy frontend |
 | WebSocket auth fails on kiosk | `VITE_PUBLIC_URL` wrong | Set to a URL phones can open (not `localhost`) |
 | Health check failing | App not listening on `0.0.0.0:3000` | Confirm `HOST`/`PORT` in `fly.toml` `[env]` |
+| Slow first request after idle | Auto-sleep cold start | Expected with `min_machines_running = 0`; machine wakes on first request |
+| Two machines billing | Default HA from earlier deploy | `fly scale count 1 --region sin -a okiosk-api` then deploy with `--ha=false` |
 | CI deploy fails | Invalid/expired `FLY_API_TOKEN` | Regenerate token and update GitHub secret |
 
 Useful debug commands:

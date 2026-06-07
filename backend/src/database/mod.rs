@@ -5,7 +5,9 @@ mod order_queries;
 mod product_queries;
 
 use crate::models::Order;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use sqlx::PgPool;
+use std::str::FromStr;
 use std::time::Duration;
 
 pub use auth_queries::AuthQueries;
@@ -36,18 +38,12 @@ impl Database {
     pub async fn new(database_url: &str) -> Result<Self, sqlx::Error> {
         eprintln!("🔍 Connecting to database...");
 
-        // Inject a short TCP-level connect_timeout so a silently-dropped SYN
-        // (e.g. Render → Supabase pooler firewall DROP) fails in 10 s instead
-        // of waiting the full acquire_timeout (30 s).
-        let url_with_timeout = if database_url.contains('?') {
-            if database_url.contains("connect_timeout") {
-                database_url.to_string()
-            } else {
-                format!("{}&connect_timeout=10", database_url)
-            }
-        } else {
-            format!("{}?connect_timeout=10", database_url)
-        };
+        let (url, disable_statement_cache) = prepare_database_url(database_url);
+
+        let mut connect_options = PgConnectOptions::from_str(&url)?;
+        if disable_statement_cache {
+            connect_options = connect_options.statement_cache_capacity(0);
+        }
 
         let pool = PgPoolOptions::new()
             .max_connections(5)
@@ -55,7 +51,7 @@ impl Database {
             .acquire_timeout(Duration::from_secs(15))
             .idle_timeout(Duration::from_secs(1200))
             .max_lifetime(Duration::from_secs(900))
-            .connect(&url_with_timeout) // eager connect — fails at startup if DB unreachable
+            .connect_with(connect_options) // eager connect — fails at startup if DB unreachable
             .await?;
 
         eprintln!("✅ Database connected successfully");
@@ -106,5 +102,57 @@ impl Database {
             "Connected to Supabase! Found {} orders in the database.",
             row.0
         ))
+    }
+}
+
+/// Normalize the database URL for SQLx + Supabase compatibility.
+///
+/// SQLx uses named prepared statements (`sqlx_s_1`, …) which break on Supabase's
+/// transaction-mode pooler (port 6543). Session-mode pooler (port 5432) works.
+fn prepare_database_url(database_url: &str) -> (String, bool) {
+    let mut url = database_url.to_string();
+    let mut disable_statement_cache = false;
+
+    // Supabase transaction pooler → session pooler (same host, port 5432).
+    if url.contains("pooler.supabase.com:6543") {
+        eprintln!(
+            "⚠️  Supabase transaction pooler (6543) is incompatible with SQLx; using session pooler (5432)"
+        );
+        url = url.replace("pooler.supabase.com:6543", "pooler.supabase.com:5432");
+    } else if url.contains(":6543") {
+        // Other PgBouncer transaction poolers: disable statement cache as a fallback.
+        disable_statement_cache = true;
+    }
+
+    // Short TCP connect_timeout so a silently-dropped SYN fails fast instead of
+    // waiting the full acquire_timeout.
+    if url.contains('?') {
+        if !url.contains("connect_timeout") {
+            url = format!("{}&connect_timeout=10", url);
+        }
+    } else {
+        url = format!("{}?connect_timeout=10", url);
+    }
+
+    (url, disable_statement_cache)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prepare_database_url;
+
+    #[test]
+    fn rewrites_supabase_transaction_pooler_to_session_mode() {
+        let input = "postgresql://postgres.x:pw@aws-0-ap.pooler.supabase.com:6543/postgres";
+        let (url, disable_cache) = prepare_database_url(input);
+        assert!(url.contains("pooler.supabase.com:5432"));
+        assert!(!url.contains(":6543"));
+        assert!(!disable_cache);
+    }
+
+    #[test]
+    fn adds_connect_timeout() {
+        let (url, _) = prepare_database_url("postgresql://localhost/okiosk");
+        assert!(url.contains("connect_timeout=10"));
     }
 }
