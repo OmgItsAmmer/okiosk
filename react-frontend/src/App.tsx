@@ -5,6 +5,7 @@ import { CartProvider } from './context/CartContext';
 import { SnackbarProvider } from './components/Snackbar';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
+import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import OrderAssistant from './pages/OrderAssistant';
 import MenuScreen from './pages/MenuScreen';
@@ -74,7 +75,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
               </Routes>
             </InactivityHandler>
           </CartProvider>
