@@ -12,7 +12,7 @@ pub struct AiService {
 
 impl AiService {
     /// Create a new AI Service
-    pub fn new(_api_url: String) -> Self {
+    pub fn new() -> Self {
         let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
         let openai_model = env::var("OPENAI_MODEL")
             .unwrap_or_else(|_| "gpt-4o-mini".to_string());

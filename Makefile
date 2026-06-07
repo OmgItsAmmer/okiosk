@@ -28,7 +28,7 @@ run-backend:
 	@echo "Starting Rust backend..."
 	cd backend && cargo run
 
-run-frontend:
+frontend:
 	@echo "Starting React Vite frontend..."
 	cd react-frontend && npm run dev
 
